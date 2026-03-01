@@ -80,12 +80,12 @@
 
 ## 10. FBX Skinning Extraction
 
-- [ ] 10.1 In `FBXDocument.ts`: add `FbxSkin` and `FbxCluster` subtype classes; `FbxSkin` exposes `clusters: FbxCluster[]`; `FbxCluster` exposes `indexes: Int32Array`, `weights: Float64Array`, `transformMatrix: Float64Array` (16 values), `linkedModel: FbxModel | null`
-- [ ] 10.2 In `FBXConverter.ts`: after building `AiMesh`, query child connections for Skin deformers; for each Cluster: read `Indexes`/`Weights` arrays; accumulate per-vertex weight table `Map<vertexId, {boneIdx,weight}[]>`
-- [ ] 10.3 After all Clusters processed: normalize per-vertex weights (same rule as PMX D1); build `AiBone[]` — one per Cluster; set `AiBone.offsetMatrix` from `TransformMatrix` (cast float64→float32); set `AiBone.name` from linked Model name
-- [ ] 10.4 Assign `mesh.bones = bones`
-- [ ] 10.5 In `FBXExporter.ts`: for each mesh with `bones.length > 0`, emit `Deformer:Skin` + one `Deformer:Cluster` per bone with `Indexes`, `Weights`, `TransformMatrix` arrays; add OO Connections (Cluster→Skin, Skin→Geometry)
-- [ ] 10.6 Write unit test: parse FBX fixture with skinning → assert `mesh.bones.length > 0` and first bone has `weights.length > 0`
+- [x] 10.1 In `FBXDocument.ts`: add `FbxSkin` and `FbxCluster` subtype classes; `FbxSkin` exposes `clusters: FbxCluster[]`; `FbxCluster` exposes `indexes: Int32Array`, `weights: Float64Array`, `transformMatrix: Float64Array` (16 values), `linkedModel: FbxModel | null`
+- [x] 10.2 In `FBXConverter.ts`: after building `AiMesh`, query child connections for Skin deformers; for each Cluster: read `Indexes`/`Weights` arrays; accumulate per-vertex weight table `Map<vertexId, {boneIdx,weight}[]>`
+- [x] 10.3 After all Clusters processed: normalize per-vertex weights (same rule as PMX D1); build `AiBone[]` — one per Cluster; set `AiBone.offsetMatrix` from `TransformMatrix` (cast float64→float32); set `AiBone.name` from linked Model name
+- [x] 10.4 Assign `mesh.bones = bones`
+- [x] 10.5 In `FBXExporter.ts`: for each mesh with `bones.length > 0`, emit `Deformer:Skin` + one `Deformer:Cluster` per bone with `Indexes`, `Weights`, `TransformMatrix` arrays; add OO Connections (Cluster→Skin, Skin→Geometry)
+- [x] 10.6 Write unit test: parse FBX fixture with skinning → assert `mesh.bones.length > 0` and first bone has `weights.length > 0`
 
 ## 11. FBX Animation Extraction
 

@@ -35,6 +35,18 @@ function renderMaterialNode(id: number, name: string): FbxExportNode {
   );
 }
 
+function flattenBoneIndexes(mesh: AiScene["meshes"][number], boneIndex: number): string {
+  return mesh.bones[boneIndex]?.weights.map((weight) => weight.vertexId).join(",") ?? "";
+}
+
+function flattenBoneWeights(mesh: AiScene["meshes"][number], boneIndex: number): string {
+  return mesh.bones[boneIndex]?.weights.map((weight) => weight.weight).join(",") ?? "";
+}
+
+function flattenMatrix(mesh: AiScene["meshes"][number], boneIndex: number): string {
+  return Array.from(mesh.bones[boneIndex]?.offsetMatrix.data ?? new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])).join(",");
+}
+
 export class FBXExporter implements BaseExporter {
   getSupportedExtensions(): string[] {
     return ["fbx"];
@@ -71,6 +83,26 @@ export class FBXExporter implements BaseExporter {
         objects.push(renderMaterialNode(materialId, scene.materials[mesh.materialIndex]?.name ?? `Material_${mesh.materialIndex}`));
       }
       connectionLines.push(`C: "OO", ${materialIdMap.get(mesh.materialIndex)}, ${modelId}`);
+
+      if (mesh.bones.length > 0) {
+        const skinId = nextId++;
+        objects.push(new FbxExportNode("Deformer", [skinId, `Deformer::Skin_${meshIndex}`, "Skin"]));
+        connectionLines.push(`C: "OO", ${skinId}, ${geometryId}`);
+        mesh.bones.forEach((bone, boneIndex) => {
+          const clusterId = nextId++;
+          const boneModelId = nextId++;
+          objects.push(
+            new FbxExportNode("Deformer", [clusterId, `SubDeformer::${bone.name}`, "Cluster"], [
+              `Indexes: ${flattenBoneIndexes(mesh, boneIndex)}`,
+              `Weights: ${flattenBoneWeights(mesh, boneIndex)}`,
+              `TransformMatrix: ${flattenMatrix(mesh, boneIndex)}`,
+            ]),
+          );
+          objects.push(new FbxExportNode("Model", [boneModelId, `Model::${bone.name}`, "LimbNode"]));
+          connectionLines.push(`C: "OO", ${clusterId}, ${skinId}`);
+          connectionLines.push(`C: "OO", ${boneModelId}, ${clusterId}`);
+        });
+      }
     });
 
     objects.push(new FbxExportNode("Model", [ROOT_MODEL_ID, "Model::Root", "Model"]));

@@ -1,6 +1,17 @@
 import type { FBXElement } from "./FBXParser";
 import { PropertyTable } from "./FBXProperties";
 
+function parseNumberArray(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => Number(item));
+  }
+  return String(value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map(Number);
+}
+
 export interface LazyFbxObject {
   id: bigint;
   kind: string;
@@ -14,6 +25,65 @@ export interface FbxConnectionGraph {
   childToParents: Map<bigint, bigint[]>;
 }
 
+export class FbxModel {
+  constructor(private readonly object: LazyFbxObject) {}
+
+  get id(): bigint {
+    return this.object.id;
+  }
+
+  get name(): string {
+    return this.object.name.replace(/^Model::/, "");
+  }
+
+  get properties(): PropertyTable {
+    return this.object.properties;
+  }
+}
+
+export class FbxCluster {
+  readonly indexes: Int32Array;
+  readonly weights: Float64Array;
+  readonly transformMatrix: Float64Array;
+  readonly linkedModel: FbxModel | null;
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    this.indexes = Int32Array.from(parseNumberArray(object.element.values.Indexes?.[0] ?? []));
+    this.weights = Float64Array.from(parseNumberArray(object.element.values.Weights?.[0] ?? []));
+    const transformValues = parseNumberArray(object.element.values.TransformMatrix?.[0] ?? []);
+    this.transformMatrix = Float64Array.from(
+      transformValues.length === 16
+        ? transformValues
+        : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    );
+    const modelObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Model");
+    this.linkedModel = modelObject ? new FbxModel(modelObject) : null;
+  }
+
+  get id(): bigint {
+    return this.object.id;
+  }
+
+  get name(): string {
+    return this.object.name;
+  }
+}
+
+export class FbxSkin {
+  readonly clusters: FbxCluster[];
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    this.clusters = document
+      .getChildObjects(object.id)
+      .filter((entry) => entry.kind === "Cluster")
+      .map((entry) => new FbxCluster(document, entry));
+  }
+
+  get id(): bigint {
+    return this.object.id;
+  }
+}
+
 export class FbxDocument {
   readonly objects = new Map<bigint, LazyFbxObject>();
   readonly connections: FbxConnectionGraph = {
@@ -24,6 +94,18 @@ export class FbxDocument {
   constructor(public readonly root: FBXElement) {
     this.loadObjects();
     this.loadConnections();
+  }
+
+  getChildObjects(parentId: bigint): LazyFbxObject[] {
+    return (this.connections.parentToChildren.get(parentId) ?? [])
+      .map((id) => this.objects.get(id))
+      .filter((entry): entry is LazyFbxObject => Boolean(entry));
+  }
+
+  getParentObjects(childId: bigint): LazyFbxObject[] {
+    return (this.connections.childToParents.get(childId) ?? [])
+      .map((id) => this.objects.get(id))
+      .filter((entry): entry is LazyFbxObject => Boolean(entry));
   }
 
   private loadObjects(): void {

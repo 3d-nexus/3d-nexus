@@ -3,11 +3,12 @@ import {
   AiPrimitiveType,
   AiSceneFlags,
   createIdentityMatrix4x4,
+  type AiMesh,
   type AiMatrix4x4,
   type AiNode,
   type AiScene,
 } from "nexus-core";
-import { FbxDocument } from "./FBXDocument";
+import { FbxDocument, FbxSkin } from "./FBXDocument";
 
 type CoordSystemInfo = {
   upAxis: number;
@@ -124,7 +125,7 @@ export class FBXConverter {
       });
       const normalNumbers = parseNumberList(geometry.element.values.Normals?.[0] ?? []);
       const uvNumbers = parseNumberList(geometry.element.values.UV?.[0] ?? []);
-      return {
+      const mesh: AiMesh = {
         name: String(geometry.properties.get("Name") ?? geometry.name),
         primitiveTypes: faces.some((face) => face.indices.length > 3)
           ? AiPrimitiveType.POLYGON
@@ -171,6 +172,38 @@ export class FBXConverter {
           },
         },
       };
+      const skins = document
+        .getChildObjects(geometry.id)
+        .filter((object) => object.kind === "Skin")
+        .map((object) => new FbxSkin(document, object));
+      if (skins.length > 0) {
+        const perVertex = new Map<number, Array<{ boneIdx: number; weight: number }>>();
+        const bones = skins.flatMap((skin) =>
+          skin.clusters.map((cluster, boneIdx) => {
+            cluster.indexes.forEach((vertexId, index) => {
+              const entries = perVertex.get(vertexId) ?? [];
+              entries.push({ boneIdx, weight: Number(cluster.weights[index] ?? 0) });
+              perVertex.set(vertexId, entries);
+            });
+            return {
+              name: cluster.linkedModel?.name ?? cluster.name,
+              weights: [] as Array<{ vertexId: number; weight: number }>,
+              offsetMatrix: { data: Float32Array.from(cluster.transformMatrix, (value) => Number(value)) },
+            };
+          }),
+        );
+        perVertex.forEach((entries, vertexId) => {
+          const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+          if (total <= 0) {
+            return;
+          }
+          entries.forEach((entry) => {
+            bones[entry.boneIdx]?.weights.push({ vertexId, weight: entry.weight / total });
+          });
+        });
+        mesh.bones = bones;
+      }
+      return mesh;
     });
 
     const childNodes: AiNode[] = models.map((model, index) => ({
