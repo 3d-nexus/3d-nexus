@@ -19,12 +19,12 @@
 
 ## 3. PMX Multi-Weight Skinning (Exporter)
 
-- [ ] 3.1 In `MMDPmxExporter.ts`: build reverse lookup `Map<vertexId, {boneIdx, weight}[]>` from `mesh.bones[].weights`
-- [ ] 3.2 For each vertex: count non-zero weight entries; select skinning type (1→BDEF1, 2→BDEF2/SDEF, 3-4→BDEF4) based on entry count and SDEF marker
-- [ ] 3.3 Write BDEF1 block: 1 bone index via `BinaryWriter`
-- [ ] 3.4 Write BDEF2 block: 2 bone indices + float32 weight
-- [ ] 3.5 Write SDEF block: 2 bone indices + float32 weight + `c`/`r0`/`r1` vectors from `ikChain`; fall back to BDEF2 if `ikChain` absent
-- [ ] 3.6 Write BDEF4 block: 4 bone indices + 4 float32 weights (pad with 0-index/0-weight if fewer than 4 entries)
+- [x] 3.1 In `MMDPmxExporter.ts`: build reverse lookup `Map<vertexId, {boneIdx, weight}[]>` from `mesh.bones[].weights`
+- [x] 3.2 For each vertex: count non-zero weight entries; select skinning type (1→BDEF1, 2→BDEF2/SDEF, 3-4→BDEF4) based on entry count and SDEF marker
+- [x] 3.3 Write BDEF1 block: 1 bone index via `BinaryWriter`
+- [x] 3.4 Write BDEF2 block: 2 bone indices + float32 weight
+- [x] 3.5 Write SDEF block: 2 bone indices + float32 weight + `c`/`r0`/`r1` vectors from `ikChain`; fall back to BDEF2 if `ikChain` absent
+- [x] 3.6 Write BDEF4 block: 4 bone indices + 4 float32 weights (pad with 0-index/0-weight if fewer than 4 entries)
 
 ## 4. PMX Morph Pipeline (Importer)
 

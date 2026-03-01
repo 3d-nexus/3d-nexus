@@ -1,43 +1,77 @@
-import type { AiScene } from "nexus-core";
+import type { AiMesh, AiScene, AiVector3D, SdefCoeffs } from "nexus-core";
+import { BinaryWriter } from "./BinaryWriter";
 
-class BinaryWriter {
-  private readonly bytes: number[] = [];
+type VertexBoneEntry = { boneIdx: number; weight: number; ikChain?: SdefCoeffs };
 
-  writeUint8(value: number): void {
-    this.bytes.push(value & 0xff);
+function writeVec3(writer: BinaryWriter, value: AiVector3D): void {
+  writer.writeFloat32(value.x);
+  writer.writeFloat32(value.y);
+  writer.writeFloat32(value.z);
+}
+
+function buildVertexWeightLookup(mesh: AiMesh): Map<number, VertexBoneEntry[]> {
+  const lookup = new Map<number, VertexBoneEntry[]>();
+
+  mesh.bones.forEach((bone, boneIdx) => {
+    bone.weights.forEach((weight) => {
+      const entries = lookup.get(weight.vertexId) ?? [];
+      const ikChain = bone.ikChain as SdefCoeffs | undefined;
+      entries.push({
+        boneIdx,
+        weight: weight.weight,
+        ...(ikChain ? { ikChain } : {}),
+      });
+      lookup.set(weight.vertexId, entries);
+    });
+  });
+
+  lookup.forEach((entries, vertexId) => {
+    lookup.set(
+      vertexId,
+      entries
+        .filter((entry) => entry.weight > 0)
+        .sort((left, right) => right.weight - left.weight)
+        .slice(0, 4),
+    );
+  });
+
+  return lookup;
+}
+
+function writeVertexSkinning(writer: BinaryWriter, entries: VertexBoneEntry[]): void {
+  if (entries.length <= 1) {
+    writer.writeUint8(0);
+    writer.writeInt32(entries[0]?.boneIdx ?? 0);
+    return;
   }
 
-  writeUint16(value: number): void {
-    this.bytes.push(value & 0xff, (value >> 8) & 0xff);
+  const sdefEntry = entries.find((entry) => entry.ikChain?.type === "sdef");
+  if (entries.length === 2 && sdefEntry?.ikChain) {
+    writer.writeUint8(3);
+    writer.writeInt32(entries[0]!.boneIdx);
+    writer.writeInt32(entries[1]!.boneIdx);
+    writer.writeFloat32(entries[0]!.weight);
+    writeVec3(writer, sdefEntry.ikChain.c);
+    writeVec3(writer, sdefEntry.ikChain.r0);
+    writeVec3(writer, sdefEntry.ikChain.r1);
+    return;
   }
 
-  writeUint32(value: number): void {
-    this.bytes.push(value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >> 24) & 0xff);
+  if (entries.length === 2) {
+    writer.writeUint8(1);
+    writer.writeInt32(entries[0]!.boneIdx);
+    writer.writeInt32(entries[1]!.boneIdx);
+    writer.writeFloat32(entries[0]!.weight);
+    return;
   }
 
-  writeInt32(value: number): void {
-    this.writeUint32(value >>> 0);
+  writer.writeUint8(2);
+  const padded = [...entries];
+  while (padded.length < 4) {
+    padded.push({ boneIdx: 0, weight: 0 });
   }
-
-  writeFloat32(value: number): void {
-    const buffer = new ArrayBuffer(4);
-    new DataView(buffer).setFloat32(0, value, true);
-    this.bytes.push(...new Uint8Array(buffer));
-  }
-
-  writeString(text: string): void {
-    const encoded = new TextEncoder().encode(text);
-    this.writeInt32(encoded.length);
-    this.bytes.push(...encoded);
-  }
-
-  writeBytes(bytes: number[] | Uint8Array): void {
-    this.bytes.push(...bytes);
-  }
-
-  toArrayBuffer(): ArrayBuffer {
-    return Uint8Array.from(this.bytes).buffer;
-  }
+  padded.forEach((entry) => writer.writeInt32(entry.boneIdx));
+  padded.forEach((entry) => writer.writeFloat32(entry.weight));
 }
 
 export class MMDPmxExporter {
@@ -47,28 +81,25 @@ export class MMDPmxExporter {
     if (!mesh) {
       throw new Error("Cannot export PMX without at least one mesh");
     }
+
+    const vertexWeightLookup = buildVertexWeightLookup(mesh);
+
     writer.writeBytes(new TextEncoder().encode("PMX "));
     writer.writeFloat32(2.0);
     writer.writeUint8(8);
-    writer.writeBytes([1, 0, 4, 4, 4, 4, 4, 4]);
-    writer.writeString(scene.rootNode.name);
-    writer.writeString(scene.rootNode.name);
-    writer.writeString("");
-    writer.writeString("");
+    writer.writeBytes(Uint8Array.from([1, 0, 4, 4, 4, 4, 4, 4]));
+    writer.writeString(scene.rootNode.name, "utf-8");
+    writer.writeString(scene.rootNode.name, "utf-8");
+    writer.writeString("", "utf-8");
+    writer.writeString("", "utf-8");
     writer.writeUint32(mesh.vertices.length);
+
     mesh.vertices.forEach((vertex, index) => {
-      writer.writeFloat32(vertex.x);
-      writer.writeFloat32(vertex.y);
-      writer.writeFloat32(vertex.z);
-      const normal = mesh.normals[index] ?? { x: 0, y: 1, z: 0 };
-      writer.writeFloat32(normal.x);
-      writer.writeFloat32(normal.y);
-      writer.writeFloat32(normal.z);
-      const uv = mesh.textureCoords[0]?.[index] ?? { x: 0, y: 0 };
-      writer.writeFloat32(uv.x);
-      writer.writeFloat32(uv.y);
-      writer.writeUint8(0);
-      writer.writeInt32(0);
+      writeVec3(writer, vertex);
+      writeVec3(writer, mesh.normals[index] ?? { x: 0, y: 1, z: 0 });
+      writer.writeFloat32(mesh.textureCoords[0]?.[index]?.x ?? 0);
+      writer.writeFloat32(mesh.textureCoords[0]?.[index]?.y ?? 0);
+      writeVertexSkinning(writer, vertexWeightLookup.get(index) ?? []);
       writer.writeFloat32(1);
     });
 
@@ -77,8 +108,8 @@ export class MMDPmxExporter {
     indices.forEach((index) => writer.writeUint32(index));
     writer.writeUint32(0);
     writer.writeUint32(1);
-    writer.writeString(scene.materials[0]?.name ?? "Material");
-    writer.writeString(scene.materials[0]?.name ?? "Material");
+    writer.writeString(scene.materials[0]?.name ?? "Material", "utf-8");
+    writer.writeString(scene.materials[0]?.name ?? "Material", "utf-8");
     writer.writeFloat32(1);
     writer.writeFloat32(1);
     writer.writeFloat32(1);
@@ -108,8 +139,8 @@ export class MMDPmxExporter {
       ? scene.rootNode.children
       : [{ name: "RootBone", parent: null } as const];
     bones.forEach((bone, index) => {
-      writer.writeString(bone.name);
-      writer.writeString(bone.name);
+      writer.writeString(bone.name, "utf-8");
+      writer.writeString(bone.name, "utf-8");
       writer.writeFloat32(0);
       writer.writeFloat32(0);
       writer.writeFloat32(0);
