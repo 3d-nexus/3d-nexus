@@ -107,11 +107,11 @@
 
 ## 13. FBX Coordinate System & Unit Normalization
 
-- [ ] 13.1 In `FBXConverter.ts`: add `parseGlobalSettings(doc): CoordSystemInfo` — reads `UpAxis`, `UpAxisSign`, `FrontAxis`, `FrontAxisSign`, `CoordAxis`, `CoordAxisSign`, `UnitScaleFactor` from the `GlobalSettings` PropertyTable; defaults: UpAxis=1, UpSign=1, FrontAxis=2, FrontSign=1, CoordAxis=0, CoordSign=1, Scale=1.0
-- [ ] 13.2 Implement `buildAxisSwapMatrix(info): AiMatrix4x4` — maps (CoordAxis→X, UpAxis→Y, FrontAxis→Z) with sign-flip columns; combine with scale matrix from `UnitScaleFactor / 100`
-- [ ] 13.3 Pre-multiply axis-swap matrix into `scene.rootNode.transformation`; store applied scale factor as `scene.metadata["nexus:unitScaleFactor"] = { type: FLOAT, data: factor }`
-- [ ] 13.4 In `FBXExporter.ts`: write `GlobalSettings` block with canonical Y-up right-handed properties and `UnitScaleFactor = 1.0`
-- [ ] 13.5 Write unit test: Z-up FBX (UpAxis=2) → assert root transform has ≈−90° X rotation; Y-up FBX → assert root transform is identity
+- [x] 13.1 In `FBXConverter.ts`: add `parseGlobalSettings(doc): CoordSystemInfo` — reads `UpAxis`, `UpAxisSign`, `FrontAxis`, `FrontAxisSign`, `CoordAxis`, `CoordAxisSign`, `UnitScaleFactor` from the `GlobalSettings` PropertyTable; defaults: UpAxis=1, UpSign=1, FrontAxis=2, FrontSign=1, CoordAxis=0, CoordSign=1, Scale=1.0
+- [x] 13.2 Implement `buildAxisSwapMatrix(info): AiMatrix4x4` — maps (CoordAxis→X, UpAxis→Y, FrontAxis→Z) with sign-flip columns; combine with scale matrix from `UnitScaleFactor / 100`
+- [x] 13.3 Pre-multiply axis-swap matrix into `scene.rootNode.transformation`; store applied scale factor as `scene.metadata["nexus:unitScaleFactor"] = { type: FLOAT, data: factor }`
+- [x] 13.4 In `FBXExporter.ts`: write `GlobalSettings` block with canonical Y-up right-handed properties and `UnitScaleFactor = 1.0`
+- [x] 13.5 Write unit test: Z-up FBX (UpAxis=2) → assert root transform has ≈−90° X rotation; Y-up FBX → assert root transform is identity
 
 ## 14. FBX Full Material, Texture & Multi-UV
 

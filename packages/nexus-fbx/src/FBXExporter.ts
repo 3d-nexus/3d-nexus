@@ -83,8 +83,11 @@ export class FBXExporter implements BaseExporter {
       "}",
       new FbxExportNode("GlobalSettings", [], [
         "UpAxis: 1",
+        "UpAxisSign: 1",
         "FrontAxis: 2",
+        "FrontAxisSign: 1",
         "CoordAxis: 0",
+        "CoordAxisSign: 1",
         "UnitScaleFactor: 1.0",
       ]).render(),
       new FbxExportNode("Objects", [], [], objects).render(),

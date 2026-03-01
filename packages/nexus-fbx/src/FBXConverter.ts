@@ -1,4 +1,5 @@
 import {
+  AiMetadataType,
   AiPrimitiveType,
   AiSceneFlags,
   createIdentityMatrix4x4,
@@ -7,6 +8,16 @@ import {
   type AiScene,
 } from "nexus-core";
 import { FbxDocument } from "./FBXDocument";
+
+type CoordSystemInfo = {
+  upAxis: number;
+  upSign: number;
+  frontAxis: number;
+  frontSign: number;
+  coordAxis: number;
+  coordSign: number;
+  unitScaleFactor: number;
+};
 
 function parseNumberList(value: unknown): number[] {
   if (Array.isArray(value)) {
@@ -59,8 +70,34 @@ export function buildAxisSwapMatrix(
   };
 }
 
+export function parseGlobalSettings(document: FbxDocument): CoordSystemInfo {
+  const settings = document.root.children.find((child) => child.name === "GlobalSettings");
+  const readNumber = (key: string, fallback: number): number => {
+    const value = settings?.values[key]?.[0];
+    return value === undefined ? fallback : Number(value);
+  };
+  return {
+    upAxis: readNumber("UpAxis", 1),
+    upSign: readNumber("UpAxisSign", 1),
+    frontAxis: readNumber("FrontAxis", 2),
+    frontSign: readNumber("FrontAxisSign", 1),
+    coordAxis: readNumber("CoordAxis", 0),
+    coordSign: readNumber("CoordAxisSign", 1),
+    unitScaleFactor: readNumber("UnitScaleFactor", 100),
+  };
+}
+
+function applyScale(matrix: AiMatrix4x4, factor: number): AiMatrix4x4 {
+  const next = new Float32Array(matrix.data);
+  for (let index = 0; index < 12; index += 1) {
+    next[index] = (next[index] ?? 0) * factor;
+  }
+  return { data: next };
+}
+
 export class FBXConverter {
   convert(document: FbxDocument): AiScene {
+    const coordInfo = parseGlobalSettings(document);
     const geometries = [...document.objects.values()].filter((object) => object.kind === "Mesh");
     const materials = [...document.objects.values()].filter((object) => object.kind === "Material");
     const models = [...document.objects.values()].filter((object) => object.kind === "Model");
@@ -146,7 +183,17 @@ export class FBXConverter {
     }));
     const rootNode: AiNode = {
       name: "FBXRoot",
-      transformation: createIdentityMatrix4x4(),
+      transformation: applyScale(
+        buildAxisSwapMatrix(
+          coordInfo.upAxis,
+          coordInfo.upSign,
+          coordInfo.frontAxis,
+          coordInfo.frontSign,
+          coordInfo.coordAxis,
+          coordInfo.coordSign,
+        ),
+        coordInfo.unitScaleFactor / 100,
+      ),
       parent: null,
       children: childNodes,
       meshIndices: [],
@@ -176,7 +223,12 @@ export class FBXConverter {
       textures: [],
       lights: [],
       cameras: [],
-      metadata: {},
+      metadata: {
+        "nexus:unitScaleFactor": {
+          type: AiMetadataType.FLOAT,
+          data: coordInfo.unitScaleFactor / 100,
+        },
+      },
     };
   }
 }
