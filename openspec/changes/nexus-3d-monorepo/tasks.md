@@ -59,24 +59,24 @@
 
 ## 5. nexus-fbx — FBX Parser & Exporter
 
-- [ ] 5.1 Scaffold `packages/nexus-fbx/` with `package.json` (`nexus-core: workspace:*`, `fflate` runtime dep), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
-- [ ] 5.2 Create `src/FBXTokenizer.ts` — shared `FBXToken` types: `NodeBegin`, `NodeEnd`, `Data` (with value: `string | number | boolean | bigint | ArrayBuffer | TypedArray`)
-- [ ] 5.3 Create `src/FBXBinaryTokenizer.ts` — reads binary FBX; validates 23-byte Kaydara magic; reads node records with 32-bit (< 7500) or 64-bit (>= 7500) offsets; decompresses property arrays with `fflate.inflateSync`
-- [ ] 5.4 Create `src/FBXAsciiTokenizer.ts` — tokenises ASCII FBX text; handles `NodeName: {`, property lines, string escaping (`\n`, `\t`, `\\`)
-- [ ] 5.5 Create `src/FBXParser.ts` — converts flat token stream → nested `FBXElement` tree (name, properties[], children[])
-- [ ] 5.6 Create `src/FBXProperties.ts` — `PropertyTable` class wrapping `Properties70` element; typed getters returning `string | number | boolean | AiVector3D | AiColor4D`
-- [ ] 5.7 Create `src/FBXDocument.ts` — `FbxDocument` with `objects: Map<bigint, LazyFbxObject>` (lazy-parsed subtypes); `connections` bidirectional graph; subtypes: `FbxModel`, `FbxGeometry`, `FbxMaterial`, `FbxTexture`, `FbxVideo`, `FbxDeformer` (Skin/Cluster/BlendShape/BlendShapeChannel), `FbxAnimationStack`, `FbxAnimationLayer`, `FbxAnimationCurveNode`, `FbxAnimationCurve`
-- [ ] 5.8 Create `src/FBXConverter.ts` — traverses `FbxDocument` → `AiScene`; resolves coordinate system from `GlobalSettings`; converts `FbxGeometry` → `AiMesh` (handles `ByVertice`/`ByPolygonVertex`/`ByPolygon` mapping modes for normals/UVs); converts `Skin`/`Cluster` → `AiBone`; converts `BlendShape` → `AiAnimMesh`; converts `AnimationStack` → `AiAnimation`
-- [ ] 5.9 Create `src/FBXImporter.ts` — implements `BaseImporter`; detects binary vs ASCII by magic; delegates to tokeniser → parser → document → converter
-- [ ] 5.10 Create `src/FBXExportNode.ts` — `FbxExportNode` helper for building FBX ASCII node strings with typed properties
-- [ ] 5.11 Create `src/FBXExportProperty.ts` — serialises typed FBX property values to ASCII string representation
-- [ ] 5.12 Create `src/FBXExporter.ts` — implements `BaseExporter`; serialises `AiScene` to FBX 7.4 ASCII; writes `FBXHeaderExtension`, `GlobalSettings`, `Objects` (Geometry with negated last polygon index, Material with Properties70, NodeAttribute, Model), `Connections`, `Takes`
-- [ ] 5.13 Add fixture files `src/__tests__/fixtures/cube.fbx` (ASCII FBX 7.4), `cube_binary.fbx` (binary FBX 7.4)
-- [ ] 5.14 Create `src/__tests__/FBXBinaryTokenizer.test.ts` — validates magic check, compressed array decompression, 64-bit offset detection
-- [ ] 5.15 Create `src/__tests__/FBXConverter.test.ts` — parses `cube.fbx`; asserts 1 mesh, 8 vertices, 6 face quads (or 12 triangles if triangulated), correct material name
-- [ ] 5.16 Create `src/__tests__/roundtrip.test.ts` — parse ASCII FBX → IR → export ASCII FBX → re-parse; assert mesh name and vertex count preserved
-- [ ] 5.17 Create `src/index.ts` exporting `FBXImporter`, `FBXExporter`
-- [ ] 5.18 Build and run `vitest run` — all tests pass
+- [x] 5.1 Scaffold `packages/nexus-fbx/` with `package.json` (`nexus-core: workspace:*`, `fflate` runtime dep), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
+- [x] 5.2 Create `src/FBXTokenizer.ts` — shared `FBXToken` types: `NodeBegin`, `NodeEnd`, `Data` (with value: `string | number | boolean | bigint | ArrayBuffer | TypedArray`)
+- [x] 5.3 Create `src/FBXBinaryTokenizer.ts` — reads binary FBX; validates 23-byte Kaydara magic; reads node records with 32-bit (< 7500) or 64-bit (>= 7500) offsets; decompresses property arrays with `fflate.inflateSync`
+- [x] 5.4 Create `src/FBXAsciiTokenizer.ts` — tokenises ASCII FBX text; handles `NodeName: {`, property lines, string escaping (`\n`, `\t`, `\\`)
+- [x] 5.5 Create `src/FBXParser.ts` — converts flat token stream → nested `FBXElement` tree (name, properties[], children[])
+- [x] 5.6 Create `src/FBXProperties.ts` — `PropertyTable` class wrapping `Properties70` element; typed getters returning `string | number | boolean | AiVector3D | AiColor4D`
+- [x] 5.7 Create `src/FBXDocument.ts` — `FbxDocument` with `objects: Map<bigint, LazyFbxObject>` (lazy-parsed subtypes); `connections` bidirectional graph; subtypes: `FbxModel`, `FbxGeometry`, `FbxMaterial`, `FbxTexture`, `FbxVideo`, `FbxDeformer` (Skin/Cluster/BlendShape/BlendShapeChannel), `FbxAnimationStack`, `FbxAnimationLayer`, `FbxAnimationCurveNode`, `FbxAnimationCurve`
+- [x] 5.8 Create `src/FBXConverter.ts` — traverses `FbxDocument` → `AiScene`; resolves coordinate system from `GlobalSettings`; converts `FbxGeometry` → `AiMesh` (handles `ByVertice`/`ByPolygonVertex`/`ByPolygon` mapping modes for normals/UVs); converts `Skin`/`Cluster` → `AiBone`; converts `BlendShape` → `AiAnimMesh`; converts `AnimationStack` → `AiAnimation`
+- [x] 5.9 Create `src/FBXImporter.ts` — implements `BaseImporter`; detects binary vs ASCII by magic; delegates to tokeniser → parser → document → converter
+- [x] 5.10 Create `src/FBXExportNode.ts` — `FbxExportNode` helper for building FBX ASCII node strings with typed properties
+- [x] 5.11 Create `src/FBXExportProperty.ts` — serialises typed FBX property values to ASCII string representation
+- [x] 5.12 Create `src/FBXExporter.ts` — implements `BaseExporter`; serialises `AiScene` to FBX 7.4 ASCII; writes `FBXHeaderExtension`, `GlobalSettings`, `Objects` (Geometry with negated last polygon index, Material with Properties70, NodeAttribute, Model), `Connections`, `Takes`
+- [x] 5.13 Add fixture files `src/__tests__/fixtures/cube.fbx` (ASCII FBX 7.4), `cube_binary.fbx` (binary FBX 7.4)
+- [x] 5.14 Create `src/__tests__/FBXBinaryTokenizer.test.ts` — validates magic check, compressed array decompression, 64-bit offset detection
+- [x] 5.15 Create `src/__tests__/FBXConverter.test.ts` — parses `cube.fbx`; asserts 1 mesh, 8 vertices, 6 face quads (or 12 triangles if triangulated), correct material name
+- [x] 5.16 Create `src/__tests__/roundtrip.test.ts` — parse ASCII FBX → IR → export ASCII FBX → re-parse; assert mesh name and vertex count preserved
+- [x] 5.17 Create `src/index.ts` exporting `FBXImporter`, `FBXExporter`
+- [x] 5.18 Build and run `vitest run` — all tests pass
 
 ## 6. nexus-converter — Conversion Pipeline
 

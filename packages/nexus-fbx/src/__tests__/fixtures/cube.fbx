@@ -1,0 +1,30 @@
+; FBX 7.4.0 project file
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 1
+  FrontAxis: 2
+  CoordAxis: 0
+}
+Objects: {
+  Geometry: 1, "Geometry::Cube", "Mesh" {
+    Vertices: -1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1,-1,-1,1,1,-1,1,1,1,1,-1,1,1
+    PolygonVertexIndex: 0,1,2,-4,4,7,6,-6,0,4,5,-2,1,5,6,-3,2,6,7,-4,3,7,4,-1
+    Normals: 0,0,-1,0,0,1,0,-1,0,1,0,0,0,1,0,-1,0,0
+    UV: 0,0,1,0,1,1,0,1
+  }
+  Material: 2, "Material::CubeMaterial", "Material" {
+    Properties70: {
+      P: "DiffuseColor", "Color", "", "A", 0.8, 0.6, 0.4
+    }
+  }
+  Model: 3, "Model::Cube", "Model" {
+  }
+}
+Connections: {
+  C: "OO", 1, 3
+  C: "OO", 2, 3
+}
+Takes: {
+}

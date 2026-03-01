@@ -1,0 +1,38 @@
+import type { AiColor4D, AiVector3D } from "nexus-core";
+import type { FBXElement } from "./FBXParser";
+
+export class PropertyTable {
+  private readonly values = new Map<string, string | number | boolean | AiVector3D | AiColor4D>();
+
+  constructor(element?: FBXElement) {
+    const entries = element?.values.P ?? [];
+    entries.forEach((entry) => {
+      if (!Array.isArray(entry) || entry.length < 5) {
+        return;
+      }
+
+      const [name, type] = entry;
+      const valueParts = entry.slice(4);
+      if (type === "Color" || type === "ColorRGB") {
+        this.values.set(String(name), {
+          r: Number(valueParts[0] ?? 0),
+          g: Number(valueParts[1] ?? 0),
+          b: Number(valueParts[2] ?? 0),
+          a: 1,
+        });
+      } else if (type === "Lcl Translation") {
+        this.values.set(String(name), {
+          x: Number(valueParts[0] ?? 0),
+          y: Number(valueParts[1] ?? 0),
+          z: Number(valueParts[2] ?? 0),
+        });
+      } else {
+        this.values.set(String(name), valueParts[0] as string | number | boolean);
+      }
+    });
+  }
+
+  get(name: string): string | number | boolean | AiVector3D | AiColor4D | undefined {
+    return this.values.get(name);
+  }
+}

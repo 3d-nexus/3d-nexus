@@ -1,0 +1,19 @@
+{
+  "name": "nexus-fbx",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "nexus-core": "workspace:*"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  }
+}
