@@ -125,13 +125,13 @@
 
 ## 15. FBX Multi-Mesh Export
 
-- [ ] 15.1 Refactor `FBXExporter.ts` `write()` method to iterate `scene.meshes[]` instead of accessing only `[0]`
-- [ ] 15.2 Assign unique sequential IDs (base: 100001) to each Geometry/Model/Material node; build `nodeIdMap: Map<meshIndex|materialIndex, id>`
-- [ ] 15.3 Emit one `Geometry` node per mesh (vertices, indices, normals, UVs)
-- [ ] 15.4 Emit one `Model` node per mesh; use `mesh.name || "Mesh_N"` as model name
-- [ ] 15.5 Deduplicate materials: if multiple meshes share `materialIndex`, emit Material node once and reuse ID
-- [ ] 15.6 In `Connections` section: write `C: "OO", modelId, geometryId` + `C: "OO", materialId, modelId` + `C: "OO", modelId, rootModelId` per mesh
-- [ ] 15.7 Write unit test: export 3-mesh scene → count `Geometry:` occurrences = 3, `Model:` occurrences = 4 (3 mesh + 1 root), `Material:` = unique material count
+- [x] 15.1 Refactor `FBXExporter.ts` `write()` method to iterate `scene.meshes[]` instead of accessing only `[0]`
+- [x] 15.2 Assign unique sequential IDs (base: 100001) to each Geometry/Model/Material node; build `nodeIdMap: Map<meshIndex|materialIndex, id>`
+- [x] 15.3 Emit one `Geometry` node per mesh (vertices, indices, normals, UVs)
+- [x] 15.4 Emit one `Model` node per mesh; use `mesh.name || "Mesh_N"` as model name
+- [x] 15.5 Deduplicate materials: if multiple meshes share `materialIndex`, emit Material node once and reuse ID
+- [x] 15.6 In `Connections` section: write `C: "OO", modelId, geometryId` + `C: "OO", materialId, modelId` + `C: "OO", modelId, rootModelId` per mesh
+- [x] 15.7 Write unit test: export 3-mesh scene → count `Geometry:` occurrences = 3, `Model:` occurrences = 4 (3 mesh + 1 root), `Material:` = unique material count
 
 ## 16. Integration Tests & Validation
 
