@@ -8,7 +8,7 @@ import {
   type AiNode,
   type AiScene,
 } from "nexus-core";
-import { FbxDocument, FbxSkin } from "./FBXDocument";
+import { FbxBlendShape, FbxDocument, FbxSkin } from "./FBXDocument";
 
 type CoordSystemInfo = {
   upAxis: number;
@@ -202,6 +202,35 @@ export class FBXConverter {
           });
         });
         mesh.bones = bones;
+      }
+      const blendShapes = document
+        .getChildObjects(geometry.id)
+        .filter((object) => object.kind === "BlendShape")
+        .map((object) => new FbxBlendShape(document, object));
+      if (blendShapes.length > 0) {
+        mesh.morphTargets = blendShapes.flatMap((blendShape) =>
+          blendShape.channels.map((channel) => {
+            const verticesCopy = mesh.vertices.map((vertex) => ({ ...vertex }));
+            channel.shapeIndexes.forEach((vertexIndex, index) => {
+              const base = vertexIndex * 3;
+              verticesCopy[vertexIndex] = {
+                x: (mesh.vertices[vertexIndex]?.x ?? 0) + Number(channel.shapeVertices[base] ?? 0),
+                y: (mesh.vertices[vertexIndex]?.y ?? 0) + Number(channel.shapeVertices[base + 1] ?? 0),
+                z: (mesh.vertices[vertexIndex]?.z ?? 0) + Number(channel.shapeVertices[base + 2] ?? 0),
+              };
+            });
+            return {
+              name: channel.name,
+              vertices: verticesCopy,
+              normals: mesh.normals.map((normal) => ({ ...normal })),
+              tangents: [],
+              bitangents: [],
+              colors: Array.from({ length: 8 }, () => null),
+              textureCoords: mesh.textureCoords.map((channelUvs) => channelUvs?.map((uv) => ({ ...uv })) ?? null),
+              weight: 0,
+            };
+          }),
+        );
       }
       return mesh;
     });

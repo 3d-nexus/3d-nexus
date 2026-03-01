@@ -84,6 +84,34 @@ export class FbxSkin {
   }
 }
 
+export class FbxBlendShapeChannel {
+  readonly shapeIndexes: Int32Array;
+  readonly shapeVertices: Float64Array;
+  readonly shapeName: string;
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    const shapeObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Shape");
+    this.shapeIndexes = Int32Array.from(parseNumberArray(shapeObject?.element.values.Indexes?.[0] ?? []));
+    this.shapeVertices = Float64Array.from(parseNumberArray(shapeObject?.element.values.Vertices?.[0] ?? []));
+    this.shapeName = shapeObject?.name.replace(/^Geometry::/, "") ?? object.name;
+  }
+
+  get name(): string {
+    return this.object.name.replace(/^SubDeformer::/, "");
+  }
+}
+
+export class FbxBlendShape {
+  readonly channels: FbxBlendShapeChannel[];
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    this.channels = document
+      .getChildObjects(object.id)
+      .filter((entry) => entry.kind === "BlendShapeChannel")
+      .map((entry) => new FbxBlendShapeChannel(document, entry));
+  }
+}
+
 export class FbxDocument {
   readonly objects = new Map<bigint, LazyFbxObject>();
   readonly connections: FbxConnectionGraph = {

@@ -99,11 +99,11 @@
 
 ## 12. FBX BlendShape Extraction
 
-- [ ] 12.1 In `FBXDocument.ts`: add `FbxBlendShape` and `FbxBlendShapeChannel` subtypes; `FbxBlendShapeChannel` resolves its connected `Shape` (FbxGeometry with type `"Shape"`) which exposes `shapeIndexes: Int32Array` and `shapeVertices: Float64Array`
-- [ ] 12.2 In `FBXConverter.ts`: after building `AiMesh` base, query BlendShape deformers; for each BlendShapeChannel → Shape: expand sparse `Indexes`/`Vertices` deltas into dense `AiAnimMesh` (base + delta); set `animMesh.name = channelName`
-- [ ] 12.3 Assign `mesh.morphTargets = animMeshes`
-- [ ] 12.4 In `FBXExporter.ts`: for each mesh with `morphTargets.length > 0`, emit `Deformer:BlendShape` + one `Deformer:BlendShapeChannel` + one `Geometry:Shape` per morph target; Shape `Indexes` = indices where `|animMesh.vertices[i] - base[i]| > ε`; `Vertices` = the delta values; add OO Connections
-- [ ] 12.5 Write unit test: FBX fixture with 2 BlendShape channels → `mesh.morphTargets.length === 2`, `morphTargets[0].vertices.length === mesh.vertices.length`
+- [x] 12.1 In `FBXDocument.ts`: add `FbxBlendShape` and `FbxBlendShapeChannel` subtypes; `FbxBlendShapeChannel` resolves its connected `Shape` (FbxGeometry with type `"Shape"`) which exposes `shapeIndexes: Int32Array` and `shapeVertices: Float64Array`
+- [x] 12.2 In `FBXConverter.ts`: after building `AiMesh` base, query BlendShape deformers; for each BlendShapeChannel → Shape: expand sparse `Indexes`/`Vertices` deltas into dense `AiAnimMesh` (base + delta); set `animMesh.name = channelName`
+- [x] 12.3 Assign `mesh.morphTargets = animMeshes`
+- [x] 12.4 In `FBXExporter.ts`: for each mesh with `morphTargets.length > 0`, emit `Deformer:BlendShape` + one `Deformer:BlendShapeChannel` + one `Geometry:Shape` per morph target; Shape `Indexes` = indices where `|animMesh.vertices[i] - base[i]| > ε`; `Vertices` = the delta values; add OO Connections
+- [x] 12.5 Write unit test: FBX fixture with 2 BlendShape channels → `mesh.morphTargets.length === 2`, `morphTargets[0].vertices.length === mesh.vertices.length`
 
 ## 13. FBX Coordinate System & Unit Normalization
 

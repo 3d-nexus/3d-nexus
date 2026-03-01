@@ -47,6 +47,30 @@ function flattenMatrix(mesh: AiScene["meshes"][number], boneIndex: number): stri
   return Array.from(mesh.bones[boneIndex]?.offsetMatrix.data ?? new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])).join(",");
 }
 
+function flattenShapeIndexes(mesh: AiScene["meshes"][number], morphIndex: number): string {
+  return mesh.morphTargets[morphIndex]?.vertices
+    .flatMap((vertex, vertexIndex) => {
+      const base = mesh.vertices[vertexIndex];
+      return base &&
+        (Math.abs(vertex.x - base.x) > 1e-6 || Math.abs(vertex.y - base.y) > 1e-6 || Math.abs(vertex.z - base.z) > 1e-6)
+        ? [vertexIndex]
+        : [];
+    })
+    .join(",") ?? "";
+}
+
+function flattenShapeVertices(mesh: AiScene["meshes"][number], morphIndex: number): string {
+  return mesh.morphTargets[morphIndex]?.vertices
+    .flatMap((vertex, vertexIndex) => {
+      const base = mesh.vertices[vertexIndex];
+      return base &&
+        (Math.abs(vertex.x - base.x) > 1e-6 || Math.abs(vertex.y - base.y) > 1e-6 || Math.abs(vertex.z - base.z) > 1e-6)
+        ? [vertex.x - base.x, vertex.y - base.y, vertex.z - base.z]
+        : [];
+    })
+    .join(",") ?? "";
+}
+
 export class FBXExporter implements BaseExporter {
   getSupportedExtensions(): string[] {
     return ["fbx"];
@@ -101,6 +125,25 @@ export class FBXExporter implements BaseExporter {
           objects.push(new FbxExportNode("Model", [boneModelId, `Model::${bone.name}`, "LimbNode"]));
           connectionLines.push(`C: "OO", ${clusterId}, ${skinId}`);
           connectionLines.push(`C: "OO", ${boneModelId}, ${clusterId}`);
+        });
+      }
+
+      if (mesh.morphTargets.length > 0) {
+        const blendShapeId = nextId++;
+        objects.push(new FbxExportNode("Deformer", [blendShapeId, `Deformer::BlendShape_${meshIndex}`, "BlendShape"]));
+        connectionLines.push(`C: "OO", ${blendShapeId}, ${geometryId}`);
+        mesh.morphTargets.forEach((morphTarget, morphIndex) => {
+          const channelId = nextId++;
+          const shapeId = nextId++;
+          objects.push(new FbxExportNode("Deformer", [channelId, `SubDeformer::${morphTarget.name}`, "BlendShapeChannel"]));
+          objects.push(
+            new FbxExportNode("Geometry", [shapeId, `Geometry::${morphTarget.name}`, "Shape"], [
+              `Indexes: ${flattenShapeIndexes(mesh, morphIndex)}`,
+              `Vertices: ${flattenShapeVertices(mesh, morphIndex)}`,
+            ]),
+          );
+          connectionLines.push(`C: "OO", ${channelId}, ${blendShapeId}`);
+          connectionLines.push(`C: "OO", ${shapeId}, ${channelId}`);
         });
       }
     });
