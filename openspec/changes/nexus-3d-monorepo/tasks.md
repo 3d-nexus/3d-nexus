@@ -41,21 +41,21 @@
 
 ## 4. nexus-mmd — PMX / PMD / VMD Parser & Exporter
 
-- [ ] 4.1 Scaffold `packages/nexus-mmd/` with `package.json` (`nexus-core: workspace:*`), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
-- [ ] 4.2 Create `src/BinaryReader.ts` — `DataView`-backed cursor reader with `readUint8/16/32`, `readInt8/16/32`, `readFloat32`, `readFloat64`, `readString(len, encoding)`, `readIndex(size)` helpers
-- [ ] 4.3 Create `src/MMDPmxParser.ts` — full PMX 2.0/2.1 binary parser; `PmxSetting`, `PmxVertex` (all 5 skinning types: BDEF1/2/4, SDEF, QDEF), `PmxMaterial`, `PmxBone` (with IK chain), `PmxMorph` (vertex/UV/bone/material/group), `PmxFrame`, `PmxRigidBody`, `PmxJoint`, `PmxSoftBody`; validates `PMX ` magic
-- [ ] 4.4 Create `src/MMDPmdParser.ts` — PMD binary parser; validates `Pmd` magic; Shift_JIS decode via lookup table for bone/morph names; `PmdHeader`, `PmdVertex`, `PmdMaterial`, `PmdBone`, `PmdIk`, `PmdMorph`
-- [ ] 4.5 Create `src/MMDVmdParser.ts` — VMD binary parser; validates magic string; `VmdBoneFrame` (with 4×4×4 bezier interpolation bytes), `VmdMorphFrame`, `VmdCameraFrame`, `VmdLightFrame`, `VmdShadowFrame`, `VmdIkFrame`
-- [ ] 4.6 Create `src/MMDImporter.ts` — implements `BaseImporter`; detects format by magic bytes; maps PMX/PMD to `AiScene` (bones → `AiNode` hierarchy, morphs → `AiAnimMesh[]`, materials → `AiMaterial[]`); merges VMD keyframes into `AiAnimation` when `ImportSettings.motionBuffer` is provided; stashes rigid-body data in `scene.metadata["mmd:rigidBodies"]`; emits `ImportWarning` for unmatched VMD bones
-- [ ] 4.7 Create `src/MMDPmxExporter.ts` — writes `AiScene` → PMX 2.0 binary via `DataView`
-- [ ] 4.8 Create `src/MMDVmdExporter.ts` — writes `AiScene` first `AiAnimation` → VMD binary
-- [ ] 4.9 Create `src/MMDExporter.ts` — implements `BaseExporter`; routes to PMX or VMD exporter via `ExportSettings.format`
-- [ ] 4.10 Add fixture binary `src/__tests__/fixtures/minimal.pmx` (hand-crafted minimal valid PMX), `minimal.vmd`
-- [ ] 4.11 Create `src/__tests__/MMDPmxParser.test.ts` — parses `minimal.pmx`; asserts vertex count, bone count, material count, PMX magic validation error on bad input
-- [ ] 4.12 Create `src/__tests__/MMDVmdParser.test.ts` — parses `minimal.vmd`; asserts bone frame count, morph frame count
-- [ ] 4.13 Create `src/__tests__/roundtrip.test.ts` — PMX → IR → PMX; assert vertex count preserved
-- [ ] 4.14 Create `src/index.ts` exporting `MMDImporter`, `MMDExporter`
-- [ ] 4.15 Build and run `vitest run` — all tests pass
+- [x] 4.1 Scaffold `packages/nexus-mmd/` with `package.json` (`nexus-core: workspace:*`), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
+- [x] 4.2 Create `src/BinaryReader.ts` — `DataView`-backed cursor reader with `readUint8/16/32`, `readInt8/16/32`, `readFloat32`, `readFloat64`, `readString(len, encoding)`, `readIndex(size)` helpers
+- [x] 4.3 Create `src/MMDPmxParser.ts` — full PMX 2.0/2.1 binary parser; `PmxSetting`, `PmxVertex` (all 5 skinning types: BDEF1/2/4, SDEF, QDEF), `PmxMaterial`, `PmxBone` (with IK chain), `PmxMorph` (vertex/UV/bone/material/group), `PmxFrame`, `PmxRigidBody`, `PmxJoint`, `PmxSoftBody`; validates `PMX ` magic
+- [x] 4.4 Create `src/MMDPmdParser.ts` — PMD binary parser; validates `Pmd` magic; Shift_JIS decode via lookup table for bone/morph names; `PmdHeader`, `PmdVertex`, `PmdMaterial`, `PmdBone`, `PmdIk`, `PmdMorph`
+- [x] 4.5 Create `src/MMDVmdParser.ts` — VMD binary parser; validates magic string; `VmdBoneFrame` (with 4×4×4 bezier interpolation bytes), `VmdMorphFrame`, `VmdCameraFrame`, `VmdLightFrame`, `VmdShadowFrame`, `VmdIkFrame`
+- [x] 4.6 Create `src/MMDImporter.ts` — implements `BaseImporter`; detects format by magic bytes; maps PMX/PMD to `AiScene` (bones → `AiNode` hierarchy, morphs → `AiAnimMesh[]`, materials → `AiMaterial[]`); merges VMD keyframes into `AiAnimation` when `ImportSettings.motionBuffer` is provided; stashes rigid-body data in `scene.metadata["mmd:rigidBodies"]`; emits `ImportWarning` for unmatched VMD bones
+- [x] 4.7 Create `src/MMDPmxExporter.ts` — writes `AiScene` → PMX 2.0 binary via `DataView`
+- [x] 4.8 Create `src/MMDVmdExporter.ts` — writes `AiScene` first `AiAnimation` → VMD binary
+- [x] 4.9 Create `src/MMDExporter.ts` — implements `BaseExporter`; routes to PMX or VMD exporter via `ExportSettings.format`
+- [x] 4.10 Add fixture binary `src/__tests__/fixtures/minimal.pmx` (hand-crafted minimal valid PMX), `minimal.vmd`
+- [x] 4.11 Create `src/__tests__/MMDPmxParser.test.ts` — parses `minimal.pmx`; asserts vertex count, bone count, material count, PMX magic validation error on bad input
+- [x] 4.12 Create `src/__tests__/MMDVmdParser.test.ts` — parses `minimal.vmd`; asserts bone frame count, morph frame count
+- [x] 4.13 Create `src/__tests__/roundtrip.test.ts` — PMX → IR → PMX; assert vertex count preserved
+- [x] 4.14 Create `src/index.ts` exporting `MMDImporter`, `MMDExporter`
+- [x] 4.15 Build and run `vitest run` — all tests pass
 
 ## 5. nexus-fbx — FBX Parser & Exporter
 

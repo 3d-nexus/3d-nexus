@@ -26,6 +26,12 @@ importers:
 
   packages/nexus-core: {}
 
+  packages/nexus-mmd:
+    dependencies:
+      nexus-core:
+        specifier: workspace:*
+        version: link:../nexus-core
+
   packages/nexus-obj:
     dependencies:
       nexus-core:
