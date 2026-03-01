@@ -80,19 +80,19 @@
 
 ## 6. nexus-converter — Conversion Pipeline
 
-- [ ] 6.1 Scaffold `packages/nexus-converter/` with `package.json` (deps: `nexus-core`, `nexus-obj`, `nexus-mmd`, `nexus-fbx` all `workspace:*`), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
-- [ ] 6.2 Create `src/formats.ts` — `ModelFormat` union type `"obj" | "fbx" | "pmx" | "pmd" | "vmd"` and `IMPORTER_REGISTRY`, `EXPORTER_REGISTRY` maps
-- [ ] 6.3 Create `src/postprocess/TriangulateStep.ts` — fan-triangulates all non-triangle faces in every mesh
-- [ ] 6.4 Create `src/postprocess/GenerateNormalsStep.ts` — computes flat per-face normals for meshes with empty `normals` array
-- [ ] 6.5 Create `src/postprocess/FlipUVsStep.ts` — inverts V channel: `uv.y = 1 - uv.y`
-- [ ] 6.6 Create `src/postprocess/SortByPTypeStep.ts` — splits meshes by `AiPrimitiveType` into separate meshes (points / lines / triangles)
-- [ ] 6.7 Create `src/postprocess/OptimizeMeshesStep.ts` — merges meshes sharing the same material into one mesh
-- [ ] 6.8 Create `src/ConvertOptions.ts` — `ConvertOptions` interface with `postProcess?: PostProcessStep[]`, `importSettings?: ImportSettings`, `exportSettings?: ExportSettings`
-- [ ] 6.9 Create `src/ModelConverter.ts` — `convert(input, fromFormat, toFormat, options?)` method: lookup importer → `read()` → apply each `postProcess` step → lookup exporter → `write()`; throws `ConversionError` for unknown formats
-- [ ] 6.10 Create `src/__tests__/ModelConverter.test.ts` — OBJ→OBJ round-trip (vertex count preserved), OBJ→FBX (produces non-empty ArrayBuffer), `TriangulateStep` converts quads to tris
-- [ ] 6.11 Create `src/__tests__/postprocess.test.ts` — unit tests for each `PostProcessStep` in isolation
-- [ ] 6.12 Create `src/index.ts` exporting `ModelConverter`, `ModelFormat`, `ConvertOptions`, `ConversionError`, `TriangulateStep`, `GenerateNormalsStep`, `FlipUVsStep`, `SortByPTypeStep`, `OptimizeMeshesStep`
-- [ ] 6.13 Build and run `vitest run` — all tests pass
+- [x] 6.1 Scaffold `packages/nexus-converter/` with `package.json` (deps: `nexus-core`, `nexus-obj`, `nexus-mmd`, `nexus-fbx` all `workspace:*`), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
+- [x] 6.2 Create `src/formats.ts` — `ModelFormat` union type `"obj" | "fbx" | "pmx" | "pmd" | "vmd"` and `IMPORTER_REGISTRY`, `EXPORTER_REGISTRY` maps
+- [x] 6.3 Create `src/postprocess/TriangulateStep.ts` — fan-triangulates all non-triangle faces in every mesh
+- [x] 6.4 Create `src/postprocess/GenerateNormalsStep.ts` — computes flat per-face normals for meshes with empty `normals` array
+- [x] 6.5 Create `src/postprocess/FlipUVsStep.ts` — inverts V channel: `uv.y = 1 - uv.y`
+- [x] 6.6 Create `src/postprocess/SortByPTypeStep.ts` — splits meshes by `AiPrimitiveType` into separate meshes (points / lines / triangles)
+- [x] 6.7 Create `src/postprocess/OptimizeMeshesStep.ts` — merges meshes sharing the same material into one mesh
+- [x] 6.8 Create `src/ConvertOptions.ts` — `ConvertOptions` interface with `postProcess?: PostProcessStep[]`, `importSettings?: ImportSettings`, `exportSettings?: ExportSettings`
+- [x] 6.9 Create `src/ModelConverter.ts` — `convert(input, fromFormat, toFormat, options?)` method: lookup importer → `read()` → apply each `postProcess` step → lookup exporter → `write()`; throws `ConversionError` for unknown formats
+- [x] 6.10 Create `src/__tests__/ModelConverter.test.ts` — OBJ→OBJ round-trip (vertex count preserved), OBJ→FBX (produces non-empty ArrayBuffer), `TriangulateStep` converts quads to tris
+- [x] 6.11 Create `src/__tests__/postprocess.test.ts` — unit tests for each `PostProcessStep` in isolation
+- [x] 6.12 Create `src/index.ts` exporting `ModelConverter`, `ModelFormat`, `ConvertOptions`, `ConversionError`, `TriangulateStep`, `GenerateNormalsStep`, `FlipUVsStep`, `SortByPTypeStep`, `OptimizeMeshesStep`
+- [x] 6.13 Build and run `vitest run` — all tests pass
 
 ## 7. Playground App
 

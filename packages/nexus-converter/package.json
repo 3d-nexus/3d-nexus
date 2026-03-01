@@ -1,0 +1,21 @@
+{
+  "name": "nexus-converter",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "nexus-core": "workspace:*",
+    "nexus-fbx": "workspace:*",
+    "nexus-mmd": "workspace:*",
+    "nexus-obj": "workspace:*"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  }
+}
