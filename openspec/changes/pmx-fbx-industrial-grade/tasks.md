@@ -28,33 +28,33 @@
 
 ## 4. PMX Morph Pipeline (Importer)
 
-- [ ] 4.1 In `MMDImporter.ts`: add `buildMorphTargets(pmxDoc, baseMesh): AiAnimMesh[]` helper
-- [ ] 4.2 Vertex morphs (type 1): for each morph, create `AiAnimMesh` with `vertices[]` = base + delta for all morph offsets; fill remaining vertices with base positions; set `name` = morph EN name (or JP if EN empty)
-- [ ] 4.3 UV morphs (type 3): create `AiAnimMesh` with `name = "UV:" + name`; store UV offsets in `textureCoords[0]`; set all other channels to base values
-- [ ] 4.4 Bone morphs (type 2): serialize to JSON `{ name, entries:[{boneIndex, translation, rotation}] }`; accumulate in array
-- [ ] 4.5 Material morphs (type 8): serialize to JSON `{ name, entries:[{materialIndex, operation, diffuse, specular, ambient, edge, edgeSize, texture, sphereTexture, toon}] }`; accumulate
-- [ ] 4.6 Group morphs (type 0): serialize to JSON `{ name, entries:[{morphIndex, weight}] }`; accumulate
-- [ ] 4.7 Store bone/material/group morph JSON arrays in `scene.metadata["mmd:boneMorphs"]`, `"mmd:materialMorphs"`, `"mmd:groupMorphs"]` as `AiMetadataType.AISTRING`
-- [ ] 4.8 Write unit test: import a PMX fixture with vertex + UV morphs; assert `morphTargets.length`, `morphTargets[0].vertices[42]` delta applied, `morphTargets[1].name` starts with `"UV:"`
+- [x] 4.1 In `MMDImporter.ts`: add `buildMorphTargets(pmxDoc, baseMesh): AiAnimMesh[]` helper
+- [x] 4.2 Vertex morphs (type 1): for each morph, create `AiAnimMesh` with `vertices[]` = base + delta for all morph offsets; fill remaining vertices with base positions; set `name` = morph EN name (or JP if EN empty)
+- [x] 4.3 UV morphs (type 3): create `AiAnimMesh` with `name = "UV:" + name`; store UV offsets in `textureCoords[0]`; set all other channels to base values
+- [x] 4.4 Bone morphs (type 2): serialize to JSON `{ name, entries:[{boneIndex, translation, rotation}] }`; accumulate in array
+- [x] 4.5 Material morphs (type 8): serialize to JSON `{ name, entries:[{materialIndex, operation, diffuse, specular, ambient, edge, edgeSize, texture, sphereTexture, toon}] }`; accumulate
+- [x] 4.6 Group morphs (type 0): serialize to JSON `{ name, entries:[{morphIndex, weight}] }`; accumulate
+- [x] 4.7 Store bone/material/group morph JSON arrays in `scene.metadata["mmd:boneMorphs"]`, `"mmd:materialMorphs"`, `"mmd:groupMorphs"]` as `AiMetadataType.AISTRING`
+- [x] 4.8 Write unit test: import a PMX fixture with vertex + UV morphs; assert `morphTargets.length`, `morphTargets[0].vertices[42]` delta applied, `morphTargets[1].name` starts with `"UV:"`
 
 ## 5. PMX Morph Pipeline (Exporter)
 
-- [ ] 5.1 In `MMDPmxExporter.ts`: add `writeMorphs(writer, scene, mesh, baseVertices)` function
-- [ ] 5.2 Write vertex morph blocks: for each `AiAnimMesh` without `"UV:"` prefix, compute delta = `animMesh.vertices[i] - baseVertices[i]`; collect non-zero deltas; write PMX morph header (name JP/EN, panel, type=1) + offset count + `{vertexIndex, offsetXYZ}` entries
-- [ ] 5.3 Write UV morph blocks: for each `AiAnimMesh` with `"UV:"` prefix, write morph type=3 + offset entries from `textureCoords[0]`
-- [ ] 5.4 Write bone morph blocks: parse `scene.metadata["mmd:boneMorphs"]`; write type=2 morph entries
-- [ ] 5.5 Write material morph blocks: parse `scene.metadata["mmd:materialMorphs"]`; write type=8 morph entries
-- [ ] 5.6 Write group morph blocks: parse `scene.metadata["mmd:groupMorphs"]`; write type=0 morph entries
-- [ ] 5.7 Write morph count header before all morph blocks; use `BinaryWriter` throughout
-- [ ] 5.8 Write roundtrip test: PMX import → export → re-import; assert morph count equals original
+- [x] 5.1 In `MMDPmxExporter.ts`: add `writeMorphs(writer, scene, mesh, baseVertices)` function
+- [x] 5.2 Write vertex morph blocks: for each `AiAnimMesh` without `"UV:"` prefix, compute delta = `animMesh.vertices[i] - baseVertices[i]`; collect non-zero deltas; write PMX morph header (name JP/EN, panel, type=1) + offset count + `{vertexIndex, offsetXYZ}` entries
+- [x] 5.3 Write UV morph blocks: for each `AiAnimMesh` with `"UV:"` prefix, write morph type=3 + offset entries from `textureCoords[0]`
+- [x] 5.4 Write bone morph blocks: parse `scene.metadata["mmd:boneMorphs"]`; write type=2 morph entries
+- [x] 5.5 Write material morph blocks: parse `scene.metadata["mmd:materialMorphs"]`; write type=8 morph entries
+- [x] 5.6 Write group morph blocks: parse `scene.metadata["mmd:groupMorphs"]`; write type=0 morph entries
+- [x] 5.7 Write morph count header before all morph blocks; use `BinaryWriter` throughout
+- [x] 5.8 Write roundtrip test: PMX import → export → re-import; assert morph count equals original
 
 ## 6. PMX Physics Export
 
-- [ ] 6.1 In `MMDPmxExporter.ts`: add `writeRigidBodies(writer, scene)` function
-- [ ] 6.2 Parse `scene.metadata["mmd:rigidBodies"]`; if absent or invalid JSON, write `uint32 = 0` and return
-- [ ] 6.3 For each rigid body entry: write name JP (20 bytes, UTF-16LE) + name EN (20 bytes) + associated bone index + group index + non-collision mask + shape (1 byte) + size (float32×3) + position (float32×3) + rotation (float32×3) + mass + translate damping + rotate damping + repulsion + friction + physics mode (1 byte)
-- [ ] 6.4 Add `writeJoints(writer, scene)` function; parse `scene.metadata["mmd:joints"]`; write PMX joint struct per entry (name JP/EN + type + bodyA/B indices + position/rotation + limit min/max ×2 + spring factors ×2)
-- [ ] 6.5 Write unit test: import a PMX with 5 rigid bodies + 4 joints → export → re-import → assert counts match
+- [x] 6.1 In `MMDPmxExporter.ts`: add `writeRigidBodies(writer, scene)` function
+- [x] 6.2 Parse `scene.metadata["mmd:rigidBodies"]`; if absent or invalid JSON, write `uint32 = 0` and return
+- [x] 6.3 For each rigid body entry: write name JP (20 bytes, UTF-16LE) + name EN (20 bytes) + associated bone index + group index + non-collision mask + shape (1 byte) + size (float32×3) + position (float32×3) + rotation (float32×3) + mass + translate damping + rotate damping + repulsion + friction + physics mode (1 byte)
+- [x] 6.4 Add `writeJoints(writer, scene)` function; parse `scene.metadata["mmd:joints"]`; write PMX joint struct per entry (name JP/EN + type + bodyA/B indices + position/rotation + limit min/max ×2 + spring factors ×2)
+- [x] 6.5 Write unit test: import a PMX with 5 rigid bodies + 4 joints → export → re-import → assert counts match
 
 ## 7. PMX Multi-Mesh Export & Full Material Properties
 
@@ -65,18 +65,18 @@
 
 ## 8. VMD Bezier Interpolation Round-Trip
 
-- [ ] 8.1 In `MMDVmdParser.ts`: replace raw `interpolation: Uint8Array` with `{ x: VmdInterpolation; y: VmdInterpolation; z: VmdInterpolation; r: VmdInterpolation }` using VMD interleaved byte layout `[ax0,ax1,...,ay0,...,bx0,...,by0,...]` → map to 4-axis structs
-- [ ] 8.2 In `MMDImporter.ts` VMD merge path: attach `{ vmd: [xInterp, yInterp, zInterp, rInterp] }` to each `AiVectorKey.interpolation` and `AiQuatKey.interpolation`
-- [ ] 8.3 In `MMDVmdExporter.ts`: read `key.interpolation?.vmd`; if present, serialize back to 64-byte interleaved layout; if absent, write default linear preset (ax=ay=20, bx=by=107) for all 4 axes
-- [ ] 8.4 Write unit test: parse VMD bone frame → export → re-parse → assert 64 interpolation bytes are byte-identical to input
+- [x] 8.1 In `MMDVmdParser.ts`: replace raw `interpolation: Uint8Array` with `{ x: VmdInterpolation; y: VmdInterpolation; z: VmdInterpolation; r: VmdInterpolation }` using VMD interleaved byte layout `[ax0,ax1,...,ay0,...,bx0,...,by0,...]` → map to 4-axis structs
+- [x] 8.2 In `MMDImporter.ts` VMD merge path: attach `{ vmd: [xInterp, yInterp, zInterp, rInterp] }` to each `AiVectorKey.interpolation` and `AiQuatKey.interpolation`
+- [x] 8.3 In `MMDVmdExporter.ts`: read `key.interpolation?.vmd`; if present, serialize back to 64-byte interleaved layout; if absent, write default linear preset (ax=ay=20, bx=by=107) for all 4 axes
+- [x] 8.4 Write unit test: parse VMD bone frame → export → re-parse → assert 64 interpolation bytes are byte-identical to input
 
 ## 9. VMD Camera / Light / IK Frame Export
 
-- [ ] 9.1 In `MMDVmdParser.ts`: parse camera frames into `VmdCameraFrame[]` with `frame`, `distance`, `position[3]`, `rotation[3]`, `fov`, `perspective`; store in `VmdDocument.cameraFrames`
-- [ ] 9.2 In `MMDImporter.ts`: serialize `VmdDocument.cameraFrames` to JSON; store as `scene.metadata["mmd:cameraFrames"]`; also serialize `VmdDocument.ikFrames` to `"mmd:ikFrames"`
-- [ ] 9.3 In `MMDVmdExporter.ts`: parse `scene.metadata["mmd:cameraFrames"]`; write camera section header (count) + each entry with correct binary layout
-- [ ] 9.4 In `MMDVmdExporter.ts`: parse `scene.metadata["mmd:ikFrames"]`; write IK frame section header + each entry (frame, show, ikCount, per-IK name[20] + enable byte)
-- [ ] 9.5 Write unit test: VMD with 3 camera frames → import → export → re-import → assert camera frame count matches
+- [x] 9.1 In `MMDVmdParser.ts`: parse camera frames into `VmdCameraFrame[]` with `frame`, `distance`, `position[3]`, `rotation[3]`, `fov`, `perspective`; store in `VmdDocument.cameraFrames`
+- [x] 9.2 In `MMDImporter.ts`: serialize `VmdDocument.cameraFrames` to JSON; store as `scene.metadata["mmd:cameraFrames"]`; also serialize `VmdDocument.ikFrames` to `"mmd:ikFrames"`
+- [x] 9.3 In `MMDVmdExporter.ts`: parse `scene.metadata["mmd:cameraFrames"]`; write camera section header (count) + each entry with correct binary layout
+- [x] 9.4 In `MMDVmdExporter.ts`: parse `scene.metadata["mmd:ikFrames"]`; write IK frame section header + each entry (frame, show, ikCount, per-IK name[20] + enable byte)
+- [x] 9.5 Write unit test: VMD with 3 camera frames → import → export → re-import → assert camera frame count matches
 
 ## 10. FBX Skinning Extraction
 

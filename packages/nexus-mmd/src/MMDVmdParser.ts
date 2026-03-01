@@ -12,7 +12,12 @@ export interface VmdBoneFrame {
   frame: number;
   position: number[];
   rotation: number[];
-  interpolation: number[][][];
+  interpolation: {
+    x: VmdInterpolation;
+    y: VmdInterpolation;
+    z: VmdInterpolation;
+    r: VmdInterpolation;
+  };
 }
 
 export interface VmdMorphFrame {
@@ -26,10 +31,18 @@ export interface VmdDocument {
   modelName: string;
   boneFrames: VmdBoneFrame[];
   morphFrames: VmdMorphFrame[];
-  cameraFrames: Array<{ frame: number }>;
+  cameraFrames: Array<{
+    frame: number;
+    distance: number;
+    position: number[];
+    rotation: number[];
+    interpolation: Uint8Array;
+    fov: number;
+    perspective: number;
+  }>;
   lightFrames: Array<{ frame: number }>;
   shadowFrames: Array<{ frame: number }>;
-  ikFrames: Array<{ frame: number }>;
+  ikFrames: Array<{ frame: number; show: number; entries: Array<{ name: string; enabled: number }> }>;
 }
 
 function decodeNullTerminated(bytes: Uint8Array): string {
@@ -55,11 +68,12 @@ export class MMDVmdParser {
       const position = [reader.readFloat32(), reader.readFloat32(), reader.readFloat32()];
       const rotation = [reader.readFloat32(), reader.readFloat32(), reader.readFloat32(), reader.readFloat32()];
       const bytes = reader.readBytes(64);
-      const interpolation = Array.from({ length: 4 }, (_, axis) =>
-        Array.from({ length: 4 }, (_, point) =>
-          Array.from({ length: 4 }, (_, coord) => bytes[axis * 16 + point * 4 + coord] ?? 0),
-        ),
-      );
+      const interpolation = {
+        x: { ax: bytes[0] ?? 0, ay: bytes[4] ?? 0, bx: bytes[8] ?? 0, by: bytes[12] ?? 0 },
+        y: { ax: bytes[16] ?? 0, ay: bytes[20] ?? 0, bx: bytes[24] ?? 0, by: bytes[28] ?? 0 },
+        z: { ax: bytes[32] ?? 0, ay: bytes[36] ?? 0, bx: bytes[40] ?? 0, by: bytes[44] ?? 0 },
+        r: { ax: bytes[48] ?? 0, ay: bytes[52] ?? 0, bx: bytes[56] ?? 0, by: bytes[60] ?? 0 },
+      };
       boneFrames.push({ name, frame, position, rotation, interpolation });
     }
 
@@ -70,31 +84,47 @@ export class MMDVmdParser {
       weight: reader.readFloat32(),
     }));
 
-    const skipFrames = (count: number, words: number, trailingBytes = 0): Array<{ frame: number }> =>
-      Array.from({ length: count }, () => {
-        const frame = reader.readUint32();
-        for (let index = 0; index < words; index += 1) {
-          reader.readFloat32();
-        }
-        if (trailingBytes) {
-          reader.readBytes(trailingBytes);
-        }
-        return { frame };
-      });
+    const cameraFrameCount = reader.readUint32();
+    const cameraFrames = Array.from({ length: cameraFrameCount }, () => {
+      const frame = reader.readUint32();
+      const distance = reader.readFloat32();
+      const position = [reader.readFloat32(), reader.readFloat32(), reader.readFloat32()];
+      const rotation = [reader.readFloat32(), reader.readFloat32(), reader.readFloat32()];
+      const interpolation = reader.readBytes(24);
+      const fov = reader.readUint32();
+      const perspective = reader.readUint8();
+      return { frame, distance, position, rotation, interpolation, fov, perspective };
+    });
 
-    const cameraFrames = skipFrames(reader.readUint32(), 7, 25);
-    const lightFrames = skipFrames(reader.readUint32(), 6);
-    const shadowFrames = skipFrames(reader.readUint32(), 1, 1);
+    const lightFrameCount = reader.readUint32();
+    const lightFrames = Array.from({ length: lightFrameCount }, () => {
+      const frame = reader.readUint32();
+      for (let index = 0; index < 6; index += 1) {
+        reader.readFloat32();
+      }
+      return { frame };
+    });
+
+    const shadowFrameCount = reader.readUint32();
+    const shadowFrames = Array.from({ length: shadowFrameCount }, () => {
+      const frame = reader.readUint32();
+      reader.readUint8();
+      reader.readFloat32();
+      return { frame };
+    });
     const ikFrameCount = reader.readUint32();
     const ikFrames = Array.from({ length: ikFrameCount }, () => {
       const frame = reader.readUint32();
-      reader.readUint8();
+      const show = reader.readUint8();
       const entryCount = reader.readUint32();
+      const entries = [];
       for (let index = 0; index < entryCount; index += 1) {
-        reader.readBytes(20);
-        reader.readUint8();
+        entries.push({
+          name: decodeNullTerminated(reader.readBytes(20)),
+          enabled: reader.readUint8(),
+        });
       }
-      return { frame };
+      return { frame, show, entries };
     });
 
     return { header, modelName, boneFrames, morphFrames, cameraFrames, lightFrames, shadowFrames, ikFrames };

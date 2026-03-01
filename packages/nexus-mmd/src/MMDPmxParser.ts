@@ -52,7 +52,36 @@ export interface PmxMorph {
 
 export interface PmxRigidBody {
   name: string;
+  englishName?: string;
   boneIndex: number;
+  groupIndex?: number;
+  nonCollisionMask?: number;
+  shape?: number;
+  size?: number[];
+  position?: number[];
+  rotation?: number[];
+  mass?: number;
+  translateDamping?: number;
+  rotateDamping?: number;
+  repulsion?: number;
+  friction?: number;
+  physicsMode?: number;
+}
+
+export interface PmxJoint {
+  name: string;
+  englishName?: string;
+  type: number;
+  rigidBodyA: number;
+  rigidBodyB: number;
+  position: number[];
+  rotation: number[];
+  limitPositionMin: number[];
+  limitPositionMax: number[];
+  limitRotationMin: number[];
+  limitRotationMax: number[];
+  springPosition: number[];
+  springRotation: number[];
 }
 
 export interface PmxDocument {
@@ -68,6 +97,7 @@ export interface PmxDocument {
   bones: PmxBone[];
   morphs: PmxMorph[];
   rigidBodies: PmxRigidBody[];
+  joints: PmxJoint[];
 }
 
 function readVector(reader: BinaryReader, size: number): number[] {
@@ -227,6 +257,36 @@ export class MMDPmxParser {
             vertexIndex: reader.readIndex(setting.vertexIndexSize, false),
             position: readVector(reader, 3),
           });
+        } else if (type === 3) {
+          offsets.push({
+            vertexIndex: reader.readIndex(setting.vertexIndexSize, false),
+            uv: readVector(reader, 4),
+          });
+        } else if (type === 2) {
+          offsets.push({
+            boneIndex: reader.readIndex(setting.boneIndexSize),
+            translation: readVector(reader, 3),
+            rotation: readVector(reader, 4),
+          });
+        } else if (type === 8) {
+          offsets.push({
+            materialIndex: reader.readIndex(setting.materialIndexSize),
+            operation: reader.readUint8(),
+            diffuse: readVector(reader, 4),
+            specular: readVector(reader, 3),
+            shininess: reader.readFloat32(),
+            ambient: readVector(reader, 3),
+            edge: readVector(reader, 4),
+            edgeSize: reader.readFloat32(),
+            texture: readVector(reader, 4),
+            sphereTexture: readVector(reader, 4),
+            toon: readVector(reader, 4),
+          });
+        } else if (type === 0) {
+          offsets.push({
+            morphIndex: reader.readIndex(setting.morphIndexSize),
+            weight: reader.readFloat32(),
+          });
         }
       }
       morphs.push({ name, englishName, panel, type, offsets });
@@ -248,24 +308,70 @@ export class MMDPmxParser {
     const rigidBodies: PmxRigidBody[] = [];
     for (let index = 0; index < rigidBodyCount; index += 1) {
       const name = reader.readTextBuffer(encoding);
-      reader.readTextBuffer(encoding);
+      const englishName = reader.readTextBuffer(encoding);
       const boneIndex = reader.readIndex(setting.boneIndexSize);
-      reader.readUint8();
-      reader.readUint16();
-      reader.readUint8();
-      readVector(reader, 14);
-      reader.readUint8();
-      rigidBodies.push({ name, boneIndex });
+      const groupIndex = reader.readUint8();
+      const nonCollisionMask = reader.readUint16();
+      const shape = reader.readUint8();
+      const size = readVector(reader, 3);
+      const position = readVector(reader, 3);
+      const rotation = readVector(reader, 3);
+      const mass = reader.readFloat32();
+      const translateDamping = reader.readFloat32();
+      const rotateDamping = reader.readFloat32();
+      const repulsion = reader.readFloat32();
+      const friction = reader.readFloat32();
+      const physicsMode = reader.readUint8();
+      rigidBodies.push({
+        name,
+        englishName,
+        boneIndex,
+        groupIndex,
+        nonCollisionMask,
+        shape,
+        size,
+        position,
+        rotation,
+        mass,
+        translateDamping,
+        rotateDamping,
+        repulsion,
+        friction,
+        physicsMode,
+      });
     }
 
     const jointCount = reader.readUint32();
+    const joints: PmxJoint[] = [];
     for (let index = 0; index < jointCount; index += 1) {
-      reader.readTextBuffer(encoding);
-      reader.readTextBuffer(encoding);
-      reader.readUint8();
-      reader.readIndex(setting.rigidBodyIndexSize);
-      reader.readIndex(setting.rigidBodyIndexSize);
-      readVector(reader, 24);
+      const name = reader.readTextBuffer(encoding);
+      const englishName = reader.readTextBuffer(encoding);
+      const type = reader.readUint8();
+      const rigidBodyA = reader.readIndex(setting.rigidBodyIndexSize);
+      const rigidBodyB = reader.readIndex(setting.rigidBodyIndexSize);
+      const position = readVector(reader, 3);
+      const rotation = readVector(reader, 3);
+      const limitPositionMin = readVector(reader, 3);
+      const limitPositionMax = readVector(reader, 3);
+      const limitRotationMin = readVector(reader, 3);
+      const limitRotationMax = readVector(reader, 3);
+      const springPosition = readVector(reader, 3);
+      const springRotation = readVector(reader, 3);
+      joints.push({
+        name,
+        englishName,
+        type,
+        rigidBodyA,
+        rigidBodyB,
+        position,
+        rotation,
+        limitPositionMin,
+        limitPositionMax,
+        limitRotationMin,
+        limitRotationMax,
+        springPosition,
+        springRotation,
+      });
     }
 
     if (setting.version >= 2.1 && reader.position < buffer.byteLength) {
@@ -288,6 +394,7 @@ export class MMDPmxParser {
       bones,
       morphs,
       rigidBodies,
+      joints,
     };
   }
 }

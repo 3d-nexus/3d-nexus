@@ -39,6 +39,7 @@ function createDocument(vertexSkinning: Array<{ skinningType: number; skinning: 
     ],
     morphs: [],
     rigidBodies: [],
+    joints: [],
   };
 }
 

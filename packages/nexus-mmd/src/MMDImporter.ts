@@ -168,6 +168,92 @@ export function buildPmxBones(document: PmxDocument, warnings: ImportResult["war
   }));
 }
 
+function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["morphTargets"] {
+  return document.morphs.flatMap((morph) => {
+    if (morph.type === 1) {
+      const overrides = new Map<number, number[]>();
+      morph.offsets.forEach((offset) => {
+        if (offset && typeof offset === "object" && "vertexIndex" in offset) {
+          overrides.set(
+            Number((offset as { vertexIndex: number }).vertexIndex),
+            ((offset as { position?: number[] }).position ?? [0, 0, 0]).map(Number),
+          );
+        }
+      });
+      return [
+        {
+          name: morph.englishName || morph.name,
+          vertices: baseMesh.vertices.map((vertex, index) => {
+            const delta = overrides.get(index);
+            return delta
+              ? { x: vertex.x + delta[0]!, y: vertex.y + delta[1]!, z: vertex.z + delta[2]! }
+              : { ...vertex };
+          }),
+          normals: [...baseMesh.normals],
+          tangents: [],
+          bitangents: [],
+          colors: Array.from({ length: 8 }, () => null),
+          textureCoords: baseMesh.textureCoords.map((channel) => channel?.map((value) => ({ ...value })) ?? null),
+          weight: 0,
+        },
+      ];
+    }
+
+    if (morph.type === 3) {
+      const overrides = new Map<number, number[]>();
+      morph.offsets.forEach((offset) => {
+        if (offset && typeof offset === "object" && "vertexIndex" in offset) {
+          overrides.set(
+            Number((offset as { vertexIndex: number }).vertexIndex),
+            ((offset as { uv?: number[] }).uv ?? [0, 0, 0, 0]).map(Number),
+          );
+        }
+      });
+      return [
+        {
+          name: `UV:${morph.englishName || morph.name}`,
+          vertices: baseMesh.vertices.map((vertex) => ({ ...vertex })),
+          normals: [...baseMesh.normals],
+          tangents: [],
+          bitangents: [],
+          colors: Array.from({ length: 8 }, () => null),
+          textureCoords: baseMesh.textureCoords.map((channel, channelIndex) =>
+            channelIndex === 0
+              ? baseMesh.vertices.map((_, index) => {
+                  const delta = overrides.get(index) ?? [0, 0, 0, 0];
+                  return { x: delta[0] ?? 0, y: delta[1] ?? 0, z: delta[2] ?? 0 };
+                })
+              : channel?.map((value) => ({ ...value })) ?? null,
+          ),
+          weight: 0,
+        },
+      ];
+    }
+
+    return [];
+  });
+}
+
+function collectMorphMetadata(document: PmxDocument) {
+  const encode = (type: number, key: string, mapEntry: (morph: PmxDocument["morphs"][number]) => unknown) => {
+    const items = document.morphs.filter((morph) => morph.type === type).map(mapEntry);
+    return items.length > 0
+      ? {
+          [key]: {
+            type: AiMetadataType.AISTRING,
+            data: JSON.stringify(items),
+          },
+        }
+      : {};
+  };
+
+  return {
+    ...encode(2, "mmd:boneMorphs", (morph) => ({ name: morph.englishName || morph.name, entries: morph.offsets })),
+    ...encode(8, "mmd:materialMorphs", (morph) => ({ name: morph.englishName || morph.name, entries: morph.offsets })),
+    ...encode(0, "mmd:groupMorphs", (morph) => ({ name: morph.englishName || morph.name, entries: morph.offsets })),
+  };
+}
+
 function sceneFromPmx(document: PmxDocument): ImportResult {
   const warnings: ImportResult["warnings"] = [];
   const children = buildBoneNodes(document.bones);
@@ -214,22 +300,7 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
     })),
     bones: buildPmxBones(document, warnings),
     materialIndex: 0,
-    morphTargets: document.morphs
-      .filter((morph) => morph.type === 1)
-      .map((morph) => ({
-        name: morph.name,
-        vertices: document.vertices.map((vertex) => ({
-          x: vertex.position[0],
-          y: vertex.position[1],
-          z: vertex.position[2],
-        })),
-        normals: [],
-        tangents: [],
-        bitangents: [],
-        colors: Array.from({ length: 8 }, () => null),
-        textureCoords: Array.from({ length: 8 }, () => null),
-        weight: 0,
-      })),
+    morphTargets: [],
     aabb: {
       min: {
         x: Math.min(...document.vertices.map((vertex) => vertex.position[0])),
@@ -243,6 +314,22 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
       },
     },
   };
+  mesh.morphTargets = buildMorphTargets(document, mesh);
+  const metadata = {
+    ...collectMorphMetadata(document),
+  };
+  if (document.rigidBodies.length > 0) {
+    metadata["mmd:rigidBodies"] = {
+      type: AiMetadataType.AISTRING,
+      data: JSON.stringify(document.rigidBodies),
+    };
+  }
+  if (document.joints.length > 0) {
+    metadata["mmd:joints"] = {
+      type: AiMetadataType.AISTRING,
+      data: JSON.stringify(document.joints),
+    };
+  }
 
   return {
     scene: {
@@ -293,14 +380,7 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
       textures: [],
       lights: [],
       cameras: [],
-      metadata: document.rigidBodies.length
-        ? {
-            "mmd:rigidBodies": {
-              type: AiMetadataType.AISTRING,
-              data: JSON.stringify(document.rigidBodies),
-            },
-          }
-        : {},
+      metadata,
     },
     warnings,
   };
@@ -340,6 +420,9 @@ function mergeVmd(scene: AiScene, buffer: ArrayBuffer, warnings: ImportResult["w
     channel.positionKeys.push({
       time: frame.frame,
       value: { x: frame.position[0]!, y: frame.position[1]!, z: frame.position[2]! },
+      interpolation: {
+        vmd: [frame.interpolation.x, frame.interpolation.y, frame.interpolation.z, frame.interpolation.r],
+      } as never,
     });
     channel.rotationKeys.push({
       time: frame.frame,
@@ -349,6 +432,9 @@ function mergeVmd(scene: AiScene, buffer: ArrayBuffer, warnings: ImportResult["w
         z: frame.rotation[2]!,
         w: frame.rotation[3]!,
       },
+      interpolation: {
+        vmd: [frame.interpolation.x, frame.interpolation.y, frame.interpolation.z, frame.interpolation.r],
+      } as never,
     });
   });
 
@@ -366,6 +452,23 @@ function mergeVmd(scene: AiScene, buffer: ArrayBuffer, warnings: ImportResult["w
     morphMeshChannels,
   };
   scene.animations.push(animation);
+  if (document.cameraFrames.length > 0) {
+    scene.metadata["mmd:cameraFrames"] = {
+      type: AiMetadataType.AISTRING,
+      data: JSON.stringify(
+        document.cameraFrames.map((frame) => ({
+          ...frame,
+          interpolation: Array.from(frame.interpolation),
+        })),
+      ),
+    };
+  }
+  if (document.ikFrames.length > 0) {
+    scene.metadata["mmd:ikFrames"] = {
+      type: AiMetadataType.AISTRING,
+      data: JSON.stringify(document.ikFrames),
+    };
+  }
 }
 
 export class MMDImporter implements BaseImporter {
