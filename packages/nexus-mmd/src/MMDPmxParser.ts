@@ -128,9 +128,12 @@ export class MMDPmxParser {
           skinning = {
             bones: Array.from({ length: 4 }, () => ({
               boneIndex: reader.readIndex(setting.boneIndexSize),
-              weight: reader.readFloat32(),
+              weight: 0,
             })),
           };
+          (skinning as { bones: Array<{ boneIndex: number; weight: number }> }).bones.forEach((entry) => {
+            entry.weight = reader.readFloat32();
+          });
           break;
         case 3:
           skinning = {

@@ -8,14 +8,14 @@
 
 ## 2. PMX Multi-Weight Skinning (Importer)
 
-- [ ] 2.1 In `MMDImporter.ts`: replace hardcoded single-bone weight logic with a per-vertex accumulator `Map<vertexId, {boneIdx, weight}[]>`
-- [ ] 2.2 Handle BDEF2: extract `boneIndex1`, `boneIndex2`, `bone1Weight`; add two entries to accumulator with weights `w` and `1-w`
-- [ ] 2.3 Handle BDEF4: extract four `boneIndex`/`weight` pairs; add all non-zero entries to accumulator
-- [ ] 2.4 Handle SDEF: treat like BDEF2 for weights; additionally set `AiBone.ikChain = { type:"sdef", c, r0, r1 }` on the primary bone; emit `ImportWarning "PMX_WEIGHT_UNNORMALIZED"` if `|sum - 1.0| > 0.01`
-- [ ] 2.5 Handle QDEF (PMX 2.1): treat identically to BDEF4 logic
-- [ ] 2.6 After accumulation, normalize per-vertex weights (sum → 1.0, drop entries with weight < 1e-6)
-- [ ] 2.7 Write normalized entries to `AiBone.weights[]` for each bone; assemble `mesh.bones[]`
-- [ ] 2.8 Write unit test `packages/nexus-mmd/src/__tests__/skinning.test.ts` — BDEF2 split (0.7/0.3), BDEF4 normalization, SDEF ikChain preservation
+- [x] 2.1 In `MMDImporter.ts`: replace hardcoded single-bone weight logic with a per-vertex accumulator `Map<vertexId, {boneIdx, weight}[]>`
+- [x] 2.2 Handle BDEF2: extract `boneIndex1`, `boneIndex2`, `bone1Weight`; add two entries to accumulator with weights `w` and `1-w`
+- [x] 2.3 Handle BDEF4: extract four `boneIndex`/`weight` pairs; add all non-zero entries to accumulator
+- [x] 2.4 Handle SDEF: treat like BDEF2 for weights; additionally set `AiBone.ikChain = { type:"sdef", c, r0, r1 }` on the primary bone; emit `ImportWarning "PMX_WEIGHT_UNNORMALIZED"` if `|sum - 1.0| > 0.01`
+- [x] 2.5 Handle QDEF (PMX 2.1): treat identically to BDEF4 logic
+- [x] 2.6 After accumulation, normalize per-vertex weights (sum → 1.0, drop entries with weight < 1e-6)
+- [x] 2.7 Write normalized entries to `AiBone.weights[]` for each bone; assemble `mesh.bones[]`
+- [x] 2.8 Write unit test `packages/nexus-mmd/src/__tests__/skinning.test.ts` — BDEF2 split (0.7/0.3), BDEF4 normalization, SDEF ikChain preservation
 
 ## 3. PMX Multi-Weight Skinning (Exporter)
 
