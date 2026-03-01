@@ -89,13 +89,13 @@
 
 ## 11. FBX Animation Extraction
 
-- [ ] 11.1 In `FBXDocument.ts`: add `FbxAnimationStack`, `FbxAnimationLayer`, `FbxAnimationCurveNode`, `FbxAnimationCurve` subtypes; `FbxAnimationCurve` exposes `keyTimes: BigInt64Array`, `keyValues: Float32Array`
-- [ ] 11.2 In `FBXConverter.ts`: add `convertAnimations(doc): AiAnimation[]` method; iterate AnimationStack objects; for each Stack → Layer → CurveNode chain
-- [ ] 11.3 For each CurveNode: determine T/R/S type from name suffix; resolve connected Model; read d|X, d|Y, d|Z child curves; build time-merged keyframe list; convert BigInt ticks → seconds
-- [ ] 11.4 For rotation CurveNodes: read `RotationOrder` from Model Properties70 (default 0 = EulerXYZ); convert Euler degree triplets to `AiQuaternion` per keyframe using ZYX extrinsic composition
-- [ ] 11.5 Build `AiNodeAnim` per Model per Stack; set `positionKeys`, `rotationKeys`, `scalingKeys`; set `animation.duration = (LocalStop - LocalStart) / FBX_TICKS_PER_SECOND`
-- [ ] 11.6 In `FBXExporter.ts`: add `writeAnimations(animations, nodeIdMap)` function; for each `AiAnimation` emit `AnimationStack` + `AnimationLayer`; for each `AiNodeAnim` emit T/R/S `AnimationCurveNode` triplets with child `AnimationCurve` nodes; convert quaternion → Euler ZYX for rotation curves; write ticks from seconds
-- [ ] 11.7 Write unit test: parse FBX fixture with one animation → assert `animations.length === 1`, `animations[0].channels.length > 0`, `positionKeys[0].time ≈ expected`
+- [x] 11.1 In `FBXDocument.ts`: add `FbxAnimationStack`, `FbxAnimationLayer`, `FbxAnimationCurveNode`, `FbxAnimationCurve` subtypes; `FbxAnimationCurve` exposes `keyTimes: BigInt64Array`, `keyValues: Float32Array`
+- [x] 11.2 In `FBXConverter.ts`: add `convertAnimations(doc): AiAnimation[]` method; iterate AnimationStack objects; for each Stack → Layer → CurveNode chain
+- [x] 11.3 For each CurveNode: determine T/R/S type from name suffix; resolve connected Model; read d|X, d|Y, d|Z child curves; build time-merged keyframe list; convert BigInt ticks → seconds
+- [x] 11.4 For rotation CurveNodes: read `RotationOrder` from Model Properties70 (default 0 = EulerXYZ); convert Euler degree triplets to `AiQuaternion` per keyframe using ZYX extrinsic composition
+- [x] 11.5 Build `AiNodeAnim` per Model per Stack; set `positionKeys`, `rotationKeys`, `scalingKeys`; set `animation.duration = (LocalStop - LocalStart) / FBX_TICKS_PER_SECOND`
+- [x] 11.6 In `FBXExporter.ts`: add `writeAnimations(animations, nodeIdMap)` function; for each `AiAnimation` emit `AnimationStack` + `AnimationLayer`; for each `AiNodeAnim` emit T/R/S `AnimationCurveNode` triplets with child `AnimationCurve` nodes; convert quaternion → Euler ZYX for rotation curves; write ticks from seconds
+- [x] 11.7 Write unit test: parse FBX fixture with one animation → assert `animations.length === 1`, `animations[0].channels.length > 0`, `positionKeys[0].time ≈ expected`
 
 ## 12. FBX BlendShape Extraction
 

@@ -1,14 +1,18 @@
 import {
   AiMetadataType,
+  AiAnimBehaviour,
   AiPrimitiveType,
   AiSceneFlags,
   createIdentityMatrix4x4,
+  type AiAnimation,
   type AiMesh,
   type AiMatrix4x4,
   type AiNode,
+  type AiNodeAnim,
   type AiScene,
 } from "nexus-core";
-import { FbxBlendShape, FbxDocument, FbxSkin } from "./FBXDocument";
+import { FbxAnimationStack, FbxBlendShape, FbxDocument, FbxSkin } from "./FBXDocument";
+import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
 type CoordSystemInfo = {
   upAxis: number;
@@ -96,7 +100,96 @@ function applyScale(matrix: AiMatrix4x4, factor: number): AiMatrix4x4 {
   return { data: next };
 }
 
+function quaternionFromEulerDegrees(x: number, y: number, z: number): { x: number; y: number; z: number; w: number } {
+  const halfX = (x * Math.PI) / 360;
+  const halfY = (y * Math.PI) / 360;
+  const halfZ = (z * Math.PI) / 360;
+  const sx = Math.sin(halfX);
+  const cx = Math.cos(halfX);
+  const sy = Math.sin(halfY);
+  const cy = Math.cos(halfY);
+  const sz = Math.sin(halfZ);
+  const cz = Math.cos(halfZ);
+  return {
+    x: sx * cy * cz - cx * sy * sz,
+    y: cx * sy * cz + sx * cy * sz,
+    z: cx * cy * sz - sx * sy * cz,
+    w: cx * cy * cz + sx * sy * sz,
+  };
+}
+
 export class FBXConverter {
+  convertAnimations(document: FbxDocument): AiAnimation[] {
+    const stacks = [...document.objects.values()]
+      .filter((object) => object.kind === "AnimationStack")
+      .map((object) => new FbxAnimationStack(document, object));
+    return stacks.map((stack) => {
+      const channels = new Map<string, AiNodeAnim>();
+      stack.layers.forEach((layer) => {
+        layer.curveNodes.forEach((curveNode) => {
+          const targetName = curveNode.linkedModel?.name ?? curveNode.name;
+          const axisValues = new Map<string, { times: bigint[]; values: number[] }>();
+          curveNode.curves.forEach((curve) => {
+            const axis = curve.name.split("_").pop() ?? "X";
+            axisValues.set(axis, {
+              times: Array.from(curve.keyTimes),
+              values: Array.from(curve.keyValues),
+            });
+          });
+          const mergedTimes = [...new Set(Array.from(axisValues.values()).flatMap((axis) => axis.times.map((time) => time.toString())))].map(
+            (time) => BigInt(time),
+          );
+          if (mergedTimes.length === 0) {
+            return;
+          }
+
+          const channel =
+            channels.get(targetName) ??
+            (() => {
+              const next: AiNodeAnim = {
+                nodeName: targetName,
+                positionKeys: [],
+                rotationKeys: [],
+                scalingKeys: [],
+                preState: AiAnimBehaviour.DEFAULT,
+                postState: AiAnimBehaviour.DEFAULT,
+              };
+              channels.set(targetName, next);
+              return next;
+            })();
+          const nodeType = curveNode.name.includes("::R_")
+            ? "R"
+            : curveNode.name.includes("::S_")
+              ? "S"
+              : "T";
+          mergedTimes.forEach((time) => {
+            const seconds = Number(time) / Number(FBX_TICKS_PER_SECOND);
+            const readAxis = (axis: string) => {
+              const entry = axisValues.get(axis);
+              const index = entry?.times.findIndex((candidate) => candidate === time) ?? -1;
+              return index >= 0 ? Number(entry?.values[index] ?? 0) : 0;
+            };
+            if (nodeType === "T") {
+              channel.positionKeys.push({ time: seconds, value: { x: readAxis("X"), y: readAxis("Y"), z: readAxis("Z") } });
+            } else if (nodeType === "S") {
+              channel.scalingKeys.push({ time: seconds, value: { x: readAxis("X"), y: readAxis("Y"), z: readAxis("Z") } });
+            } else {
+              channel.rotationKeys.push({ time: seconds, value: quaternionFromEulerDegrees(readAxis("X"), readAxis("Y"), readAxis("Z")) });
+            }
+          });
+        });
+      });
+      return {
+        name: stack.name || "Take001",
+        duration: Number(stack.localStop - stack.localStart) / Number(FBX_TICKS_PER_SECOND),
+        ticksPerSecond: 1,
+        channels: [...channels.values()],
+        meshChannels: [],
+        morphMeshChannels: [],
+      };
+    });
+  }
+
   convert(document: FbxDocument): AiScene {
     const coordInfo = parseGlobalSettings(document);
     const geometries = [...document.objects.values()].filter((object) => object.kind === "Mesh");
@@ -281,7 +374,7 @@ export class FBXConverter {
           },
         ],
       })),
-      animations: [],
+      animations: this.convertAnimations(document),
       textures: [],
       lights: [],
       cameras: [],

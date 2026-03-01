@@ -1,5 +1,6 @@
-import { type AiScene, type BaseExporter, type ExportSettings } from "nexus-core";
+import { type AiAnimation, type AiQuaternion, type AiScene, type BaseExporter, type ExportSettings } from "nexus-core";
 import { FbxExportNode } from "./FBXExportNode";
+import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
 const ROOT_MODEL_ID = 100000;
 const BASE_NODE_ID = 100001;
@@ -71,6 +72,83 @@ function flattenShapeVertices(mesh: AiScene["meshes"][number], morphIndex: numbe
     .join(",") ?? "";
 }
 
+function quaternionToEulerDegrees(quaternion: AiQuaternion): [number, number, number] {
+  const sinrCosp = 2 * (quaternion.w * quaternion.x + quaternion.y * quaternion.z);
+  const cosrCosp = 1 - 2 * (quaternion.x * quaternion.x + quaternion.y * quaternion.y);
+  const x = Math.atan2(sinrCosp, cosrCosp);
+  const sinp = 2 * (quaternion.w * quaternion.y - quaternion.z * quaternion.x);
+  const y = Math.abs(sinp) >= 1 ? Math.sign(sinp) * (Math.PI / 2) : Math.asin(sinp);
+  const sinyCosp = 2 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y);
+  const cosyCosp = 1 - 2 * (quaternion.y * quaternion.y + quaternion.z * quaternion.z);
+  const z = Math.atan2(sinyCosp, cosyCosp);
+  return [(x * 180) / Math.PI, (y * 180) / Math.PI, (z * 180) / Math.PI];
+}
+
+function toTick(time: number): number {
+  return Math.trunc(time * Number(FBX_TICKS_PER_SECOND));
+}
+
+function writeAnimations(
+  animations: AiAnimation[],
+  nodeIdMap: Map<string, number>,
+  objects: FbxExportNode[],
+  connectionLines: string[],
+  nextId: number,
+): number {
+  animations.forEach((animation, animationIndex) => {
+    const stackId = nextId++;
+    const layerId = nextId++;
+    objects.push(
+      new FbxExportNode("AnimationStack", [stackId, `AnimStack::${animation.name || `Take_${animationIndex}`}`, "AnimationStack"], [
+        `LocalStart: 0`,
+        `LocalStop: ${toTick(animation.duration)}`,
+      ]),
+    );
+    objects.push(new FbxExportNode("AnimationLayer", [layerId, `AnimLayer::${animation.name || `Layer_${animationIndex}`}`, "AnimationLayer"]));
+    connectionLines.push(`C: "OO", ${layerId}, ${stackId}`);
+
+    animation.channels.forEach((channel) => {
+      const modelId = nodeIdMap.get(channel.nodeName);
+      if (!modelId) {
+        return;
+      }
+      const curveSpecs = [
+        {
+          type: "T",
+          keys: channel.positionKeys.map((key) => ({ time: key.time, values: [key.value.x, key.value.y, key.value.z] })),
+        },
+        {
+          type: "R",
+          keys: channel.rotationKeys.map((key) => ({ time: key.time, values: quaternionToEulerDegrees(key.value) })),
+        },
+        {
+          type: "S",
+          keys: channel.scalingKeys.map((key) => ({ time: key.time, values: [key.value.x, key.value.y, key.value.z] })),
+        },
+      ].filter((entry) => entry.keys.length > 0);
+
+      curveSpecs.forEach((spec) => {
+        const curveNodeId = nextId++;
+        objects.push(new FbxExportNode("AnimationCurveNode", [curveNodeId, `AnimCurveNode::${spec.type}_${channel.nodeName}`, "AnimationCurveNode"]));
+        connectionLines.push(`C: "OO", ${curveNodeId}, ${layerId}`);
+        connectionLines.push(`C: "OO", ${modelId}, ${curveNodeId}`);
+        ["X", "Y", "Z"].forEach((axis, axisIndex) => {
+          const curveId = nextId++;
+          objects.push(
+            new FbxExportNode("AnimationCurve", [curveId, `AnimCurve::${channel.nodeName}_${spec.type}_${axis}`, "AnimationCurve"], [
+              `KeyTime: ${spec.keys.map((key) => toTick(key.time)).join(",")}`,
+              `KeyValueFloat: ${spec.keys.map((key) => key.values[axisIndex]).join(",")}`,
+            ]),
+          );
+          connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
+        });
+      });
+    });
+  });
+
+  return nextId;
+}
+
 export class FBXExporter implements BaseExporter {
   getSupportedExtensions(): string[] {
     return ["fbx"];
@@ -80,6 +158,7 @@ export class FBXExporter implements BaseExporter {
     const objects: FbxExportNode[] = [];
     const connectionLines: string[] = [];
     const materialIdMap = new Map<number, number>();
+    const modelIdMap = new Map<string, number>();
     let nextId = BASE_NODE_ID;
 
     scene.meshes.forEach((mesh, meshIndex) => {
@@ -98,6 +177,7 @@ export class FBXExporter implements BaseExporter {
         ),
       );
       objects.push(new FbxExportNode("Model", [modelId, `Model::${mesh.name || `Mesh_${meshIndex}`}`, "Model"]));
+      modelIdMap.set(mesh.name || `Mesh_${meshIndex}`, modelId);
       connectionLines.push(`C: "OO", ${modelId}, ${geometryId}`);
       connectionLines.push(`C: "OO", ${modelId}, ${ROOT_MODEL_ID}`);
 
@@ -123,6 +203,7 @@ export class FBXExporter implements BaseExporter {
             ]),
           );
           objects.push(new FbxExportNode("Model", [boneModelId, `Model::${bone.name}`, "LimbNode"]));
+          modelIdMap.set(bone.name, boneModelId);
           connectionLines.push(`C: "OO", ${clusterId}, ${skinId}`);
           connectionLines.push(`C: "OO", ${boneModelId}, ${clusterId}`);
         });
@@ -149,6 +230,9 @@ export class FBXExporter implements BaseExporter {
     });
 
     objects.push(new FbxExportNode("Model", [ROOT_MODEL_ID, "Model::Root", "Model"]));
+    modelIdMap.set("Root", ROOT_MODEL_ID);
+    modelIdMap.set(scene.rootNode.name, ROOT_MODEL_ID);
+    nextId = writeAnimations(scene.animations, modelIdMap, objects, connectionLines, nextId);
 
     const text = [
       "; FBX 7.4.0 project file",

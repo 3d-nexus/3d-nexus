@@ -112,6 +112,72 @@ export class FbxBlendShape {
   }
 }
 
+export class FbxAnimationCurve {
+  readonly keyTimes: BigInt64Array;
+  readonly keyValues: Float32Array;
+
+  constructor(private readonly object: LazyFbxObject) {
+    this.keyTimes = BigInt64Array.from(parseNumberArray(object.element.values.KeyTime?.[0] ?? []).map((value) => BigInt(Math.trunc(value))));
+    this.keyValues = Float32Array.from(parseNumberArray(object.element.values.KeyValueFloat?.[0] ?? []));
+  }
+
+  get name(): string {
+    return this.object.name;
+  }
+}
+
+export class FbxAnimationCurveNode {
+  readonly curves: FbxAnimationCurve[];
+  readonly linkedModel: FbxModel | null;
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    this.curves = document
+      .getChildObjects(object.id)
+      .filter((entry) => entry.kind === "AnimationCurve")
+      .map((entry) => new FbxAnimationCurve(entry));
+    const modelObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Model");
+    this.linkedModel = modelObject ? new FbxModel(modelObject) : null;
+  }
+
+  get name(): string {
+    return this.object.name;
+  }
+}
+
+export class FbxAnimationLayer {
+  readonly curveNodes: FbxAnimationCurveNode[];
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    this.curveNodes = document
+      .getChildObjects(object.id)
+      .filter((entry) => entry.kind === "AnimationCurveNode")
+      .map((entry) => new FbxAnimationCurveNode(document, entry));
+  }
+}
+
+export class FbxAnimationStack {
+  readonly layers: FbxAnimationLayer[];
+
+  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+    this.layers = document
+      .getChildObjects(object.id)
+      .filter((entry) => entry.kind === "AnimationLayer")
+      .map((entry) => new FbxAnimationLayer(document, entry));
+  }
+
+  get name(): string {
+    return this.object.name.replace(/^AnimStack::/, "");
+  }
+
+  get localStart(): bigint {
+    return BigInt(Math.trunc(Number(this.object.element.values.LocalStart?.[0] ?? 0)));
+  }
+
+  get localStop(): bigint {
+    return BigInt(Math.trunc(Number(this.object.element.values.LocalStop?.[0] ?? 0)));
+  }
+}
+
 export class FbxDocument {
   readonly objects = new Map<bigint, LazyFbxObject>();
   readonly connections: FbxConnectionGraph = {
