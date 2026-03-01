@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus 3D Playground</title>
+    <style>
+      :root {
+        --bg: #f3efe6;
+        --card: rgba(255, 252, 245, 0.92);
+        --ink: #1f2a37;
+        --accent: #c0521d;
+        --accent-soft: #f3d1bc;
+        --border: rgba(31, 42, 55, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, #fff7df, transparent 35%),
+          radial-gradient(circle at bottom right, #d8e3d2, transparent 25%),
+          linear-gradient(135deg, #efe6d7, #dde7df);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 20px 64px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2.5rem, 8vw, 4.4rem);
+        line-height: 0.95;
+      }
+
+      p {
+        max-width: 600px;
+        margin: 0 0 24px;
+        font-size: 1.05rem;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 22px 60px rgba(31, 42, 55, 0.12);
+        backdrop-filter: blur(12px);
+      }
+
+      .hero {
+        display: grid;
+        gap: 20px;
+      }
+
+      .dropzone {
+        padding: 40px 24px;
+        border: 2px dashed rgba(192, 82, 29, 0.4);
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(243,209,188,0.45));
+        text-align: center;
+      }
+
+      .dropzone.dragover {
+        border-color: var(--accent);
+        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(192,82,29,0.12));
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        margin-top: 16px;
+      }
+
+      .controls label {
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .controls select,
+      .controls button,
+      .controls input[type="file"]::file-selector-button {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 10px 16px;
+        font: inherit;
+        background: white;
+      }
+
+      .controls button {
+        cursor: pointer;
+        background: var(--ink);
+        color: white;
+      }
+
+      .grid {
+        display: grid;
+        gap: 20px;
+        margin-top: 24px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+      }
+
+      .stat {
+        border-radius: 16px;
+        padding: 16px;
+        background: rgba(255,255,255,0.75);
+        border: 1px solid var(--border);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.4rem;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      a.download {
+        display: inline-flex;
+        margin-top: 12px;
+        color: var(--accent);
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div>
+          <h1>Nexus 3D Playground</h1>
+          <p>Drop a model, inspect the parsed scene summary, then convert it into another format entirely in the browser.</p>
+        </div>
+        <div class="panel">
+          <div id="dropzone" class="dropzone">
+            <strong>Drop a `.obj`, `.fbx`, `.pmx`, `.pmd`, or `.vmd` file here</strong>
+            <div class="controls">
+              <input id="file-input" type="file" />
+              <label for="target-format">Output</label>
+              <select id="target-format"></select>
+              <button id="convert-button" type="button">Convert</button>
+            </div>
+          </div>
+        </div>
+        <section class="grid">
+          <div class="panel">
+            <h2>Status</h2>
+            <p id="status">Waiting for a file.</p>
+            <a id="download-link" class="download" hidden>Download result</a>
+          </div>
+          <div class="panel">
+            <h2>Warnings</h2>
+            <ul id="warnings"></ul>
+          </div>
+          <div class="panel">
+            <h2>Mesh Stats</h2>
+            <div id="stats" class="stats"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

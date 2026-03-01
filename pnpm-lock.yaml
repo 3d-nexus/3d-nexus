@@ -24,6 +24,24 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.11.0)
 
+  apps/playground:
+    dependencies:
+      nexus-converter:
+        specifier: workspace:*
+        version: link:../../packages/nexus-converter
+      nexus-core:
+        specifier: workspace:*
+        version: link:../../packages/nexus-core
+      nexus-fbx:
+        specifier: workspace:*
+        version: link:../../packages/nexus-fbx
+      nexus-mmd:
+        specifier: workspace:*
+        version: link:../../packages/nexus-mmd
+      nexus-obj:
+        specifier: workspace:*
+        version: link:../../packages/nexus-obj
+
   packages/nexus-converter:
     dependencies:
       nexus-core:

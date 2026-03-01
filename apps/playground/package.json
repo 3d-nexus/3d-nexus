@@ -1,0 +1,17 @@
+{
+  "name": "playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "nexus-converter": "workspace:*",
+    "nexus-core": "workspace:*",
+    "nexus-fbx": "workspace:*",
+    "nexus-mmd": "workspace:*",
+    "nexus-obj": "workspace:*"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  }
+}

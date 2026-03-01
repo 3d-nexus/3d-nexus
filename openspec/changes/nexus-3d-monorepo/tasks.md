@@ -96,8 +96,8 @@
 
 ## 7. Playground App
 
-- [ ] 7.1 Scaffold `apps/playground/` with `package.json` (deps: all nexus packages `workspace:*`), `tsconfig.json`, `vite.config.ts`, `index.html`
-- [ ] 7.2 Create `src/main.ts` — drag-and-drop file input UI; detect format by file extension; call `ModelConverter.convert()` and offer the result as a download
-- [ ] 7.3 Create `src/ui.ts` — display conversion status, warnings list, and basic mesh stats (vertex count, face count, material count, animation count)
-- [ ] 7.4 Wire up `vite dev` and verify all packages load correctly via workspace symlinks in the browser
-- [ ] 7.5 Manual integration test: drag a `.pmx` file → convert to OBJ → download and inspect in a 3D viewer
+- [x] 7.1 Scaffold `apps/playground/` with `package.json` (deps: all nexus packages `workspace:*`), `tsconfig.json`, `vite.config.ts`, `index.html`
+- [x] 7.2 Create `src/main.ts` — drag-and-drop file input UI; detect format by file extension; call `ModelConverter.convert()` and offer the result as a download
+- [x] 7.3 Create `src/ui.ts` — display conversion status, warnings list, and basic mesh stats (vertex count, face count, material count, animation count)
+- [x] 7.4 Wire up `vite dev` and verify all packages load correctly via workspace symlinks in the browser
+- [x] 7.5 Manual integration test: drag a `.pmx` file → convert to OBJ → download and inspect in a 3D viewer
