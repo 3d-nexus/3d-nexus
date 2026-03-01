@@ -26,18 +26,18 @@
 
 ## 3. nexus-obj — OBJ/MTL Parser & Exporter
 
-- [ ] 3.1 Scaffold `packages/nexus-obj/` with `package.json` (`nexus-core: workspace:*`), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
-- [ ] 3.2 Create `src/ObjFileData.ts` — `ObjFace`, `ObjObject`, `ObjMaterial`, `ObjModel` internal DOM types (mirrors assimp `ObjFileData.h`)
-- [ ] 3.3 Create `src/ObjFileMtlParser.ts` — parses MTL text into `ObjMaterial[]`; handles `newmtl`, `Ka`, `Kd`, `Ks`, `Ke`, `Ns`, `Ni`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`, `map_Ns`, `map_bump`, `bump`, `map_d`, `disp`
-- [ ] 3.4 Create `src/ObjFileParser.ts` — line-by-line OBJ tokeniser; dispatches on `v`, `vn`, `vt`, `f`, `o`, `g`, `usemtl`, `mtllib`, `s`, `#`; handles negative index references and `f v//n` format
-- [ ] 3.5 Create `src/ObjFileImporter.ts` — converts `ObjModel` DOM → `AiScene` IR; one mesh per material group; creates default material when MTL is missing; emits `ImportWarning` for missing MTL
-- [ ] 3.6 Create `src/ObjExporter.ts` — converts `AiScene` IR → OBJ text + MTL text; exposes `getMtlContent(): string`; includes `mtllib` directive; handles meshes with no normals
-- [ ] 3.7 Add fixture files `src/__tests__/fixtures/cube.obj`, `cube.mtl`
-- [ ] 3.8 Create `src/__tests__/ObjFileParser.test.ts` — tests vertex parsing, face formats, negative indices, comment skipping
-- [ ] 3.9 Create `src/__tests__/ObjFileMtlParser.test.ts` — tests `Kd`, `map_Kd`, `d` parsing
-- [ ] 3.10 Create `src/__tests__/roundtrip.test.ts` — parse `cube.obj`, export to OBJ, re-parse, assert vertex and face counts match
-- [ ] 3.11 Create `src/index.ts` exporting `ObjFileImporter`, `ObjExporter`
-- [ ] 3.12 Build and run `vitest run` — all tests pass
+- [x] 3.1 Scaffold `packages/nexus-obj/` with `package.json` (`nexus-core: workspace:*`), `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
+- [x] 3.2 Create `src/ObjFileData.ts` — `ObjFace`, `ObjObject`, `ObjMaterial`, `ObjModel` internal DOM types (mirrors assimp `ObjFileData.h`)
+- [x] 3.3 Create `src/ObjFileMtlParser.ts` — parses MTL text into `ObjMaterial[]`; handles `newmtl`, `Ka`, `Kd`, `Ks`, `Ke`, `Ns`, `Ni`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`, `map_Ns`, `map_bump`, `bump`, `map_d`, `disp`
+- [x] 3.4 Create `src/ObjFileParser.ts` — line-by-line OBJ tokeniser; dispatches on `v`, `vn`, `vt`, `f`, `o`, `g`, `usemtl`, `mtllib`, `s`, `#`; handles negative index references and `f v//n` format
+- [x] 3.5 Create `src/ObjFileImporter.ts` — converts `ObjModel` DOM → `AiScene` IR; one mesh per material group; creates default material when MTL is missing; emits `ImportWarning` for missing MTL
+- [x] 3.6 Create `src/ObjExporter.ts` — converts `AiScene` IR → OBJ text + MTL text; exposes `getMtlContent(): string`; includes `mtllib` directive; handles meshes with no normals
+- [x] 3.7 Add fixture files `src/__tests__/fixtures/cube.obj`, `cube.mtl`
+- [x] 3.8 Create `src/__tests__/ObjFileParser.test.ts` — tests vertex parsing, face formats, negative indices, comment skipping
+- [x] 3.9 Create `src/__tests__/ObjFileMtlParser.test.ts` — tests `Kd`, `map_Kd`, `d` parsing
+- [x] 3.10 Create `src/__tests__/roundtrip.test.ts` — parse `cube.obj`, export to OBJ, re-parse, assert vertex and face counts match
+- [x] 3.11 Create `src/index.ts` exporting `ObjFileImporter`, `ObjExporter`
+- [x] 3.12 Build and run `vitest run` — all tests pass
 
 ## 4. nexus-mmd — PMX / PMD / VMD Parser & Exporter
 
