@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "nexus-core": ["packages/nexus-core/src/index.ts"],
+      "nexus-obj": ["packages/nexus-obj/src/index.ts"],
+      "nexus-mmd": ["packages/nexus-mmd/src/index.ts"],
+      "nexus-fbx": ["packages/nexus-fbx/src/index.ts"],
+      "nexus-converter": ["packages/nexus-converter/src/index.ts"]
+    }
+  }
+}

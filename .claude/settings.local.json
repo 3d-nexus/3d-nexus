@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__desktop-commander__list_directory",
+      "mcp__desktop-commander__read_file",
+      "Bash(openspec new change \"nexus-3d-monorepo\")"
+    ]
+  }
+}
