@@ -9,20 +9,20 @@
 
 ## 2. nexus-core — IR Types & Math
 
-- [ ] 2.1 Scaffold `packages/nexus-core/` with `package.json`, `tsconfig.json` (extends base), `vite.config.ts`, `vitest.config.ts`
-- [ ] 2.2 Create `src/types/math.ts` — `AiVector2D`, `AiVector3D`, `AiColor3D`, `AiColor4D`, `AiQuaternion`, `AiMatrix3x3`, `AiMatrix4x4` (column-major Float32Array), `AiAABB`
-- [ ] 2.3 Create `src/types/mesh.ts` — `AiPrimitiveType` enum, `AiFace`, `AiVertexWeight`, `AiBone`, `AiAnimMesh`, `AiMesh`
-- [ ] 2.4 Create `src/types/material.ts` — `AiTextureType` enum, `AiTextureMapping` enum, `AiPropertyTypeInfo` enum, `AiMaterialProperty`, `AiMaterial`, `AiUVTransform`
-- [ ] 2.5 Create `src/types/anim.ts` — `AiAnimBehaviour` enum, `AiAnimInterpolation` enum, `AiVectorKey`, `AiQuatKey`, `AiMeshKey`, `AiMeshMorphKey`, `AiNodeAnim`, `AiMeshAnim`, `AiMeshMorphAnim`, `AiAnimation`
-- [ ] 2.6 Create `src/types/texture.ts` — `AiTexture`
-- [ ] 2.7 Create `src/types/light.ts` — `AiLightSourceType` enum, `AiLight`
-- [ ] 2.8 Create `src/types/camera.ts` — `AiCamera`
-- [ ] 2.9 Create `src/types/metadata.ts` — `AiMetadataType` enum, `AiMetadataEntry`, `AiMetadata`
-- [ ] 2.10 Create `src/types/scene.ts` — `AiSceneFlags` enum, `AiNode`, `AiScene`
-- [ ] 2.11 Create `src/interfaces.ts` — `ImportSettings`, `ExportSettings`, `ImportWarning`, `ImportResult`, `BaseImporter`, `BaseExporter`
-- [ ] 2.12 Create `src/math/utils.ts` — `createIdentityMatrix4x4()`, `multiplyMatrix4x4()`, `invertMatrix4x4()`, `transformVector3()`, `normalizeVector3()`
-- [ ] 2.13 Create `src/index.ts` re-exporting all public types and utilities
-- [ ] 2.14 Build `nexus-core` (`vite build`) and verify `dist/index.js` + `dist/index.d.ts` are generated
+- [x] 2.1 Scaffold `packages/nexus-core/` with `package.json`, `tsconfig.json` (extends base), `vite.config.ts`, `vitest.config.ts`
+- [x] 2.2 Create `src/types/math.ts` — `AiVector2D`, `AiVector3D`, `AiColor3D`, `AiColor4D`, `AiQuaternion`, `AiMatrix3x3`, `AiMatrix4x4` (column-major Float32Array), `AiAABB`
+- [x] 2.3 Create `src/types/mesh.ts` — `AiPrimitiveType` enum, `AiFace`, `AiVertexWeight`, `AiBone`, `AiAnimMesh`, `AiMesh`
+- [x] 2.4 Create `src/types/material.ts` — `AiTextureType` enum, `AiTextureMapping` enum, `AiPropertyTypeInfo` enum, `AiMaterialProperty`, `AiMaterial`, `AiUVTransform`
+- [x] 2.5 Create `src/types/anim.ts` — `AiAnimBehaviour` enum, `AiAnimInterpolation` enum, `AiVectorKey`, `AiQuatKey`, `AiMeshKey`, `AiMeshMorphKey`, `AiNodeAnim`, `AiMeshAnim`, `AiMeshMorphAnim`, `AiAnimation`
+- [x] 2.6 Create `src/types/texture.ts` — `AiTexture`
+- [x] 2.7 Create `src/types/light.ts` — `AiLightSourceType` enum, `AiLight`
+- [x] 2.8 Create `src/types/camera.ts` — `AiCamera`
+- [x] 2.9 Create `src/types/metadata.ts` — `AiMetadataType` enum, `AiMetadataEntry`, `AiMetadata`
+- [x] 2.10 Create `src/types/scene.ts` — `AiSceneFlags` enum, `AiNode`, `AiScene`
+- [x] 2.11 Create `src/interfaces.ts` — `ImportSettings`, `ExportSettings`, `ImportWarning`, `ImportResult`, `BaseImporter`, `BaseExporter`
+- [x] 2.12 Create `src/math/utils.ts` — `createIdentityMatrix4x4()`, `multiplyMatrix4x4()`, `invertMatrix4x4()`, `transformVector3()`, `normalizeVector3()`
+- [x] 2.13 Create `src/index.ts` re-exporting all public types and utilities
+- [x] 2.14 Build `nexus-core` (`vite build`) and verify `dist/index.js` + `dist/index.d.ts` are generated
 
 ## 3. nexus-obj — OBJ/MTL Parser & Exporter
 

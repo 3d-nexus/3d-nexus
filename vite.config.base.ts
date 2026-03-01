@@ -4,7 +4,7 @@ import dts from "vite-plugin-dts";
 
 const BUILTIN_EXTERNALS = new Set([
   ...builtinModules,
-  ...builtinModules.map((moduleName) => `node:${moduleName}`),
+  ...builtinModules.map((moduleName: string) => `node:${moduleName}`),
 ]);
 
 export interface PackageBuildOptions {
