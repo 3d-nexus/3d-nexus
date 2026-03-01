@@ -1,4 +1,4 @@
-import type { AiMesh, AiScene, AiVector3D, SdefCoeffs } from "nexus-core";
+import type { AiMaterial, AiMaterialProperty, AiMesh, AiScene, AiVector3D, SdefCoeffs } from "nexus-core";
 import { BinaryWriter } from "./BinaryWriter";
 
 type VertexBoneEntry = { boneIdx: number; weight: number; ikChain?: SdefCoeffs };
@@ -85,6 +85,84 @@ function parseMetadataArray(scene: AiScene, key: string): Array<Record<string, u
   } catch {
     return [];
   }
+}
+
+function getMaterialProperty(material: AiMaterial | undefined, key: string): AiMaterialProperty | undefined {
+  return material?.properties.find((property) => property.key === key);
+}
+
+function getStringProperty(material: AiMaterial | undefined, key: string): string | undefined {
+  const value = getMaterialProperty(material, key)?.data;
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getNumberProperty(material: AiMaterial | undefined, key: string, fallback: number): number {
+  const value = getMaterialProperty(material, key)?.data;
+  return typeof value === "number" ? value : fallback;
+}
+
+function getColor4(material: AiMaterial | undefined, key: string, fallback: [number, number, number, number]): [number, number, number, number] {
+  const value = getMaterialProperty(material, key)?.data as Partial<{ r: number; g: number; b: number; a: number }> | undefined;
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+  return [Number(value.r ?? fallback[0]), Number(value.g ?? fallback[1]), Number(value.b ?? fallback[2]), Number(value.a ?? fallback[3])];
+}
+
+function getColor3(material: AiMaterial | undefined, key: string, fallback: [number, number, number]): [number, number, number] {
+  const value = getMaterialProperty(material, key)?.data as Partial<{ r: number; g: number; b: number }> | undefined;
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+  return [Number(value.r ?? fallback[0]), Number(value.g ?? fallback[1]), Number(value.b ?? fallback[2])];
+}
+
+function collectTexturePaths(scene: AiScene): string[] {
+  const seen = new Set<string>();
+  const textures: string[] = [];
+  scene.meshes.forEach((mesh) => {
+    const path = getStringProperty(scene.materials[mesh.materialIndex], "$tex.file");
+    if (path && !seen.has(path)) {
+      seen.add(path);
+      textures.push(path);
+    }
+  });
+  return textures;
+}
+
+function writeMaterialBlock(
+  writer: BinaryWriter,
+  material: AiMaterial | undefined,
+  faceVertexCount: number,
+  textureIndexLookup: Map<string, number>,
+): void {
+  const name = material?.name ?? "Material";
+  const diffuse = getColor4(material, "$clr.diffuse", [1, 1, 1, 1]);
+  const specular = getColor3(material, "$clr.specular", [0.5, 0.5, 0.5]);
+  const ambient = getColor3(material, "$clr.ambient", [0.2, 0.2, 0.2]);
+  const edgeColor = getColor4(material, "mmd:edgeColor", [0, 0, 0, 1]);
+  const edgeSize = getNumberProperty(material, "mmd:edgeSize", 1);
+  const sphereMode = getNumberProperty(material, "mmd:sphereMode", 0);
+  const toonIndex = getNumberProperty(material, "mmd:toonIndex", 0);
+  const texturePath = getStringProperty(material, "$tex.file");
+  const textureIndex = texturePath ? (textureIndexLookup.get(texturePath) ?? -1) : -1;
+
+  writer.writeString(name, "utf-8");
+  writer.writeString(name, "utf-8");
+  diffuse.forEach((value) => writer.writeFloat32(value));
+  specular.forEach((value) => writer.writeFloat32(value));
+  writer.writeFloat32(16);
+  ambient.forEach((value) => writer.writeFloat32(value));
+  writer.writeUint8(0);
+  edgeColor.forEach((value) => writer.writeFloat32(value));
+  writer.writeFloat32(edgeSize);
+  writer.writeUint8(0);
+  writer.writeInt32(textureIndex);
+  writer.writeInt32(-1);
+  writer.writeUint8(sphereMode);
+  writer.writeUint8(Math.max(0, Math.min(255, toonIndex)));
+  writer.writeInt32(0);
+  writer.writeInt32(faceVertexCount);
 }
 
 function writeMorphs(writer: BinaryWriter, scene: AiScene, mesh: AiMesh, baseVertices: AiVector3D[]): void {
@@ -258,12 +336,19 @@ function writeJoints(writer: BinaryWriter, scene: AiScene): void {
 export class MMDPmxExporter {
   write(scene: AiScene): ArrayBuffer {
     const writer = new BinaryWriter();
-    const mesh = scene.meshes[0];
-    if (!mesh) {
+    if (scene.meshes.length === 0) {
       throw new Error("Cannot export PMX without at least one mesh");
     }
-
-    const vertexWeightLookup = buildVertexWeightLookup(mesh);
+    const meshes = scene.meshes;
+    const vertexWeightLookups = meshes.map((mesh) => buildVertexWeightLookup(mesh));
+    const vertexOffsets: number[] = [];
+    let runningVertexOffset = 0;
+    meshes.forEach((mesh) => {
+      vertexOffsets.push(runningVertexOffset);
+      runningVertexOffset += mesh.vertices.length;
+    });
+    const textures = collectTexturePaths(scene);
+    const textureIndexLookup = new Map(textures.map((path, index) => [path, index]));
 
     writer.writeBytes(new TextEncoder().encode("PMX "));
     writer.writeFloat32(2.0);
@@ -273,48 +358,36 @@ export class MMDPmxExporter {
     writer.writeString(scene.rootNode.name, "utf-8");
     writer.writeString("", "utf-8");
     writer.writeString("", "utf-8");
-    writer.writeUint32(mesh.vertices.length);
+    writer.writeUint32(runningVertexOffset);
 
-    mesh.vertices.forEach((vertex, index) => {
-      writeVec3(writer, vertex);
-      writeVec3(writer, mesh.normals[index] ?? { x: 0, y: 1, z: 0 });
-      writer.writeFloat32(mesh.textureCoords[0]?.[index]?.x ?? 0);
-      writer.writeFloat32(mesh.textureCoords[0]?.[index]?.y ?? 0);
-      writeVertexSkinning(writer, vertexWeightLookup.get(index) ?? []);
-      writer.writeFloat32(1);
+    meshes.forEach((mesh, meshIndex) => {
+      const vertexWeightLookup = vertexWeightLookups[meshIndex]!;
+      mesh.vertices.forEach((vertex, index) => {
+        writeVec3(writer, vertex);
+        writeVec3(writer, mesh.normals[index] ?? { x: 0, y: 1, z: 0 });
+        writer.writeFloat32(mesh.textureCoords[0]?.[index]?.x ?? 0);
+        writer.writeFloat32(mesh.textureCoords[0]?.[index]?.y ?? 0);
+        writeVertexSkinning(writer, vertexWeightLookup.get(index) ?? []);
+        writer.writeFloat32(1);
+      });
     });
 
-    const indices = mesh.faces.flatMap((face) => face.indices);
+    const indices = meshes.flatMap((mesh, meshIndex) =>
+      mesh.faces.flatMap((face) => face.indices.map((index) => index + vertexOffsets[meshIndex]!)),
+    );
     writer.writeUint32(indices.length);
     indices.forEach((index) => writer.writeUint32(index));
-    writer.writeUint32(0);
-    writer.writeUint32(1);
-    writer.writeString(scene.materials[0]?.name ?? "Material", "utf-8");
-    writer.writeString(scene.materials[0]?.name ?? "Material", "utf-8");
-    writer.writeFloat32(1);
-    writer.writeFloat32(1);
-    writer.writeFloat32(1);
-    writer.writeFloat32(1);
-    writer.writeFloat32(0.5);
-    writer.writeFloat32(0.5);
-    writer.writeFloat32(0.5);
-    writer.writeFloat32(16);
-    writer.writeFloat32(0.2);
-    writer.writeFloat32(0.2);
-    writer.writeFloat32(0.2);
-    writer.writeUint8(0);
-    writer.writeFloat32(0);
-    writer.writeFloat32(0);
-    writer.writeFloat32(0);
-    writer.writeFloat32(1);
-    writer.writeFloat32(1);
-    writer.writeUint8(0);
-    writer.writeInt32(-1);
-    writer.writeInt32(-1);
-    writer.writeUint8(0);
-    writer.writeUint8(0);
-    writer.writeInt32(0);
-    writer.writeInt32(indices.length);
+    writer.writeUint32(textures.length);
+    textures.forEach((texture) => writer.writeString(texture, "utf-8"));
+    writer.writeUint32(meshes.length);
+    meshes.forEach((mesh) => {
+      writeMaterialBlock(
+        writer,
+        scene.materials[mesh.materialIndex],
+        mesh.faces.reduce((total, face) => total + face.indices.length, 0),
+        textureIndexLookup,
+      );
+    });
     writer.writeUint32(Math.max(1, scene.rootNode.children.length));
     const bones = scene.rootNode.children.length
       ? scene.rootNode.children
@@ -332,7 +405,7 @@ export class MMDPmxExporter {
       writer.writeFloat32(1);
       writer.writeFloat32(0);
     });
-    writeMorphs(writer, scene, mesh, mesh.vertices);
+    writeMorphs(writer, scene, meshes[0]!, meshes[0]!.vertices);
     writer.writeUint32(0);
     writeRigidBodies(writer, scene);
     writeJoints(writer, scene);

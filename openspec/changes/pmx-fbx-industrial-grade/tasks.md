@@ -58,10 +58,10 @@
 
 ## 7. PMX Multi-Mesh Export & Full Material Properties
 
-- [ ] 7.1 Refactor `MMDPmxExporter.ts` to iterate `scene.meshes[]`; concatenate vertex arrays with running offset; concatenate face index arrays with per-mesh vertex base offset
-- [ ] 7.2 Build deduplicated texture path list from all `"$tex.file"` material properties; write PMX texture section
-- [ ] 7.3 For each mesh, write one PMX material block: read `$clr.diffuse`, `$clr.specular`, `$clr.ambient`, `mmd:edgeColor`, `mmd:edgeSize`, `mmd:sphereMode`, `mmd:toonIndex` from `AiMaterial`; write default safe values for absent keys; resolve texture index from deduplicated list
-- [ ] 7.4 Write unit test: export a 2-mesh scene; assert PMX vertex count = sum, material count = 2, texture section deduplicated
+- [x] 7.1 Refactor `MMDPmxExporter.ts` to iterate `scene.meshes[]`; concatenate vertex arrays with running offset; concatenate face index arrays with per-mesh vertex base offset
+- [x] 7.2 Build deduplicated texture path list from all `"$tex.file"` material properties; write PMX texture section
+- [x] 7.3 For each mesh, write one PMX material block: read `$clr.diffuse`, `$clr.specular`, `$clr.ambient`, `mmd:edgeColor`, `mmd:edgeSize`, `mmd:sphereMode`, `mmd:toonIndex` from `AiMaterial`; write default safe values for absent keys; resolve texture index from deduplicated list
+- [x] 7.4 Write unit test: export a 2-mesh scene; assert PMX vertex count = sum, material count = 2, texture section deduplicated
 
 ## 8. VMD Bezier Interpolation Round-Trip
 
