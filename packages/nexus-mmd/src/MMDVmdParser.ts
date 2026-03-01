@@ -1,5 +1,12 @@
 import { BinaryReader } from "./BinaryReader";
 
+export interface VmdInterpolation {
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+}
+
 export interface VmdBoneFrame {
   name: string;
   frame: number;

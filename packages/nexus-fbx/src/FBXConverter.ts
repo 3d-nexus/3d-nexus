@@ -1,4 +1,11 @@
-import { AiPrimitiveType, AiSceneFlags, createIdentityMatrix4x4, type AiNode, type AiScene } from "nexus-core";
+import {
+  AiPrimitiveType,
+  AiSceneFlags,
+  createIdentityMatrix4x4,
+  type AiMatrix4x4,
+  type AiNode,
+  type AiScene,
+} from "nexus-core";
 import { FbxDocument } from "./FBXDocument";
 
 function parseNumberList(value: unknown): number[] {
@@ -10,6 +17,46 @@ function parseNumberList(value: unknown): number[] {
     .map((part) => part.trim())
     .filter(Boolean)
     .map(Number);
+}
+
+export function buildAxisSwapMatrix(
+  upAxis: number,
+  upSign: number,
+  frontAxis: number,
+  frontSign: number,
+  coordAxis: number,
+  coordSign: number,
+): AiMatrix4x4 {
+  const basis = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ];
+
+  basis[0]![coordAxis] = coordSign;
+  basis[1]![upAxis] = upSign;
+  basis[2]![frontAxis] = frontSign;
+
+  return {
+    data: new Float32Array([
+      basis[0]![0] ?? 0,
+      basis[1]![0] ?? 0,
+      basis[2]![0] ?? 0,
+      0,
+      basis[0]![1] ?? 0,
+      basis[1]![1] ?? 0,
+      basis[2]![1] ?? 0,
+      0,
+      basis[0]![2] ?? 0,
+      basis[1]![2] ?? 0,
+      basis[2]![2] ?? 0,
+      0,
+      0,
+      0,
+      0,
+      1,
+    ]),
+  };
 }
 
 export class FBXConverter {

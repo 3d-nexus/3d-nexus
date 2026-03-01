@@ -17,11 +17,19 @@ export interface AiVertexWeight {
   weight: number;
 }
 
+export interface SdefCoeffs {
+  type: "sdef";
+  c: AiVector3D;
+  r0: AiVector3D;
+  r1: AiVector3D;
+}
+
 export interface AiBone {
   name: string;
   weights: AiVertexWeight[];
   offsetMatrix: AiMatrix4x4;
   node?: AiNode | null;
+  // MMD SDEF vertices store extra dual-quaternion coefficients here.
   ikChain?: unknown;
 }
 

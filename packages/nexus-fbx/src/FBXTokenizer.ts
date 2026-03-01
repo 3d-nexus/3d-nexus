@@ -14,3 +14,5 @@ export type TypedArray =
   | Float64Array
   | BigInt64Array
   | BigUint64Array;
+
+export const FBX_TICKS_PER_SECOND = 46186158000n;
