@@ -11,7 +11,7 @@ function writeFixedString(writer: BinaryWriter, text: string, length: number): v
   writer.writeString(text, "shift-jis", length);
 }
 
-function createVmdBuffer(options?: { interpolation?: Uint8Array; cameraCount?: number; ikCount?: number }): ArrayBuffer {
+function createVmdBuffer(options?: { interpolation?: Uint8Array; cameraCount?: number; lightCount?: number; morphCount?: number; ikCount?: number }): ArrayBuffer {
   const writer = new BinaryWriter();
   const interpolation =
     options?.interpolation ??
@@ -41,7 +41,13 @@ function createVmdBuffer(options?: { interpolation?: Uint8Array; cameraCount?: n
   writer.writeFloat32(1);
   writer.writeBytes(interpolation);
 
-  writer.writeUint32(0);
+  const morphCount = options?.morphCount ?? 0;
+  writer.writeUint32(morphCount);
+  for (let index = 0; index < morphCount; index += 1) {
+    writeFixedString(writer, `Morph${index}`, 15);
+    writer.writeUint32(index * 7);
+    writer.writeFloat32(0.25 + index);
+  }
 
   const cameraCount = options?.cameraCount ?? 0;
   writer.writeUint32(cameraCount);
@@ -59,7 +65,17 @@ function createVmdBuffer(options?: { interpolation?: Uint8Array; cameraCount?: n
     writer.writeUint8(index % 2);
   }
 
-  writer.writeUint32(0);
+  const lightCount = options?.lightCount ?? 0;
+  writer.writeUint32(lightCount);
+  for (let index = 0; index < lightCount; index += 1) {
+    writer.writeUint32(index * 5);
+    writer.writeFloat32(0.1 + index);
+    writer.writeFloat32(0.2 + index);
+    writer.writeFloat32(0.3 + index);
+    writer.writeFloat32(1 + index);
+    writer.writeFloat32(2 + index);
+    writer.writeFloat32(3 + index);
+  }
   writer.writeUint32(0);
 
   const ikCount = options?.ikCount ?? 0;
@@ -89,8 +105,8 @@ describe("VMD export", () => {
     );
   });
 
-  it("roundtrips camera and IK frame counts", () => {
-    const input = createVmdBuffer({ cameraCount: 3, ikCount: 2 });
+  it("roundtrips morph, camera, light, and IK frame counts", () => {
+    const input = createVmdBuffer({ cameraCount: 3, lightCount: 2, morphCount: 2, ikCount: 2 });
     const importer = new MMDImporter();
     const exporter = new MMDVmdExporter();
     const parser = new MMDVmdParser();
@@ -99,7 +115,11 @@ describe("VMD export", () => {
     const exported = exporter.write(scene);
     const reparsed = parser.parse(exported);
 
+    expect(reparsed.morphFrames).toHaveLength(2);
     expect(reparsed.cameraFrames).toHaveLength(3);
+    expect(reparsed.lightFrames).toHaveLength(2);
     expect(reparsed.ikFrames).toHaveLength(2);
+    expect(reparsed.morphFrames[1]?.frame).toBe(7);
+    expect(reparsed.lightFrames[1]?.position?.[2]).toBe(4);
   });
 });

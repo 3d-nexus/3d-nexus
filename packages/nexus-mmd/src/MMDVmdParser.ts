@@ -23,6 +23,7 @@ export interface VmdBoneFrame {
 export interface VmdMorphFrame {
   name: string;
   frame: number;
+  originalFrame: number;
   weight: number;
 }
 
@@ -33,6 +34,7 @@ export interface VmdDocument {
   morphFrames: VmdMorphFrame[];
   cameraFrames: Array<{
     frame: number;
+    originalFrame: number;
     distance: number;
     position: number[];
     rotation: number[];
@@ -40,7 +42,7 @@ export interface VmdDocument {
     fov: number;
     perspective: number;
   }>;
-  lightFrames: Array<{ frame: number }>;
+  lightFrames: Array<{ frame: number; originalFrame: number; color: number[]; position: number[] }>;
   shadowFrames: Array<{ frame: number }>;
   ikFrames: Array<{ frame: number; show: number; entries: Array<{ name: string; enabled: number }> }>;
 }
@@ -78,11 +80,16 @@ export class MMDVmdParser {
     }
 
     const morphFrameCount = reader.readUint32();
-    const morphFrames = Array.from({ length: morphFrameCount }, () => ({
-      name: decodeNullTerminated(reader.readBytes(15)),
-      frame: reader.readUint32(),
-      weight: reader.readFloat32(),
-    }));
+    const morphFrames = Array.from({ length: morphFrameCount }, () => {
+      const name = decodeNullTerminated(reader.readBytes(15));
+      const frame = reader.readUint32();
+      return {
+        name,
+        frame,
+        originalFrame: frame,
+        weight: reader.readFloat32(),
+      };
+    });
 
     const cameraFrameCount = reader.readUint32();
     const cameraFrames = Array.from({ length: cameraFrameCount }, () => {
@@ -93,16 +100,15 @@ export class MMDVmdParser {
       const interpolation = reader.readBytes(24);
       const fov = reader.readUint32();
       const perspective = reader.readUint8();
-      return { frame, distance, position, rotation, interpolation, fov, perspective };
+      return { frame, originalFrame: frame, distance, position, rotation, interpolation, fov, perspective };
     });
 
     const lightFrameCount = reader.readUint32();
     const lightFrames = Array.from({ length: lightFrameCount }, () => {
       const frame = reader.readUint32();
-      for (let index = 0; index < 6; index += 1) {
-        reader.readFloat32();
-      }
-      return { frame };
+      const color = [reader.readFloat32(), reader.readFloat32(), reader.readFloat32()];
+      const position = [reader.readFloat32(), reader.readFloat32(), reader.readFloat32()];
+      return { frame, originalFrame: frame, color, position };
     });
 
     const shadowFrameCount = reader.readUint32();

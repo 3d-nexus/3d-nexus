@@ -552,10 +552,16 @@ function mergeVmd(scene: AiScene, buffer: ArrayBuffer, warnings: ImportResult["w
     });
   });
 
-  const morphMeshChannels: AiMeshMorphAnim[] = document.morphFrames.map((frame) => ({
-    name: frame.name,
-    keys: [{ time: frame.frame, values: [0], weights: [frame.weight] }],
-  }));
+  const morphChannelMap = new Map<string, AiMeshMorphAnim>();
+  document.morphFrames.forEach((frame) => {
+    const channel = morphChannelMap.get(frame.name) ?? {
+      name: frame.name,
+      keys: [],
+    };
+    channel.keys.push({ time: frame.frame, values: [0], weights: [frame.weight] });
+    morphChannelMap.set(frame.name, channel);
+  });
+  const morphMeshChannels = Array.from(morphChannelMap.values());
 
   const animation: AiAnimation = {
     name: document.modelName || "VMDAnimation",
@@ -566,6 +572,12 @@ function mergeVmd(scene: AiScene, buffer: ArrayBuffer, warnings: ImportResult["w
     morphMeshChannels,
   };
   scene.animations.push(animation);
+  if (document.morphFrames.length > 0) {
+    scene.metadata["mmd:morphFrames"] = {
+      type: AiMetadataType.AISTRING,
+      data: JSON.stringify(document.morphFrames),
+    };
+  }
   if (document.cameraFrames.length > 0) {
     scene.metadata["mmd:cameraFrames"] = {
       type: AiMetadataType.AISTRING,
@@ -575,6 +587,12 @@ function mergeVmd(scene: AiScene, buffer: ArrayBuffer, warnings: ImportResult["w
           interpolation: Array.from(frame.interpolation),
         })),
       ),
+    };
+  }
+  if (document.lightFrames.length > 0) {
+    scene.metadata["mmd:lightFrames"] = {
+      type: AiMetadataType.AISTRING,
+      data: JSON.stringify(document.lightFrames),
     };
   }
   if (document.ikFrames.length > 0) {

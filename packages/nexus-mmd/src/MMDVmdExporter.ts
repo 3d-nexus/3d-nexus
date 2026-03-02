@@ -18,6 +18,20 @@ type IkFrame = {
   entries: Array<{ name: string; enabled: number }>;
 };
 
+type MorphFrame = {
+  name: string;
+  frame: number;
+  originalFrame?: number;
+  weight: number;
+};
+
+type LightFrame = {
+  frame: number;
+  originalFrame?: number;
+  color?: number[];
+  position?: number[];
+};
+
 function firstAnimation(scene: AiScene): AiAnimation | undefined {
   return scene.animations[0];
 }
@@ -121,13 +135,15 @@ export class MMDVmdExporter {
     });
 
     const morphFrames =
-      animation?.morphMeshChannels.flatMap((channel) =>
-        channel.keys.map((key) => ({ name: channel.name, frame: key.time, weight: key.weights[0] ?? 0 })),
-      ) ?? [];
+      readSceneArray<MorphFrame>(scene, "mmd:morphFrames").length > 0
+        ? readSceneArray<MorphFrame>(scene, "mmd:morphFrames")
+        : (animation?.morphMeshChannels.flatMap((channel) =>
+            channel.keys.map((key) => ({ name: channel.name, frame: key.time, originalFrame: key.time, weight: key.weights[0] ?? 0 })),
+          ) ?? []);
     writer.writeUint32(morphFrames.length);
     morphFrames.forEach((frame) => {
       writeFixedString(writer, frame.name, 15);
-      writer.writeUint32(frame.frame);
+      writer.writeUint32(Math.round(Number(frame.frame ?? frame.originalFrame ?? 0)));
       writer.writeFloat32(frame.weight);
     });
 
@@ -143,7 +159,13 @@ export class MMDVmdExporter {
       writer.writeUint8(Number(frame.perspective ?? 0));
     });
 
-    writer.writeUint32(0);
+    const lightFrames = readSceneArray<LightFrame>(scene, "mmd:lightFrames");
+    writer.writeUint32(lightFrames.length);
+    lightFrames.forEach((frame) => {
+      writer.writeUint32(Math.round(Number(frame.frame ?? frame.originalFrame ?? 0)));
+      (frame.color ?? [1, 1, 1]).slice(0, 3).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+      (frame.position ?? [0, 0, 0]).slice(0, 3).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+    });
     writer.writeUint32(0);
 
     const ikFrames = readSceneArray<IkFrame>(scene, "mmd:ikFrames");

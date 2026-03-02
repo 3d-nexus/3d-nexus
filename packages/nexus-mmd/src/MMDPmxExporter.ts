@@ -521,6 +521,36 @@ function writeMorphs(writer: BinaryWriter, scene: AiScene, mesh: AiMesh, baseVer
       writer.writeFloat32(Number((entry as { weight?: number }).weight ?? 0));
     });
   });
+
+  flipMorphs.forEach((morph) => {
+    const entries = Array.isArray(morph.entries) ? morph.entries : [];
+    const name = String(morph.name ?? "FlipMorph");
+    writer.writeString(name, "utf-8");
+    writer.writeString(String(morph.englishName ?? name), "utf-8");
+    writer.writeUint8(Number(morph.panel ?? 0));
+    writer.writeUint8(9);
+    writer.writeInt32(entries.length);
+    entries.forEach((entry) => {
+      writer.writeInt32(Number((entry as { morphIndex?: number }).morphIndex ?? -1));
+      writer.writeFloat32(Number((entry as { weight?: number }).weight ?? 0));
+    });
+  });
+
+  impulseMorphs.forEach((morph) => {
+    const entries = Array.isArray(morph.entries) ? morph.entries : [];
+    const name = String(morph.name ?? "ImpulseMorph");
+    writer.writeString(name, "utf-8");
+    writer.writeString(String(morph.englishName ?? name), "utf-8");
+    writer.writeUint8(Number(morph.panel ?? 0));
+    writer.writeUint8(10);
+    writer.writeInt32(entries.length);
+    entries.forEach((entry) => {
+      writer.writeInt32(Number((entry as { rigidBodyIndex?: number }).rigidBodyIndex ?? -1));
+      writer.writeUint8(Number((entry as { localFlag?: number }).localFlag ?? 0));
+      ((entry as { velocity?: number[] }).velocity ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+      ((entry as { torque?: number[] }).torque ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+    });
+  });
 }
 
 function writeRigidBodies(writer: BinaryWriter, scene: AiScene): void {
