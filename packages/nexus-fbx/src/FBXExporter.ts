@@ -261,23 +261,41 @@ function renderModelProperties(node: AiNode): FbxExportNode[] {
 }
 
 function writeAnimations(
+  scene: AiScene,
   animations: AiAnimation[],
   nodeIdMap: Map<string, number>,
   objects: FbxExportNode[],
   connectionLines: string[],
   nextId: number,
 ): number {
+  const stackMetadata = parseJsonMetadata<
+    Array<{ name: string; layers: Array<{ name: string }> }>
+  >(scene.metadata["fbx:animationStacks"]?.data) ?? [];
+  const cameraCurves = parseJsonMetadata<
+    Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
+  >(scene.metadata["fbx:cameraAnimationCurves"]?.data) ?? [];
+  const lightCurves = parseJsonMetadata<
+    Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
+  >(scene.metadata["fbx:lightAnimationCurves"]?.data) ?? [];
+
   animations.forEach((animation, animationIndex) => {
     const stackId = nextId++;
-    const layerId = nextId++;
+    const layersForStack =
+      stackMetadata.find((entry) => entry.name === animation.name)?.layers ??
+      [{ name: animation.name || `Layer_${animationIndex}` }];
+    const layerIds = layersForStack.map(() => nextId++);
     objects.push(
       new FbxExportNode("AnimationStack", [stackId, `AnimStack::${animation.name || `Take_${animationIndex}`}`, "AnimationStack"], [
         `LocalStart: 0`,
         `LocalStop: ${toTick(animation.duration)}`,
       ]),
     );
-    objects.push(new FbxExportNode("AnimationLayer", [layerId, `AnimLayer::${animation.name || `Layer_${animationIndex}`}`, "AnimationLayer"]));
-    connectionLines.push(`C: "OO", ${layerId}, ${stackId}`);
+    layersForStack.forEach((layer, index) => {
+      const layerId = layerIds[index]!;
+      objects.push(new FbxExportNode("AnimationLayer", [layerId, `AnimLayer::${layer.name}`, "AnimationLayer"]));
+      connectionLines.push(`C: "OO", ${layerId}, ${stackId}`);
+    });
+    const primaryLayerId = layerIds[0]!;
 
     animation.channels.forEach((channel) => {
       const modelId = nodeIdMap.get(channel.nodeName);
@@ -302,7 +320,7 @@ function writeAnimations(
       curveSpecs.forEach((spec) => {
         const curveNodeId = nextId++;
         objects.push(new FbxExportNode("AnimationCurveNode", [curveNodeId, `AnimCurveNode::${spec.type}_${channel.nodeName}`, "AnimationCurveNode"]));
-        connectionLines.push(`C: "OO", ${curveNodeId}, ${layerId}`);
+        connectionLines.push(`C: "OO", ${curveNodeId}, ${primaryLayerId}`);
         connectionLines.push(`C: "OO", ${modelId}, ${curveNodeId}`);
         ["X", "Y", "Z"].forEach((axis, axisIndex) => {
           const curveId = nextId++;
@@ -314,6 +332,42 @@ function writeAnimations(
           );
           connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
         });
+      });
+    });
+
+    const propertyCurves = [
+      ...cameraCurves
+        .filter((entry) => !entry.animationName || entry.animationName === animation.name)
+        .map((entry) => ({ ...entry, prefix: "CameraProperty" })),
+      ...lightCurves
+        .filter((entry) => !entry.animationName || entry.animationName === animation.name)
+        .map((entry) => ({ ...entry, prefix: "LightProperty" })),
+    ];
+    propertyCurves.forEach((entry) => {
+      const modelId = nodeIdMap.get(entry.objectName);
+      if (!modelId) {
+        return;
+      }
+      const targetLayerName = entry.layerName ?? layersForStack[0]?.name;
+      const layerIndex = layersForStack.findIndex((layer) => layer.name === targetLayerName);
+      const curveNodeId = nextId++;
+      objects.push(
+        new FbxExportNode(
+          "AnimationCurveNode",
+          [curveNodeId, `${entry.prefix}::${entry.objectName}::${entry.propertyName}`, "AnimationCurveNode"],
+        ),
+      );
+      connectionLines.push(`C: "OO", ${curveNodeId}, ${layerIds[Math.max(layerIndex, 0)]!}`);
+      connectionLines.push(`C: "OO", ${modelId}, ${curveNodeId}`);
+      Object.entries(entry.axes).forEach(([axis, payload]) => {
+        const curveId = nextId++;
+        objects.push(
+          new FbxExportNode("AnimationCurve", [curveId, `AnimCurve::${entry.objectName}_${entry.propertyName}_${axis}`, "AnimationCurve"], [
+            `KeyTime: ${payload.times.map((time) => toTick(time)).join(",")}`,
+            `KeyValueFloat: ${payload.values.join(",")}`,
+          ]),
+        );
+        connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
       });
     });
   });
@@ -491,6 +545,7 @@ export class FBXExporter implements BaseExporter {
       if (!modelId) {
         modelId = nextId++;
         sceneNodeIdMap.set(camera.name, modelId);
+        modelIdMap.set(camera.name, modelId);
         objects.push(
           new FbxExportNode("Model", [modelId, `Model::${camera.name}`, "Model"], [
             `Properties70: {`,
@@ -522,6 +577,7 @@ export class FBXExporter implements BaseExporter {
       if (!modelId) {
         modelId = nextId++;
         sceneNodeIdMap.set(light.name, modelId);
+        modelIdMap.set(light.name, modelId);
         objects.push(
           new FbxExportNode("Model", [modelId, `Model::${light.name}`, "Model"], [
             `Properties70: {`,
@@ -569,7 +625,7 @@ export class FBXExporter implements BaseExporter {
     objects.push(new FbxExportNode("Model", [ROOT_MODEL_ID, "Model::Root", "Model"]));
     modelIdMap.set("Root", ROOT_MODEL_ID);
     modelIdMap.set(scene.rootNode.name, ROOT_MODEL_ID);
-    nextId = writeAnimations(scene.animations, modelIdMap, objects, connectionLines, nextId);
+    nextId = writeAnimations(scene, scene.animations, modelIdMap, objects, connectionLines, nextId);
 
     const text = [
       "; FBX 7.4.0 project file",

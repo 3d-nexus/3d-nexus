@@ -484,6 +484,83 @@ function convertMaterial(document: FbxDocument, materialObject: FbxDocument["obj
   };
 }
 
+function collectAnimationMetadata(document: FbxDocument): {
+  metadata: AiMetadata;
+  diagnostics: Array<Record<string, unknown>>;
+} {
+  const stacks = [...document.objects.values()]
+    .filter((object) => object.kind === "AnimationStack")
+    .map((object) => new FbxAnimationStack(document, object));
+  const stackMetadata = stacks.map((stack) => ({
+    name: stack.name || "Take001",
+    localStart: Number(stack.localStart),
+    localStop: Number(stack.localStop),
+    layers: stack.layers.map((layer) => ({
+      name: layer.name,
+      curveNodes: layer.curveNodes.map((curveNode) => ({
+        name: curveNode.name,
+        target: curveNode.linkedModel?.name ?? curveNode.name,
+        rotationOrder: rotationOrderFromValue(Number(curveNode.linkedModel?.properties.get("RotationOrder") ?? 0)),
+      })),
+    })),
+  }));
+
+  const cameraCurves: Array<Record<string, unknown>> = [];
+  const lightCurves: Array<Record<string, unknown>> = [];
+  const diagnostics: Array<Record<string, unknown>> = [];
+
+  stacks.forEach((stack) => {
+    if (stack.layers.length > 1) {
+      diagnostics.push({
+        code: "FBX_ANIMATION_LAYER_MERGED",
+        severity: "warning",
+        capability: "fbx-animation",
+        profile: "motionbuilder-fbx",
+        message: `Animation stack ${stack.name} uses ${stack.layers.length} layers; normalized playback flattens them in IR channels.`,
+      });
+    }
+    stack.layers.forEach((layer) => {
+      layer.curveNodes.forEach((curveNode) => {
+        const collectTarget = (prefix: "CameraProperty::" | "LightProperty::", sink: Array<Record<string, unknown>>): void => {
+          if (!curveNode.name.startsWith(prefix)) {
+            return;
+          }
+          const [, objectName = "", propertyName = ""] = curveNode.name.split("::");
+          const axes = new Map<string, { times: number[]; values: number[] }>();
+          curveNode.curves.forEach((curve) => {
+            const axis = curve.name.split("_").pop() ?? "X";
+            axes.set(axis, {
+              times: Array.from(curve.keyTimes, (value) => Number(value) / Number(FBX_TICKS_PER_SECOND)),
+              values: Array.from(curve.keyValues, (value) => Number(value)),
+            });
+          });
+          sink.push({
+            animationName: stack.name || "Take001",
+            layerName: layer.name,
+            objectName,
+            propertyName,
+            axes: Object.fromEntries(axes),
+          });
+        };
+        collectTarget("CameraProperty::", cameraCurves);
+        collectTarget("LightProperty::", lightCurves);
+      });
+    });
+  });
+
+  const metadata: AiMetadata = {};
+  if (stackMetadata.length > 0) {
+    metadata["fbx:animationStacks"] = metadataJson(stackMetadata);
+  }
+  if (cameraCurves.length > 0) {
+    metadata["fbx:cameraAnimationCurves"] = metadataJson(cameraCurves);
+  }
+  if (lightCurves.length > 0) {
+    metadata["fbx:lightAnimationCurves"] = metadataJson(lightCurves);
+  }
+  return { metadata, diagnostics };
+}
+
 export class FBXConverter {
   convertAnimations(document: FbxDocument): AiAnimation[] {
     const stacks = [...document.objects.values()]
@@ -493,6 +570,9 @@ export class FBXConverter {
       const channels = new Map<string, AiNodeAnim>();
       stack.layers.forEach((layer) => {
         layer.curveNodes.forEach((curveNode) => {
+          if (curveNode.name.startsWith("CameraProperty::") || curveNode.name.startsWith("LightProperty::")) {
+            return;
+          }
           const targetName = curveNode.linkedModel?.name ?? curveNode.name;
           const axisValues = new Map<string, { times: bigint[]; values: number[] }>();
           curveNode.curves.forEach((curve) => {
@@ -836,6 +916,7 @@ export class FBXConverter {
         details: constraint,
       }));
 
+    const animationMetadata = collectAnimationMetadata(document);
     return {
       flags: 0 as AiSceneFlags,
       rootNode,
@@ -846,14 +927,22 @@ export class FBXConverter {
       lights,
       cameras,
       metadata: {
+        ...animationMetadata.metadata,
+        ...(animationMetadata.diagnostics.length > 0
+          ? {
+              "nexus:compatDiagnostics": metadataJson([
+                ...animationMetadata.diagnostics,
+                ...diagnostics,
+              ]),
+            }
+          : diagnostics.length > 0
+            ? {
+                "nexus:compatDiagnostics": metadataJson(diagnostics),
+              }
+            : {}),
         ...(constraints.length > 0
           ? {
               "fbx:constraints": metadataJson(constraints),
-            }
-          : {}),
-        ...(diagnostics.length > 0
-          ? {
-              "nexus:compatDiagnostics": metadataJson(diagnostics),
             }
           : {}),
         "fbx:sourceCoordSystem": metadataJson(coordInfo),

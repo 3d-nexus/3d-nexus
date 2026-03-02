@@ -159,6 +159,10 @@ export class FbxAnimationLayer {
       .filter((entry) => entry.kind === "AnimationCurveNode")
       .map((entry) => new FbxAnimationCurveNode(document, entry));
   }
+
+  get name(): string {
+    return this.object.name.replace(/^AnimLayer::/, "");
+  }
 }
 
 export class FbxAnimationStack {

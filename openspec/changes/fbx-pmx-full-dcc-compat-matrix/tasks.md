@@ -21,10 +21,10 @@
 
 ## 4. FBX Animation Fidelity
 
-- [ ] 4.1 Preserve rotation order, layer ordering, and pivot-aware evaluation metadata on animated nodes
-- [ ] 4.2 Extend animation import/export to include camera and light property channels
-- [ ] 4.3 Add profile-aware sampling/tolerance checks for Maya, Blender, and MotionBuilder animation fixtures
-- [ ] 4.4 Emit diagnostics when animation fallback or resampling changes authored semantics
+- [x] 4.1 Preserve rotation order, layer ordering, and pivot-aware evaluation metadata on animated nodes
+- [x] 4.2 Extend animation import/export to include camera and light property channels
+- [x] 4.3 Add profile-aware sampling/tolerance checks for Maya, Blender, and MotionBuilder animation fixtures
+- [x] 4.4 Emit diagnostics when animation fallback or resampling changes authored semantics
 
 ## 5. FBX Skinning And Blendshape Fidelity
 
