@@ -315,8 +315,32 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
     },
   };
   mesh.morphTargets = buildMorphTargets(document, mesh);
-  const metadata = {
+  const metadata: Record<string, { type: AiMetadataType; data: string }> = {
     ...collectMorphMetadata(document),
+    ...(document.bones.length > 0
+      ? {
+          "mmd:boneStructures": {
+            type: AiMetadataType.AISTRING,
+            data: JSON.stringify(document.bones),
+          },
+        }
+      : {}),
+    ...(document.displayFrames.length > 0
+      ? {
+          "mmd:displayFrames": {
+            type: AiMetadataType.AISTRING,
+            data: JSON.stringify(document.displayFrames),
+          },
+        }
+      : {}),
+    ...(document.softBodies.length > 0
+      ? {
+          "mmd:softBodies": {
+            type: AiMetadataType.AISTRING,
+            data: JSON.stringify(document.softBodies),
+          },
+        }
+      : {}),
   };
   if (document.rigidBodies.length > 0) {
     metadata["mmd:rigidBodies"] = {
@@ -374,7 +398,47 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
             type: AiPropertyTypeInfo.STRING,
             data: document.textures[material.textureIndex] ?? "",
           },
+          {
+            key: "mmd:edgeColor",
+            semantic: AiTextureType.NONE,
+            index: 0,
+            type: AiPropertyTypeInfo.FLOAT,
+            data: {
+              r: material.edgeColor[0] ?? 0,
+              g: material.edgeColor[1] ?? 0,
+              b: material.edgeColor[2] ?? 0,
+              a: material.edgeColor[3] ?? 1,
+            },
+          },
+          {
+            key: "mmd:edgeSize",
+            semantic: AiTextureType.NONE,
+            index: 0,
+            type: AiPropertyTypeInfo.FLOAT,
+            data: material.edgeSize,
+          },
+          {
+            key: "mmd:sphereMode",
+            semantic: AiTextureType.NONE,
+            index: 0,
+            type: AiPropertyTypeInfo.INTEGER,
+            data: material.sphereMode,
+          },
+          {
+            key: "mmd:toonIndex",
+            semantic: AiTextureType.NONE,
+            index: 0,
+            type: AiPropertyTypeInfo.INTEGER,
+            data: material.toonIndex,
+          },
         ],
+        metadata: {
+          englishName: material.englishName,
+          flags: material.flags,
+          sphereTextureIndex: material.sphereTextureIndex,
+          toonSharingFlag: material.toonSharingFlag,
+          memo: material.memo,
+        },
       })),
       animations: [],
       textures: [],

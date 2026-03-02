@@ -10,6 +10,10 @@ export class BinaryReader {
     return this.offset;
   }
 
+  set position(value: number) {
+    this.offset = value;
+  }
+
   readUint8(): number {
     const value = this.view.getUint8(this.offset);
     this.offset += 1;

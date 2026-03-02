@@ -42,10 +42,10 @@
 
 ## 7. PMX Structural Fidelity
 
-- [ ] 7.1 Preserve PMX bone flags, append/inherit settings, fixed/local axis data, and deform-layer metadata
-- [ ] 7.2 Preserve display frames, member ordering, shared toon settings, sphere modes, and material-side PMX extension fields
-- [ ] 7.3 Restore preserved PMX structure metadata during export with compatibility diagnostics for unsupported fields
-- [ ] 7.4 Add fixture-based tests for authored display frames, local-axis bones, and append-transform chains
+- [x] 7.1 Preserve PMX bone flags, append/inherit settings, fixed/local axis data, and deform-layer metadata
+- [x] 7.2 Preserve display frames, member ordering, shared toon settings, sphere modes, and material-side PMX extension fields
+- [x] 7.3 Restore preserved PMX structure metadata during export with compatibility diagnostics for unsupported fields
+- [x] 7.4 Add fixture-based tests for authored display frames, local-axis bones, and append-transform chains
 
 ## 8. PMX Skinning, Morph, And Physics Expansion
 

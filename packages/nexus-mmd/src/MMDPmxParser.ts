@@ -1,5 +1,7 @@
 import { BinaryReader } from "./BinaryReader";
 
+const PMX_SOFT_BODY_VERSION_THRESHOLD = 2.099;
+
 export interface PmxSetting {
   version: number;
   encoding: number;
@@ -29,7 +31,15 @@ export interface PmxMaterial {
   specular: number[];
   shininess: number;
   ambient: number[];
+  flags: number;
+  edgeColor: number[];
+  edgeSize: number;
   textureIndex: number;
+  sphereTextureIndex: number;
+  sphereMode: number;
+  toonSharingFlag: number;
+  toonIndex: number;
+  memo: string;
   faceVertexCount: number;
 }
 
@@ -40,6 +50,27 @@ export interface PmxBone {
   parentIndex: number;
   layer: number;
   flags: number;
+  tailBoneIndex?: number;
+  tailOffset?: number[];
+  inheritBoneIndex?: number;
+  inheritWeight?: number;
+  fixedAxis?: number[];
+  localAxisX?: number[];
+  localAxisZ?: number[];
+  externalParentKey?: number;
+  ik?: {
+    targetBoneIndex: number;
+    loopCount: number;
+    limitRadian: number;
+    links: Array<{ boneIndex: number; hasLimits: boolean; min?: number[]; max?: number[] }>;
+  };
+}
+
+export interface PmxDisplayFrame {
+  name: string;
+  englishName: string;
+  specialFlag: number;
+  elements: Array<{ type: number; index: number }>;
 }
 
 export interface PmxMorph {
@@ -98,6 +129,8 @@ export interface PmxDocument {
   morphs: PmxMorph[];
   rigidBodies: PmxRigidBody[];
   joints: PmxJoint[];
+  displayFrames: PmxDisplayFrame[];
+  softBodies: Array<{ name: string; englishName: string }>;
 }
 
 function readVector(reader: BinaryReader, size: number): number[] {
@@ -204,15 +237,35 @@ export class MMDPmxParser {
       const specular = readVector(reader, 3);
       const shininess = reader.readFloat32();
       const ambient = readVector(reader, 3);
-      reader.readUint8();
-      readVector(reader, 5);
-      reader.readUint8();
-      const textureIndex = reader.readIndex(setting.textureIndexSize);
-      reader.readIndex(setting.textureIndexSize);
-      reader.readUint8();
-      reader.readUint8();
-      reader.readInt32();
-      const faceVertexCount = reader.readInt32();
+      const flags = reader.readUint8();
+      const edgeColor = readVector(reader, 4);
+      const edgeSize = reader.readFloat32();
+      const materialStart = reader.position;
+      let textureIndex = reader.readIndex(setting.textureIndexSize);
+      let sphereTextureIndex = reader.readIndex(setting.textureIndexSize);
+      let sphereMode = reader.readUint8();
+      let toonSharingFlag = reader.readUint8();
+      let toonIndex = toonSharingFlag === 0 ? reader.readIndex(setting.textureIndexSize) : reader.readUint8();
+      let memo = "";
+      let faceVertexCount = 0;
+      const memoLength = reader.readInt32();
+      const remainingAfterMemo = buffer.byteLength - reader.position;
+      const looksLikeSpecLayout = memoLength >= 0 && memoLength <= remainingAfterMemo;
+      if (looksLikeSpecLayout) {
+        memo = reader.readString(memoLength, encoding);
+        faceVertexCount = reader.readInt32();
+      } else {
+        reader.position = materialStart;
+        reader.readUint8();
+        textureIndex = reader.readIndex(setting.textureIndexSize);
+        sphereTextureIndex = reader.readIndex(setting.textureIndexSize);
+        sphereMode = reader.readUint8();
+        toonSharingFlag = 1;
+        toonIndex = reader.readUint8();
+        reader.readInt32();
+        memo = "";
+        faceVertexCount = reader.readInt32();
+      }
       materials.push({
         name,
         englishName,
@@ -220,7 +273,15 @@ export class MMDPmxParser {
         specular,
         shininess,
         ambient,
+        flags,
+        edgeColor,
+        edgeSize,
         textureIndex,
+        sphereTextureIndex,
+        sphereMode,
+        toonSharingFlag,
+        toonIndex,
+        memo,
         faceVertexCount,
       });
     }
@@ -234,12 +295,51 @@ export class MMDPmxParser {
       const parentIndex = reader.readIndex(setting.boneIndexSize);
       const layer = reader.readInt32();
       const flags = reader.readUint16();
+      const bone: PmxBone = { name, englishName, position, parentIndex, layer, flags };
       if ((flags & 0x0001) !== 0) {
-        reader.readIndex(setting.boneIndexSize);
+        bone.tailBoneIndex = reader.readIndex(setting.boneIndexSize);
       } else {
-        readVector(reader, 3);
+        bone.tailOffset = readVector(reader, 3);
       }
-      bones.push({ name, englishName, position, parentIndex, layer, flags });
+      if ((flags & 0x0100) !== 0 || (flags & 0x0200) !== 0) {
+        bone.inheritBoneIndex = reader.readIndex(setting.boneIndexSize);
+        bone.inheritWeight = reader.readFloat32();
+      }
+      if ((flags & 0x0400) !== 0) {
+        bone.fixedAxis = readVector(reader, 3);
+      }
+      if ((flags & 0x0800) !== 0) {
+        bone.localAxisX = readVector(reader, 3);
+        bone.localAxisZ = readVector(reader, 3);
+      }
+      if ((flags & 0x2000) !== 0) {
+        bone.externalParentKey = reader.readInt32();
+      }
+      if ((flags & 0x0020) !== 0) {
+        const targetBoneIndex = reader.readIndex(setting.boneIndexSize);
+        const loopCount = reader.readInt32();
+        const limitRadian = reader.readFloat32();
+        const linkCount = reader.readInt32();
+        bone.ik = {
+          targetBoneIndex,
+          loopCount,
+          limitRadian,
+          links: Array.from({ length: linkCount }, () => {
+            const boneIndex = reader.readIndex(setting.boneIndexSize);
+            const hasLimits = reader.readUint8() !== 0;
+            const link: { boneIndex: number; hasLimits: boolean; min?: number[]; max?: number[] } = {
+              boneIndex,
+              hasLimits,
+            };
+            if (hasLimits) {
+              link.min = readVector(reader, 3);
+              link.max = readVector(reader, 3);
+            }
+            return link;
+          }),
+        };
+      }
+      bones.push(bone);
     }
 
     const morphCount = reader.readUint32();
@@ -293,15 +393,21 @@ export class MMDPmxParser {
     }
 
     const frameCount = reader.readUint32();
+    const displayFrames: PmxDisplayFrame[] = [];
     for (let index = 0; index < frameCount; index += 1) {
-      reader.readTextBuffer(encoding);
-      reader.readTextBuffer(encoding);
-      reader.readUint8();
+      const name = reader.readTextBuffer(encoding);
+      const englishName = reader.readTextBuffer(encoding);
+      const specialFlag = reader.readUint8();
       const elementCount = reader.readInt32();
+      const elements: Array<{ type: number; index: number }> = [];
       for (let elementIndex = 0; elementIndex < elementCount; elementIndex += 1) {
         const elementType = reader.readUint8();
-        reader.readIndex(elementType === 0 ? setting.boneIndexSize : setting.morphIndexSize);
+        elements.push({
+          type: elementType,
+          index: reader.readIndex(elementType === 0 ? setting.boneIndexSize : setting.morphIndexSize),
+        });
       }
+      displayFrames.push({ name, englishName, specialFlag, elements });
     }
 
     const rigidBodyCount = reader.readUint32();
@@ -374,10 +480,13 @@ export class MMDPmxParser {
       });
     }
 
-    if (setting.version >= 2.1 && reader.position < buffer.byteLength) {
+    const softBodies: Array<{ name: string; englishName: string }> = [];
+    if (setting.version >= PMX_SOFT_BODY_VERSION_THRESHOLD && reader.position < buffer.byteLength) {
       const softBodyCount = reader.readUint32();
       for (let index = 0; index < softBodyCount; index += 1) {
-        reader.readTextBuffer(encoding);
+        const name = reader.readTextBuffer(encoding);
+        const englishName = reader.readTextBuffer(encoding);
+        softBodies.push({ name, englishName });
       }
     }
 
@@ -395,6 +504,8 @@ export class MMDPmxParser {
       morphs,
       rigidBodies,
       joints,
+      displayFrames,
+      softBodies,
     };
   }
 }

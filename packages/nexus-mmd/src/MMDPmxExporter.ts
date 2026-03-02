@@ -137,6 +137,7 @@ function writeMaterialBlock(
   textureIndexLookup: Map<string, number>,
 ): void {
   const name = material?.name ?? "Material";
+  const englishName = String(material?.metadata?.englishName ?? name);
   const diffuse = getColor4(material, "$clr.diffuse", [1, 1, 1, 1]);
   const specular = getColor3(material, "$clr.specular", [0.5, 0.5, 0.5]);
   const ambient = getColor3(material, "$clr.ambient", [0.2, 0.2, 0.2]);
@@ -144,25 +145,108 @@ function writeMaterialBlock(
   const edgeSize = getNumberProperty(material, "mmd:edgeSize", 1);
   const sphereMode = getNumberProperty(material, "mmd:sphereMode", 0);
   const toonIndex = getNumberProperty(material, "mmd:toonIndex", 0);
+  const flags = Number(material?.metadata?.flags ?? 0);
+  const sphereTextureIndex = Number(material?.metadata?.sphereTextureIndex ?? -1);
+  const toonSharingFlag = Number(material?.metadata?.toonSharingFlag ?? 0);
+  const memo = String(material?.metadata?.memo ?? "");
   const texturePath = getStringProperty(material, "$tex.file");
   const textureIndex = texturePath ? (textureIndexLookup.get(texturePath) ?? -1) : -1;
 
   writer.writeString(name, "utf-8");
-  writer.writeString(name, "utf-8");
+  writer.writeString(englishName, "utf-8");
   diffuse.forEach((value) => writer.writeFloat32(value));
   specular.forEach((value) => writer.writeFloat32(value));
   writer.writeFloat32(16);
   ambient.forEach((value) => writer.writeFloat32(value));
-  writer.writeUint8(0);
+  writer.writeUint8(flags);
   edgeColor.forEach((value) => writer.writeFloat32(value));
   writer.writeFloat32(edgeSize);
-  writer.writeUint8(0);
   writer.writeInt32(textureIndex);
-  writer.writeInt32(-1);
+  writer.writeInt32(sphereTextureIndex);
   writer.writeUint8(sphereMode);
-  writer.writeUint8(Math.max(0, Math.min(255, toonIndex)));
-  writer.writeInt32(0);
+  writer.writeUint8(toonSharingFlag);
+  if (toonSharingFlag === 0) {
+    writer.writeInt32(Math.max(-1, Math.trunc(toonIndex)));
+  } else {
+    writer.writeUint8(Math.max(0, Math.min(255, toonIndex)));
+  }
+  writer.writeString(memo, "utf-8");
   writer.writeInt32(faceVertexCount);
+}
+
+function writeBoneBlock(
+  writer: BinaryWriter,
+  bone: Record<string, unknown>,
+  settingBoneIndexSize = 4,
+): void {
+  writer.writeString(String(bone.name ?? ""), "utf-8");
+  writer.writeString(String(bone.englishName ?? bone.name ?? ""), "utf-8");
+  ((bone.position as number[] | undefined) ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+  writer.writeInt32(Number(bone.parentIndex ?? -1));
+  writer.writeInt32(Number(bone.layer ?? 0));
+  const flags = Number(bone.flags ?? 0);
+  writer.writeUint16(flags);
+  if ((flags & 0x0001) !== 0) {
+    writer.writeInt32(Number(bone.tailBoneIndex ?? -1));
+  } else {
+    ((bone.tailOffset as number[] | undefined) ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+  }
+  if ((flags & 0x0100) !== 0 || (flags & 0x0200) !== 0) {
+    writer.writeInt32(Number(bone.inheritBoneIndex ?? -1));
+    writer.writeFloat32(Number(bone.inheritWeight ?? 0));
+  }
+  if ((flags & 0x0400) !== 0) {
+    ((bone.fixedAxis as number[] | undefined) ?? [0, 1, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+  }
+  if ((flags & 0x0800) !== 0) {
+    ((bone.localAxisX as number[] | undefined) ?? [1, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+    ((bone.localAxisZ as number[] | undefined) ?? [0, 0, 1]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+  }
+  if ((flags & 0x2000) !== 0) {
+    writer.writeInt32(Number(bone.externalParentKey ?? 0));
+  }
+  if ((flags & 0x0020) !== 0) {
+    const ik = (bone.ik as Record<string, unknown> | undefined) ?? {};
+    writer.writeInt32(Number(ik.targetBoneIndex ?? -1));
+    writer.writeInt32(Number(ik.loopCount ?? 0));
+    writer.writeFloat32(Number(ik.limitRadian ?? 0));
+    const links = Array.isArray(ik.links) ? (ik.links as Array<Record<string, unknown>>) : [];
+    writer.writeInt32(links.length);
+    links.forEach((link) => {
+      writer.writeInt32(Number(link.boneIndex ?? -1));
+      const hasLimits = Boolean(link.hasLimits ?? false);
+      writer.writeUint8(hasLimits ? 1 : 0);
+      if (hasLimits) {
+        ((link.min as number[] | undefined) ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+        ((link.max as number[] | undefined) ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+      }
+    });
+  }
+}
+
+function writeDisplayFrames(writer: BinaryWriter, scene: AiScene): void {
+  const displayFrames = parseMetadataArray(scene, "mmd:displayFrames");
+  writer.writeUint32(displayFrames.length);
+  displayFrames.forEach((frame) => {
+    writer.writeString(String(frame.name ?? ""), "utf-8");
+    writer.writeString(String(frame.englishName ?? frame.name ?? ""), "utf-8");
+    writer.writeUint8(Number(frame.specialFlag ?? 0));
+    const elements = Array.isArray(frame.elements) ? (frame.elements as Array<Record<string, unknown>>) : [];
+    writer.writeInt32(elements.length);
+    elements.forEach((element) => {
+      writer.writeUint8(Number(element.type ?? 0));
+      writer.writeInt32(Number(element.index ?? -1));
+    });
+  });
+}
+
+function writeSoftBodies(writer: BinaryWriter, scene: AiScene): void {
+  const softBodies = parseMetadataArray(scene, "mmd:softBodies");
+  writer.writeUint32(softBodies.length);
+  softBodies.forEach((entry) => {
+    writer.writeString(String(entry.name ?? ""), "utf-8");
+    writer.writeString(String(entry.englishName ?? entry.name ?? ""), "utf-8");
+  });
 }
 
 function writeMorphs(writer: BinaryWriter, scene: AiScene, mesh: AiMesh, baseVertices: AiVector3D[]): void {
@@ -349,9 +433,10 @@ export class MMDPmxExporter {
     });
     const textures = collectTexturePaths(scene);
     const textureIndexLookup = new Map(textures.map((path, index) => [path, index]));
+    const hasSoftBodies = parseMetadataArray(scene, "mmd:softBodies").length > 0;
 
     writer.writeBytes(new TextEncoder().encode("PMX "));
-    writer.writeFloat32(2.0);
+    writer.writeFloat32(hasSoftBodies ? 2.1 : 2.0);
     writer.writeUint8(8);
     writer.writeBytes(Uint8Array.from([1, 0, 4, 4, 4, 4, 4, 4]));
     writer.writeString(scene.rootNode.name, "utf-8");
@@ -388,34 +473,29 @@ export class MMDPmxExporter {
         textureIndexLookup,
       );
     });
+    const structuralBones = parseMetadataArray(scene, "mmd:boneStructures");
     const allBones = meshes.flatMap((mesh) => mesh.bones);
-    writer.writeUint32(Math.max(1, allBones.length));
-    const bones = allBones.length
-      ? allBones.map((bone) => ({
-          name: bone.name,
-          parent: scene.rootNode.children.find((child) => child.name === bone.name)?.parent ?? null,
-        }))
-      : [{ name: "RootBone", parent: null } as const];
-    const boneIndexLookup = new Map(bones.map((bone, index) => [bone.name, index]));
-    bones.forEach((bone, index) => {
-      writer.writeString(bone.name, "utf-8");
-      writer.writeString(bone.name, "utf-8");
-      writer.writeFloat32(0);
-      writer.writeFloat32(0);
-      writer.writeFloat32(0);
-      const parentName = (bone.parent as { name?: string } | null)?.name;
-      writer.writeInt32(parentName ? (boneIndexLookup.get(parentName) ?? -1) : -1);
-      writer.writeInt32(0);
-      writer.writeUint16(0);
-      writer.writeFloat32(0);
-      writer.writeFloat32(1);
-      writer.writeFloat32(0);
-    });
+    const bonesToWrite =
+      structuralBones.length > 0
+        ? structuralBones
+        : allBones.length > 0
+          ? allBones.map((bone) => ({
+              name: bone.name,
+              englishName: bone.name,
+              position: [0, 0, 0],
+              parentIndex: -1,
+              layer: 0,
+              flags: 0,
+              tailOffset: [0, 1, 0],
+            }))
+          : [{ name: "RootBone", englishName: "RootBone", position: [0, 0, 0], parentIndex: -1, layer: 0, flags: 0, tailOffset: [0, 1, 0] }];
+    writer.writeUint32(bonesToWrite.length);
+    bonesToWrite.forEach((bone) => writeBoneBlock(writer, bone));
     writeMorphs(writer, scene, meshes[0]!, meshes[0]!.vertices);
-    writer.writeUint32(0);
+    writeDisplayFrames(writer, scene);
     writeRigidBodies(writer, scene);
     writeJoints(writer, scene);
-    writer.writeUint32(0);
+    writeSoftBodies(writer, scene);
     return writer.toArrayBuffer();
   }
 }
