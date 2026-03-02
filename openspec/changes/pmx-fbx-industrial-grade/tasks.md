@@ -135,12 +135,12 @@
 
 ## 16. Integration Tests & Validation
 
-- [ ] 16.1 Add real-world PMX fixture (`packages/nexus-mmd/fixtures/model.pmx`) — a publicly available MMD model with skeleton, morphs, and physics; add expected bone count, morph count, vertex count as test constants
-- [ ] 16.2 Add real-world FBX fixture (`packages/nexus-fbx/fixtures/character.fbx`) — an ASCII FBX 7.4 file with skeleton, animation, and BlendShapes; add expected constants
-- [ ] 16.3 Write `packages/nexus-mmd/src/__tests__/integration.test.ts` — parse real PMX; assert: `mesh.bones.length === EXPECTED_BONES`, `mesh.morphTargets.length === EXPECTED_MORPHS`, at least one morph has `vertices[i] ≠ baseVertex[i]`, rigid body metadata present
-- [ ] 16.4 Write `packages/nexus-fbx/src/__tests__/integration.test.ts` — parse real FBX; assert: `mesh.bones.length > 0`, `animations.length > 0`, `animations[0].channels.length > 0`, coordinate system normalization applied (root transform ≠ identity for Z-up source)
-- [ ] 16.5 Write `packages/nexus-mmd/src/__tests__/roundtrip-full.test.ts` — full PMX round-trip with skinning + morphs + physics: import → export → re-import; assert vertex count, bone count, morph count, rigid body count all match
-- [ ] 16.6 Write `packages/nexus-fbx/src/__tests__/roundtrip-full.test.ts` — full FBX round-trip with skinning + animation: import → export → re-parse; assert mesh count, bone count, animation channel count, keyframe count match
-- [ ] 16.7 Run `pnpm --filter nexus-mmd vitest run` — all tests pass (including new integration tests)
-- [ ] 16.8 Run `pnpm --filter nexus-fbx vitest run` — all tests pass
-- [ ] 16.9 Run `pnpm --filter nexus-converter vitest run` — cross-format smoke test PMX→FBX and FBX→OBJ pass (mesh vertex count non-zero, no unhandled exceptions)
+- [x] 16.1 Add real-world PMX fixture (`packages/nexus-mmd/fixtures/model.pmx`) — a publicly available MMD model with skeleton, morphs, and physics; add expected bone count, morph count, vertex count as test constants
+- [x] 16.2 Add real-world FBX fixture (`packages/nexus-fbx/fixtures/character.fbx`) — an ASCII FBX 7.4 file with skeleton, animation, and BlendShapes; add expected constants
+- [x] 16.3 Write `packages/nexus-mmd/src/__tests__/integration.test.ts` — parse real PMX; assert: `mesh.bones.length === EXPECTED_BONES`, `mesh.morphTargets.length === EXPECTED_MORPHS`, at least one morph has `vertices[i] ≠ baseVertex[i]`, rigid body metadata present
+- [x] 16.4 Write `packages/nexus-fbx/src/__tests__/integration.test.ts` — parse real FBX; assert: `mesh.bones.length > 0`, `animations.length > 0`, `animations[0].channels.length > 0`, coordinate system normalization applied (root transform ≠ identity for Z-up source)
+- [x] 16.5 Write `packages/nexus-mmd/src/__tests__/roundtrip-full.test.ts` — full PMX round-trip with skinning + morphs + physics: import → export → re-import; assert vertex count, bone count, morph count, rigid body count all match
+- [x] 16.6 Write `packages/nexus-fbx/src/__tests__/roundtrip-full.test.ts` — full FBX round-trip with skinning + animation: import → export → re-parse; assert mesh count, bone count, animation channel count, keyframe count match
+- [x] 16.7 Run `pnpm --filter nexus-mmd vitest run` — all tests pass (including new integration tests)
+- [x] 16.8 Run `pnpm --filter nexus-fbx vitest run` — all tests pass
+- [x] 16.9 Run `pnpm --filter nexus-converter vitest run` — cross-format smoke test PMX→FBX and FBX→OBJ pass (mesh vertex count non-zero, no unhandled exceptions)

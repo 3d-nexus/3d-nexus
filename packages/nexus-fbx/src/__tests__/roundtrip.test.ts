@@ -15,7 +15,7 @@ describe("FBX roundtrip", () => {
     const exported = exporter.write(imported);
     const reparsed = importer.read(exported, "roundtrip.fbx").scene;
 
-    expect(reparsed.meshes[0]?.name).toContain("Geometry");
+    expect(reparsed.meshes[0]?.name).toBe(imported.meshes[0]?.name);
     expect(reparsed.meshes[0]?.vertices.length).toBe(imported.meshes[0]?.vertices.length);
   });
 });

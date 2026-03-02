@@ -1,0 +1,152 @@
+; FBX 7.4.0 project file
+; Created by nexus-fbx
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 2
+  UpAxisSign: 1
+  FrontAxis: 1
+  FrontAxisSign: -1
+  CoordAxis: 0
+  CoordAxisSign: 1
+  UnitScaleFactor: 1.0
+}
+Objects: {
+  Geometry: 100001, "Geometry::CharacterMesh", "Mesh" {
+    Vertices: 0,0,0,1,0,0,0,1,0
+    PolygonVertexIndex: 0,1,-3
+    Normals: 0,1,0,0,1,0,0,1,0
+    UV: 0,0,1,0,0,1
+    LayerElementUV: 0 {
+      MappingInformationType: "ByVertice"
+      ReferenceInformationType: "Direct"
+      UV: 0,0,1,0,0,1
+    }
+  }
+  Model: 100002, "Model::CharacterMesh", "Model" {
+  }
+  Material: 100003, "Material::Skin", "Material" {
+    Properties70: {
+      P: "DiffuseColor", "Color", "", "A", 0.8, 0.6, 0.4
+      P: "SpecularColor", "Color", "", "A", 0.2, 0.2, 0.2
+      P: "AmbientColor", "Color", "", "A", 0, 0, 0
+      P: "TransparencyFactor", "double", "", "A", 0
+      P: "Maya|roughness", "double", "", "A", 0
+      P: "Metalness", "double", "", "A", 0
+    }
+  }
+  Deformer: 100004, "Deformer::Skin_0", "Skin" {
+  }
+  Deformer: 100005, "SubDeformer::Hip", "Cluster" {
+    Indexes: 0,1
+    Weights: 1,0.5
+    TransformMatrix: 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1
+  }
+  Model: 100006, "Model::Hip", "LimbNode" {
+  }
+  Deformer: 100007, "SubDeformer::Arm", "Cluster" {
+    Indexes: 1,2
+    Weights: 0.5,1
+    TransformMatrix: 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1
+  }
+  Model: 100008, "Model::Arm", "LimbNode" {
+  }
+  Deformer: 100009, "Deformer::BlendShape_0", "BlendShape" {
+  }
+  Deformer: 100010, "SubDeformer::Smile", "BlendShapeChannel" {
+  }
+  Geometry: 100011, "Geometry::Smile", "Shape" {
+    Indexes: 0
+    Vertices: 0.2,0,0
+  }
+  Deformer: 100012, "SubDeformer::Blink", "BlendShapeChannel" {
+  }
+  Geometry: 100013, "Geometry::Blink", "Shape" {
+    Indexes: 1
+    Vertices: 0,0.2,0
+  }
+  Model: 100000, "Model::Root", "Model" {
+  }
+  AnimationStack: 100014, "AnimStack::Take001", "AnimationStack" {
+    LocalStart: 0
+    LocalStop: 46186158000
+  }
+  AnimationLayer: 100015, "AnimLayer::Take001", "AnimationLayer" {
+  }
+  AnimationCurveNode: 100016, "AnimCurveNode::T_CharacterMesh", "AnimationCurveNode" {
+  }
+  AnimationCurve: 100017, "AnimCurve::CharacterMesh_T_X", "AnimationCurve" {
+    KeyTime: 0,46186158000
+    KeyValueFloat: 0,2
+  }
+  AnimationCurve: 100018, "AnimCurve::CharacterMesh_T_Y", "AnimationCurve" {
+    KeyTime: 0,46186158000
+    KeyValueFloat: 0,0
+  }
+  AnimationCurve: 100019, "AnimCurve::CharacterMesh_T_Z", "AnimationCurve" {
+    KeyTime: 0,46186158000
+    KeyValueFloat: 0,0
+  }
+  AnimationCurveNode: 100020, "AnimCurveNode::R_CharacterMesh", "AnimationCurveNode" {
+  }
+  AnimationCurve: 100021, "AnimCurve::CharacterMesh_R_X", "AnimationCurve" {
+    KeyTime: 0
+    KeyValueFloat: 0
+  }
+  AnimationCurve: 100022, "AnimCurve::CharacterMesh_R_Y", "AnimationCurve" {
+    KeyTime: 0
+    KeyValueFloat: 0
+  }
+  AnimationCurve: 100023, "AnimCurve::CharacterMesh_R_Z", "AnimationCurve" {
+    KeyTime: 0
+    KeyValueFloat: 0
+  }
+  AnimationCurveNode: 100024, "AnimCurveNode::S_CharacterMesh", "AnimationCurveNode" {
+  }
+  AnimationCurve: 100025, "AnimCurve::CharacterMesh_S_X", "AnimationCurve" {
+    KeyTime: 0
+    KeyValueFloat: 1
+  }
+  AnimationCurve: 100026, "AnimCurve::CharacterMesh_S_Y", "AnimationCurve" {
+    KeyTime: 0
+    KeyValueFloat: 1
+  }
+  AnimationCurve: 100027, "AnimCurve::CharacterMesh_S_Z", "AnimationCurve" {
+    KeyTime: 0
+    KeyValueFloat: 1
+  }
+}
+Connections: {
+  C: "OO", 100002, 100001
+  C: "OO", 100002, 100000
+  C: "OO", 100003, 100002
+  C: "OO", 100004, 100001
+  C: "OO", 100005, 100004
+  C: "OO", 100006, 100005
+  C: "OO", 100007, 100004
+  C: "OO", 100008, 100007
+  C: "OO", 100009, 100001
+  C: "OO", 100010, 100009
+  C: "OO", 100011, 100010
+  C: "OO", 100012, 100009
+  C: "OO", 100013, 100012
+  C: "OO", 100015, 100014
+  C: "OO", 100016, 100015
+  C: "OO", 100002, 100016
+  C: "OO", 100017, 100016
+  C: "OO", 100018, 100016
+  C: "OO", 100019, 100016
+  C: "OO", 100020, 100015
+  C: "OO", 100002, 100020
+  C: "OO", 100021, 100020
+  C: "OO", 100022, 100020
+  C: "OO", 100023, 100020
+  C: "OO", 100024, 100015
+  C: "OO", 100002, 100024
+  C: "OO", 100025, 100024
+  C: "OO", 100026, 100024
+  C: "OO", 100027, 100024
+}
+Takes: {
+}

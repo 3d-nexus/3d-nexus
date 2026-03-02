@@ -356,7 +356,7 @@ export class FBXConverter {
       });
       const normalNumbers = parseNumberList(geometry.element.values.Normals?.[0] ?? []);
       const mesh: AiMesh = {
-        name: String(geometry.properties.get("Name") ?? geometry.name),
+        name: String(geometry.properties.get("Name") ?? geometry.name).replace(/^Geometry::/, ""),
         primitiveTypes: faces.some((face) => face.indices.length > 3)
           ? AiPrimitiveType.POLYGON
           : AiPrimitiveType.TRIANGLE,

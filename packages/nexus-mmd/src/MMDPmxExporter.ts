@@ -388,17 +388,23 @@ export class MMDPmxExporter {
         textureIndexLookup,
       );
     });
-    writer.writeUint32(Math.max(1, scene.rootNode.children.length));
-    const bones = scene.rootNode.children.length
-      ? scene.rootNode.children
+    const allBones = meshes.flatMap((mesh) => mesh.bones);
+    writer.writeUint32(Math.max(1, allBones.length));
+    const bones = allBones.length
+      ? allBones.map((bone) => ({
+          name: bone.name,
+          parent: scene.rootNode.children.find((child) => child.name === bone.name)?.parent ?? null,
+        }))
       : [{ name: "RootBone", parent: null } as const];
+    const boneIndexLookup = new Map(bones.map((bone, index) => [bone.name, index]));
     bones.forEach((bone, index) => {
       writer.writeString(bone.name, "utf-8");
       writer.writeString(bone.name, "utf-8");
       writer.writeFloat32(0);
       writer.writeFloat32(0);
       writer.writeFloat32(0);
-      writer.writeInt32(bone.parent ? Math.max(0, index - 1) : -1);
+      const parentName = (bone.parent as { name?: string } | null)?.name;
+      writer.writeInt32(parentName ? (boneIndexLookup.get(parentName) ?? -1) : -1);
       writer.writeInt32(0);
       writer.writeUint16(0);
       writer.writeFloat32(0);
