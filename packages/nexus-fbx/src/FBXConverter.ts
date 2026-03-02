@@ -1,17 +1,22 @@
 import {
   AiMetadataType,
   AiAnimBehaviour,
+  AiPropertyTypeInfo,
   AiPrimitiveType,
   AiSceneFlags,
+  AiTextureType,
   createIdentityMatrix4x4,
   type AiAnimation,
+  type AiMaterial,
+  type AiMaterialProperty,
   type AiMesh,
   type AiMatrix4x4,
   type AiNode,
   type AiNodeAnim,
   type AiScene,
+  type AiTexture,
 } from "nexus-core";
-import { FbxAnimationStack, FbxBlendShape, FbxDocument, FbxSkin } from "./FBXDocument";
+import { FbxAnimationStack, FbxBlendShape, FbxDocument, FbxSkin, FbxVideo } from "./FBXDocument";
 import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
 type CoordSystemInfo = {
@@ -118,6 +123,121 @@ function quaternionFromEulerDegrees(x: number, y: number, z: number): { x: numbe
   };
 }
 
+function addMaterialProperty(properties: AiMaterialProperty[], key: string, semantic: AiTextureType, type: AiPropertyTypeInfo, data: unknown): void {
+  properties.push({ key, semantic, index: 0, type, data });
+}
+
+function expandUvLayers(geometry: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never, vertexCount: number): Array<Array<{ x: number; y: number; z: number }> | null> {
+  const layers = Array.from({ length: 8 }, () => null as Array<{ x: number; y: number; z: number }> | null);
+  const uvElements = geometry.element.children.filter((child) => child.name === "LayerElementUV");
+  if (uvElements.length === 0) {
+    const uvNumbers = parseNumberList(geometry.element.values.UV?.[0] ?? []);
+    layers[0] = uvNumbers.reduce<Array<{ x: number; y: number; z: number }>>((acc, value, index, all) => {
+      if (index % 2 === 0) {
+        acc.push({ x: value, y: all[index + 1] ?? 0, z: 0 });
+      }
+      return acc;
+    }, []);
+    return layers;
+  }
+
+  uvElements.slice(0, 8).forEach((element, layerIndex) => {
+    const uvNumbers = parseNumberList(element.values.UV?.[0] ?? []);
+    const uvIndex = parseNumberList(element.values.UVIndex?.[0] ?? []);
+    const mapping = String(element.values.MappingInformationType?.[0] ?? "ByPolygonVertex");
+    const reference = String(element.values.ReferenceInformationType?.[0] ?? "Direct");
+    const direct = uvNumbers.reduce<Array<{ x: number; y: number; z: number }>>((acc, value, index, all) => {
+      if (index % 2 === 0) {
+        acc.push({ x: value, y: all[index + 1] ?? 0, z: 0 });
+      }
+      return acc;
+    }, []);
+
+    if (mapping === "ByVertice") {
+      layers[layerIndex] = Array.from({ length: vertexCount }, (_, vertexIndex) => {
+        const sourceIndex = reference === "IndexToDirect" ? uvIndex[vertexIndex] ?? vertexIndex : vertexIndex;
+        return direct[sourceIndex] ?? { x: 0, y: 0, z: 0 };
+      });
+      return;
+    }
+
+    layers[layerIndex] = Array.from({ length: vertexCount }, (_, vertexIndex) => {
+      const sourceIndex = reference === "IndexToDirect" ? uvIndex[vertexIndex] ?? vertexIndex : vertexIndex;
+      return direct[sourceIndex] ?? { x: 0, y: 0, z: 0 };
+    });
+  });
+
+  return layers;
+}
+
+function convertMaterial(document: FbxDocument, materialObject: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never, embeddedTextureLookup: Map<string, string>): AiMaterial {
+  const properties: AiMaterialProperty[] = [];
+  const table = materialObject.properties;
+  table.entries.forEach((entry) => {
+    switch (entry.name) {
+      case "DiffuseColor":
+        addMaterialProperty(properties, "$clr.diffuse", AiTextureType.DIFFUSE, AiPropertyTypeInfo.FLOAT, table.get(entry.name));
+        break;
+      case "SpecularColor":
+        addMaterialProperty(properties, "$clr.specular", AiTextureType.SPECULAR, AiPropertyTypeInfo.FLOAT, table.get(entry.name));
+        break;
+      case "AmbientColor":
+        addMaterialProperty(properties, "$clr.ambient", AiTextureType.AMBIENT, AiPropertyTypeInfo.FLOAT, table.get(entry.name));
+        break;
+      case "TransparencyFactor":
+        addMaterialProperty(properties, "$mat.opacity", AiTextureType.OPACITY, AiPropertyTypeInfo.FLOAT, 1 - Number(entry.values[0] ?? 0));
+        break;
+      case "Maya|roughness":
+        addMaterialProperty(properties, "$mat.roughness", AiTextureType.NONE, AiPropertyTypeInfo.FLOAT, Number(entry.values[0] ?? 0));
+        break;
+      case "Metalness":
+        addMaterialProperty(properties, "$mat.metalness", AiTextureType.NONE, AiPropertyTypeInfo.FLOAT, Number(entry.values[0] ?? 0));
+        break;
+      default:
+        break;
+    }
+  });
+
+  const semanticFromConnection = (property: string): AiTextureType => {
+    const lower = property.toLowerCase();
+    if (lower.includes("normal")) {
+      return AiTextureType.NORMALS;
+    }
+    if (lower.includes("specular")) {
+      return AiTextureType.SPECULAR;
+    }
+    return AiTextureType.DIFFUSE;
+  };
+
+  document.getChildConnections(materialObject.id).forEach((connection) => {
+    const textureObject = document.objects.get(connection.childId);
+    if (!textureObject || !["Texture", "TextureVideoClip"].includes(textureObject.kind)) {
+      return;
+    }
+    const videoObject = document.getChildObjects(textureObject.id).find((entry) => entry.kind === "Video");
+    const relativeFilename = String(
+      textureObject.element.values.RelativeFilename?.[0] ??
+        videoObject?.element.values.RelativeFilename?.[0] ??
+        videoObject?.name.replace(/^Video::/, "") ??
+        "",
+    );
+    const resolvedFilename = embeddedTextureLookup.get(relativeFilename) ?? relativeFilename;
+    if (!resolvedFilename) {
+      return;
+    }
+    addMaterialProperty(properties, "$tex.file", semanticFromConnection(connection.property), AiPropertyTypeInfo.STRING, resolvedFilename);
+  });
+
+  if (!properties.some((property) => property.key === "$clr.diffuse")) {
+    addMaterialProperty(properties, "$clr.diffuse", AiTextureType.DIFFUSE, AiPropertyTypeInfo.FLOAT, { r: 1, g: 1, b: 1, a: 1 });
+  }
+
+  return {
+    name: materialObject.name.replace(/^Material::/, ""),
+    properties,
+  };
+}
+
 export class FBXConverter {
   convertAnimations(document: FbxDocument): AiAnimation[] {
     const stacks = [...document.objects.values()]
@@ -195,6 +315,24 @@ export class FBXConverter {
     const geometries = [...document.objects.values()].filter((object) => object.kind === "Mesh");
     const materials = [...document.objects.values()].filter((object) => object.kind === "Material");
     const models = [...document.objects.values()].filter((object) => object.kind === "Model");
+    const videos = [...document.objects.values()].filter((object) => object.kind === "Video").map((object) => new FbxVideo(object));
+    const embeddedTextures: AiTexture[] = [];
+    const embeddedTextureLookup = new Map<string, string>();
+    videos.forEach((video, index) => {
+      if (!video.content) {
+        return;
+      }
+      const filename = `*${index}`;
+      embeddedTextures.push({
+        filename,
+        width: 0,
+        height: 0,
+        formatHint: video.relativeFilename.split(".").pop() ?? "",
+        data: new Uint8Array(video.content),
+      });
+      embeddedTextureLookup.set(video.relativeFilename, filename);
+      embeddedTextureLookup.set(video.name, filename);
+    });
 
     const meshes = geometries.map((geometry, geometryIndex) => {
       const vertices = parseNumberList(geometry.element.values.Vertices?.[0] ?? []).reduce<
@@ -217,7 +355,6 @@ export class FBXConverter {
         }
       });
       const normalNumbers = parseNumberList(geometry.element.values.Normals?.[0] ?? []);
-      const uvNumbers = parseNumberList(geometry.element.values.UV?.[0] ?? []);
       const mesh: AiMesh = {
         name: String(geometry.properties.get("Name") ?? geometry.name),
         primitiveTypes: faces.some((face) => face.indices.length > 3)
@@ -232,21 +369,7 @@ export class FBXConverter {
         }, []),
         tangents: [],
         bitangents: [],
-        textureCoords: [
-          uvNumbers.reduce<Array<{ x: number; y: number; z: number }>>((acc, value, index, all) => {
-            if (index % 2 === 0) {
-              acc.push({ x: value, y: all[index + 1] ?? 0, z: 0 });
-            }
-            return acc;
-          }, []),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-        ],
+        textureCoords: expandUvLayers(geometry, vertices.length),
         colors: Array.from({ length: 8 }, () => null),
         faces,
         bones: [],
@@ -362,20 +485,9 @@ export class FBXConverter {
       flags: 0 as AiSceneFlags,
       rootNode,
       meshes,
-      materials: materials.map((material) => ({
-        name: material.name.replace(/^Material::/, ""),
-        properties: [
-          {
-            key: "$clr.diffuse",
-            semantic: 1,
-            index: 0,
-            type: 0,
-            data: material.properties.get("DiffuseColor") ?? { r: 1, g: 1, b: 1, a: 1 },
-          },
-        ],
-      })),
+      materials: materials.map((material) => convertMaterial(document, material, embeddedTextureLookup)),
       animations: this.convertAnimations(document),
-      textures: [],
+      textures: embeddedTextures,
       lights: [],
       cameras: [],
       metadata: {

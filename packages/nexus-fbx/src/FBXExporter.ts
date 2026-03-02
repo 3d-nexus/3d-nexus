@@ -1,4 +1,14 @@
-import { type AiAnimation, type AiQuaternion, type AiScene, type BaseExporter, type ExportSettings } from "nexus-core";
+import {
+  AiPropertyTypeInfo,
+  AiTextureType,
+  type AiAnimation,
+  type AiMaterial,
+  type AiMaterialProperty,
+  type AiQuaternion,
+  type AiScene,
+  type BaseExporter,
+  type ExportSettings,
+} from "nexus-core";
 import { FbxExportNode } from "./FBXExportNode";
 import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
@@ -23,14 +33,63 @@ function flattenUvs(mesh: AiScene["meshes"][number]): string {
   return mesh.textureCoords[0]?.flatMap((uv) => [uv.x, uv.y]).join(",") ?? "";
 }
 
-function renderMaterialNode(id: number, name: string): FbxExportNode {
+function collectUvLines(mesh: AiScene["meshes"][number]): string[] {
+  const lines = [`UV: ${flattenUvs(mesh)}`];
+  mesh.textureCoords.slice(0, 8).forEach((channel, index) => {
+    if (!channel) {
+      return;
+    }
+    lines.push(`LayerElementUV: ${index} {`);
+    lines.push(`  MappingInformationType: "ByVertice"`);
+    lines.push(`  ReferenceInformationType: "Direct"`);
+    lines.push(`  UV: ${channel.flatMap((uv) => [uv.x, uv.y]).join(",")}`);
+    lines.push(`}`);
+  });
+  return lines;
+}
+
+function findMaterialProperty(material: AiMaterial | undefined, key: string, semantic?: AiTextureType): AiMaterialProperty | undefined {
+  return material?.properties.find((property) => property.key === key && (semantic === undefined || property.semantic === semantic));
+}
+
+function getColorTuple(property: AiMaterialProperty | undefined, fallback: number[]): number[] {
+  const value = property?.data as Partial<{ r: number; g: number; b: number; a: number }> | undefined;
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+  return fallback.map((entry, index) => {
+    if (index === 0) return Number(value.r ?? entry);
+    if (index === 1) return Number(value.g ?? entry);
+    if (index === 2) return Number(value.b ?? entry);
+    return Number(value.a ?? entry);
+  });
+}
+
+function getNumericProperty(material: AiMaterial | undefined, key: string, fallback: number): number {
+  const value = findMaterialProperty(material, key)?.data;
+  return typeof value === "number" ? value : fallback;
+}
+
+function renderMaterialNode(id: number, material: AiMaterial | undefined): FbxExportNode {
+  const name = material?.name ?? "Material";
+  const diffuse = getColorTuple(findMaterialProperty(material, "$clr.diffuse"), [0.8, 0.6, 0.4]);
+  const specular = getColorTuple(findMaterialProperty(material, "$clr.specular"), [0.2, 0.2, 0.2]);
+  const ambient = getColorTuple(findMaterialProperty(material, "$clr.ambient"), [0.0, 0.0, 0.0]);
+  const opacity = getNumericProperty(material, "$mat.opacity", 1);
+  const roughness = getNumericProperty(material, "$mat.roughness", 0);
+  const metalness = getNumericProperty(material, "$mat.metalness", 0);
   return new FbxExportNode(
     "Material",
     [id, `Material::${name}`, "Material"],
     [],
     [
       new FbxExportNode("Properties70", [], [
-        'P: "DiffuseColor", "Color", "", "A", 0.8, 0.6, 0.4',
+        `P: "DiffuseColor", "Color", "", "A", ${diffuse[0]}, ${diffuse[1]}, ${diffuse[2]}`,
+        `P: "SpecularColor", "Color", "", "A", ${specular[0]}, ${specular[1]}, ${specular[2]}`,
+        `P: "AmbientColor", "Color", "", "A", ${ambient[0]}, ${ambient[1]}, ${ambient[2]}`,
+        `P: "TransparencyFactor", "double", "", "A", ${1 - opacity}`,
+        `P: "Maya|roughness", "double", "", "A", ${roughness}`,
+        `P: "Metalness", "double", "", "A", ${metalness}`,
       ]),
     ],
   );
@@ -86,6 +145,17 @@ function quaternionToEulerDegrees(quaternion: AiQuaternion): [number, number, nu
 
 function toTick(time: number): number {
   return Math.trunc(time * Number(FBX_TICKS_PER_SECOND));
+}
+
+function texturePropertyName(semantic: AiTextureType): string {
+  switch (semantic) {
+    case AiTextureType.NORMALS:
+      return "NormalMap";
+    case AiTextureType.SPECULAR:
+      return "SpecularColor";
+    default:
+      return "DiffuseColor";
+  }
 }
 
 function writeAnimations(
@@ -159,7 +229,19 @@ export class FBXExporter implements BaseExporter {
     const connectionLines: string[] = [];
     const materialIdMap = new Map<number, number>();
     const modelIdMap = new Map<string, number>();
+    const embeddedVideoIdMap = new Map<string, number>();
     let nextId = BASE_NODE_ID;
+
+    scene.textures.forEach((texture) => {
+      const videoId = nextId++;
+      embeddedVideoIdMap.set(texture.filename, videoId);
+      objects.push(
+        new FbxExportNode("Video", [videoId, `Video::${texture.filename}`, "Video"], [
+          `RelativeFilename: "${texture.filename}"`,
+          `Content: "${Array.from(texture.data).map((value) => value.toString(16).padStart(2, "0")).join("")}"`,
+        ]),
+      );
+    });
 
     scene.meshes.forEach((mesh, meshIndex) => {
       const geometryId = nextId++;
@@ -172,7 +254,7 @@ export class FBXExporter implements BaseExporter {
             `Vertices: ${flattenVertices(mesh)}`,
             `PolygonVertexIndex: ${flattenPolygonIndices(mesh)}`,
             `Normals: ${flattenNormals(mesh)}`,
-            `UV: ${flattenUvs(mesh)}`,
+            ...collectUvLines(mesh),
           ],
         ),
       );
@@ -184,7 +266,37 @@ export class FBXExporter implements BaseExporter {
       if (!materialIdMap.has(mesh.materialIndex)) {
         const materialId = nextId++;
         materialIdMap.set(mesh.materialIndex, materialId);
-        objects.push(renderMaterialNode(materialId, scene.materials[mesh.materialIndex]?.name ?? `Material_${mesh.materialIndex}`));
+        const material = scene.materials[mesh.materialIndex];
+        objects.push(renderMaterialNode(materialId, material));
+        material?.properties
+          .filter((property) => property.key === "$tex.file" && property.type === AiPropertyTypeInfo.STRING)
+          .forEach((property) => {
+            const textureId = nextId++;
+            const rawFilename = String(property.data ?? "");
+            const filename = rawFilename.startsWith("*")
+              ? scene.textures[Number(rawFilename.slice(1))]?.filename ?? rawFilename
+              : rawFilename;
+            objects.push(
+              new FbxExportNode("Texture", [textureId, `Texture::${filename}`, "TextureVideoClip"], [
+                `RelativeFilename: "${filename}"`,
+              ]),
+            );
+            connectionLines.push(`C: "OP", ${textureId}, ${materialId}, "${texturePropertyName(property.semantic)}"`);
+            const videoId =
+              embeddedVideoIdMap.get(rawFilename) ??
+              embeddedVideoIdMap.get(filename) ??
+              (() => {
+                const createdVideoId = nextId++;
+                embeddedVideoIdMap.set(filename, createdVideoId);
+                objects.push(
+                  new FbxExportNode("Video", [createdVideoId, `Video::${filename}`, "Video"], [
+                    `RelativeFilename: "${filename}"`,
+                  ]),
+                );
+                return createdVideoId;
+              })();
+            connectionLines.push(`C: "OO", ${videoId}, ${textureId}`);
+          });
       }
       connectionLines.push(`C: "OO", ${materialIdMap.get(mesh.materialIndex)}, ${modelId}`);
 

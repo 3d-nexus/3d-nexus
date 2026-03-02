@@ -1,8 +1,15 @@
 import type { AiColor4D, AiVector3D } from "nexus-core";
 import type { FBXElement } from "./FBXParser";
 
+export interface PropertyEntry {
+  name: string;
+  type: string;
+  values: Array<string | number | boolean>;
+}
+
 export class PropertyTable {
   private readonly values = new Map<string, string | number | boolean | AiVector3D | AiColor4D>();
+  readonly entries: PropertyEntry[] = [];
 
   constructor(element?: FBXElement) {
     const entries = element?.values.P ?? [];
@@ -13,6 +20,11 @@ export class PropertyTable {
 
       const [name, type] = entry;
       const valueParts = entry.slice(4);
+      this.entries.push({
+        name: String(name),
+        type: String(type),
+        values: valueParts as Array<string | number | boolean>,
+      });
       if (type === "Color" || type === "ColorRGB") {
         this.values.set(String(name), {
           r: Number(valueParts[0] ?? 0),

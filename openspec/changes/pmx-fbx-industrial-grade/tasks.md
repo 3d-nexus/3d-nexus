@@ -115,13 +115,13 @@
 
 ## 14. FBX Full Material, Texture & Multi-UV
 
-- [ ] 14.1 In `FBXConverter.ts`: replace single-property material extraction with `convertMaterial(matObj): AiMaterial` — iterate all `Properties70` entries; map FBX property names to assimp keys per the spec table; handle `TransparencyFactor → opacity = 1 - value`; handle PBR props (`Maya|roughness`, `Metalness`)
-- [ ] 14.2 Resolve Texture child connections per material; for each Texture, read `RelativeFilename`; determine `AiTextureType` from connection property string; add `"$tex.file"` AiMaterialProperty with appropriate semantic
-- [ ] 14.3 Add `FbxVideo` subtype to `FBXDocument.ts`; expose `content: ArrayBuffer | null` from `Content` binary property and `relativeFilename: string`
-- [ ] 14.4 In `FBXConverter.ts`: collect all FbxVideo nodes with non-null content; create `AiTexture` entries in `scene.textures[]`; build `Map<filename, "*N">` for resolving material texture references
-- [ ] 14.5 Expand `convertGeometry` to loop `LayerElementUV` indices 0–7; expand each UV layer (respecting `MappingInformationType` + `ReferenceInformationType`) into a per-vertex `AiVector3D[]`; assign to `mesh.textureCoords[N]`
-- [ ] 14.6 In `FBXExporter.ts`: write per-material `Properties70` block from `AiMaterial.properties` (reverse key mapping); write `Video` node per `AiTexture`; resolve `"*N"` texture refs back to Video filename in material Texture nodes
-- [ ] 14.7 Write unit test: FBX fixture with diffuse+normal textures → `material.properties` contains both `$clr.diffuse` and `"$tex.file"` for NORMALS semantic
+- [x] 14.1 In `FBXConverter.ts`: replace single-property material extraction with `convertMaterial(matObj): AiMaterial` — iterate all `Properties70` entries; map FBX property names to assimp keys per the spec table; handle `TransparencyFactor → opacity = 1 - value`; handle PBR props (`Maya|roughness`, `Metalness`)
+- [x] 14.2 Resolve Texture child connections per material; for each Texture, read `RelativeFilename`; determine `AiTextureType` from connection property string; add `"$tex.file"` AiMaterialProperty with appropriate semantic
+- [x] 14.3 Add `FbxVideo` subtype to `FBXDocument.ts`; expose `content: ArrayBuffer | null` from `Content` binary property and `relativeFilename: string`
+- [x] 14.4 In `FBXConverter.ts`: collect all FbxVideo nodes with non-null content; create `AiTexture` entries in `scene.textures[]`; build `Map<filename, "*N">` for resolving material texture references
+- [x] 14.5 Expand `convertGeometry` to loop `LayerElementUV` indices 0–7; expand each UV layer (respecting `MappingInformationType` + `ReferenceInformationType`) into a per-vertex `AiVector3D[]`; assign to `mesh.textureCoords[N]`
+- [x] 14.6 In `FBXExporter.ts`: write per-material `Properties70` block from `AiMaterial.properties` (reverse key mapping); write `Video` node per `AiTexture`; resolve `"*N"` texture refs back to Video filename in material Texture nodes
+- [x] 14.7 Write unit test: FBX fixture with diffuse+normal textures → `material.properties` contains both `$clr.diffuse` and `"$tex.file"` for NORMALS semantic
 
 ## 15. FBX Multi-Mesh Export
 

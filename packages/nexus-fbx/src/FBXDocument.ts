@@ -25,6 +25,12 @@ export interface FbxConnectionGraph {
   childToParents: Map<bigint, bigint[]>;
 }
 
+export interface FbxConnection {
+  childId: bigint;
+  parentId: bigint;
+  property: string;
+}
+
 export class FbxModel {
   constructor(private readonly object: LazyFbxObject) {}
 
@@ -178,8 +184,32 @@ export class FbxAnimationStack {
   }
 }
 
+export class FbxVideo {
+  readonly content: ArrayBuffer | null;
+  readonly relativeFilename: string;
+
+  constructor(private readonly object: LazyFbxObject) {
+    const contentValue = object.element.values.Content?.[0];
+    if (contentValue instanceof ArrayBuffer) {
+      this.content = contentValue;
+    } else if (contentValue instanceof Uint8Array) {
+      this.content = new Uint8Array(contentValue).buffer;
+    } else if (typeof contentValue === "string" && contentValue.length > 0) {
+      this.content = new TextEncoder().encode(contentValue).buffer;
+    } else {
+      this.content = null;
+    }
+    this.relativeFilename = String(object.element.values.RelativeFilename?.[0] ?? object.name.replace(/^Video::/, ""));
+  }
+
+  get name(): string {
+    return this.object.name.replace(/^Video::/, "");
+  }
+}
+
 export class FbxDocument {
   readonly objects = new Map<bigint, LazyFbxObject>();
+  readonly connectionRecords: FbxConnection[] = [];
   readonly connections: FbxConnectionGraph = {
     parentToChildren: new Map(),
     childToParents: new Map(),
@@ -200,6 +230,14 @@ export class FbxDocument {
     return (this.connections.childToParents.get(childId) ?? [])
       .map((id) => this.objects.get(id))
       .filter((entry): entry is LazyFbxObject => Boolean(entry));
+  }
+
+  getChildConnections(parentId: bigint): FbxConnection[] {
+    return this.connectionRecords.filter((entry) => entry.parentId === parentId);
+  }
+
+  getParentConnections(childId: bigint): FbxConnection[] {
+    return this.connectionRecords.filter((entry) => entry.childId === childId);
   }
 
   private loadObjects(): void {
@@ -228,6 +266,11 @@ export class FbxDocument {
 
       const childId = BigInt(Number(entry[1] ?? 0));
       const parentId = BigInt(Number(entry[2] ?? 0));
+      this.connectionRecords.push({
+        childId,
+        parentId,
+        property: String(entry[3] ?? ""),
+      });
       const parentChildren = this.connections.parentToChildren.get(parentId) ?? [];
       parentChildren.push(childId);
       this.connections.parentToChildren.set(parentId, parentChildren);
