@@ -76,8 +76,22 @@ function getNumericProperty(material: AiMaterial | undefined, key: string, fallb
   return typeof value === "number" ? value : fallback;
 }
 
+function getTextureBindings(material: AiMaterial | undefined): Array<Record<string, unknown>> {
+  const bindings = material?.metadata?.textureBindings;
+  return Array.isArray(bindings) ? (bindings as Array<Record<string, unknown>>) : [];
+}
+
+function findTextureBinding(material: AiMaterial | undefined, property: AiMaterialProperty, filename: string): Record<string, unknown> | undefined {
+  return getTextureBindings(material).find((entry) => {
+    const semantic = Number(entry.semantic ?? AiTextureType.DIFFUSE);
+    const file = String(entry.file ?? entry.relativeFilename ?? "");
+    return semantic === property.semantic && (file === filename || file === String(property.data ?? ""));
+  });
+}
+
 function renderMaterialNode(id: number, material: AiMaterial | undefined): FbxExportNode {
   const name = material?.name ?? "Material";
+  const shadingModel = String(material?.metadata?.fbxShadingModel ?? "Phong");
   const diffuse = getColorTuple(findMaterialProperty(material, "$clr.diffuse"), [0.8, 0.6, 0.4]);
   const specular = getColorTuple(findMaterialProperty(material, "$clr.specular"), [0.2, 0.2, 0.2]);
   const ambient = getColorTuple(findMaterialProperty(material, "$clr.ambient"), [0.0, 0.0, 0.0]);
@@ -87,7 +101,7 @@ function renderMaterialNode(id: number, material: AiMaterial | undefined): FbxEx
   return new FbxExportNode(
     "Material",
     [id, `Material::${name}`, "Material"],
-    [],
+    [`ShadingModel: "${shadingModel}"`],
     [
       new FbxExportNode("Properties70", [], [
         `P: "DiffuseColor", "Color", "", "A", ${diffuse[0]}, ${diffuse[1]}, ${diffuse[2]}`,
@@ -463,10 +477,28 @@ export class FBXExporter implements BaseExporter {
             const filename = rawFilename.startsWith("*")
               ? scene.textures[Number(rawFilename.slice(1))]?.filename ?? rawFilename
               : rawFilename;
+            const textureBinding = findTextureBinding(material, property, filename);
+            const relativeFilename = String(textureBinding?.relativeFilename ?? filename);
             objects.push(
-              new FbxExportNode("Texture", [textureId, `Texture::${filename}`, "TextureVideoClip"], [
-                `RelativeFilename: "${filename}"`,
-              ]),
+              new FbxExportNode(
+                "Texture",
+                [textureId, `Texture::${filename}`, "TextureVideoClip"],
+                [
+                  `RelativeFilename: "${relativeFilename}"`,
+                ],
+                [
+                  new FbxExportNode("Properties70", [], [
+                    `P: "UVSet", "KString", "", "A", "${String(textureBinding?.uvSet ?? "map1")}"`,
+                    `P: "Translation", "Vector3D", "", "A", ${Array.isArray(textureBinding?.translation) ? (textureBinding?.translation as number[]).join(", ") : "0, 0, 0"}`,
+                    `P: "Scaling", "Vector3D", "", "A", ${Array.isArray(textureBinding?.scaling) ? (textureBinding?.scaling as number[]).join(", ") : "1, 1, 1"}`,
+                    `P: "Rotation", "Vector3D", "", "A", ${Array.isArray(textureBinding?.rotation) ? (textureBinding?.rotation as number[]).join(", ") : "0, 0, 0"}`,
+                    `P: "WrapModeU", "int", "", "A", ${Number(textureBinding?.wrapModeU ?? 0)}`,
+                    `P: "WrapModeV", "int", "", "A", ${Number(textureBinding?.wrapModeV ?? 0)}`,
+                    `P: "BlendMode", "KString", "", "A", "${String(textureBinding?.blendMode ?? "Normal")}"`,
+                    `P: "Layered", "bool", "", "A", ${textureBinding?.layered ? 1 : 0}`,
+                  ]),
+                ],
+              ),
             );
             connectionLines.push(`C: "OP", ${textureId}, ${materialId}, "${texturePropertyName(property.semantic)}"`);
             const videoId =

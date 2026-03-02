@@ -35,10 +35,10 @@
 
 ## 6. FBX Materials, Media, And UV Semantics
 
-- [ ] 6.1 Preserve layered textures, UV set routing, texture transforms, wrap/filter settings, and embedded media path identity
-- [ ] 6.2 Expand material fallback handling between legacy and PBR shading models with explicit diagnostics
-- [ ] 6.3 Add fixture coverage for multi-UV, layered textures, embedded media, and Unicode path cases
-- [ ] 6.4 Validate deterministic export for Blender, Maya, and runtime-target material profiles
+- [x] 6.1 Preserve layered textures, UV set routing, texture transforms, wrap/filter settings, and embedded media path identity
+- [x] 6.2 Expand material fallback handling between legacy and PBR shading models with explicit diagnostics
+- [x] 6.3 Add fixture coverage for multi-UV, layered textures, embedded media, and Unicode path cases
+- [x] 6.4 Validate deterministic export for Blender, Maya, and runtime-target material profiles
 
 ## 7. PMX Structural Fidelity
 

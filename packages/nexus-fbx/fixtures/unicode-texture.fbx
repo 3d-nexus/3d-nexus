@@ -1,0 +1,57 @@
+; FBX 7.4.0 project file
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 1
+  UpAxisSign: 1
+  FrontAxis: 2
+  FrontAxisSign: 1
+  CoordAxis: 0
+  CoordAxisSign: 1
+  UnitScaleFactor: 100
+}
+Objects: {
+  Geometry: 1, "Geometry::Mesh", "Mesh" {
+    Vertices: 0,0,0,1,0,0,0,1,0
+    PolygonVertexIndex: 0,1,-3
+    Normals: 0,1,0,0,1,0,0,1,0
+    LayerElementUV: 0 {
+      MappingInformationType: "ByVertice"
+      ReferenceInformationType: "Direct"
+      UV: 0,0,1,0,0,1
+    }
+    LayerElementUV: 1 {
+      MappingInformationType: "ByVertice"
+      ReferenceInformationType: "Direct"
+      UV: 0.1,0.1,0.9,0.1,0.1,0.9
+    }
+  }
+  Material: 2, "Material::UnicodeMat", "Material" {
+    ShadingModel: "MayaPBR"
+    Properties70: {
+      P: "DiffuseColor", "Color", "", "A", 0.8,0.8,0.8
+      P: "Maya|roughness", "double", "", "A", 0.35
+    }
+  }
+  Texture: 3, "Texture::Diffuse", "TextureVideoClip" {
+    RelativeFilename: "纹理/漫反射.png"
+    Properties70: {
+      P: "UVSet", "KString", "", "A", "map2"
+      P: "Translation", "Vector3D", "", "A", 0.1,0.2,0
+      P: "Scaling", "Vector3D", "", "A", 2,2,1
+      P: "WrapModeU", "int", "", "A", 1
+      P: "WrapModeV", "int", "", "A", 1
+      P: "BlendMode", "KString", "", "A", "Overlay"
+    }
+  }
+  Model: 4, "Model::UnicodeMesh", "Model" {
+  }
+}
+Connections: {
+  C: "OO", 1, 4
+  C: "OO", 2, 4
+  C: "OO", 3, 2, "DiffuseColor"
+}
+Takes: {
+}

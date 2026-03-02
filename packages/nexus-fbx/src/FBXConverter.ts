@@ -418,7 +418,10 @@ function expandUvLayers(geometry: FbxDocument["objects"] extends Map<bigint, inf
 
 function convertMaterial(document: FbxDocument, materialObject: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never, embeddedTextureLookup: Map<string, string>): AiMaterial {
   const properties: AiMaterialProperty[] = [];
+  const metadata: Record<string, unknown> = {};
   const table = materialObject.properties;
+  const shadingModel = String(materialObject.element.values.ShadingModel?.[0] ?? "Phong");
+  metadata.fbxShadingModel = shadingModel;
   table.entries.forEach((entry) => {
     switch (entry.name) {
       case "DiffuseColor":
@@ -471,6 +474,22 @@ function convertMaterial(document: FbxDocument, materialObject: FbxDocument["obj
     if (!resolvedFilename) {
       return;
     }
+    const textureBinding = {
+      semantic: semanticFromConnection(connection.property),
+      file: resolvedFilename,
+      relativeFilename,
+      uvSet: String(textureObject.properties.get("UVSet") ?? "map1"),
+      translation: readPropertyVectorAsArray(textureObject.properties, "Translation", [0, 0, 0]),
+      scaling: readPropertyVectorAsArray(textureObject.properties, "Scaling", [1, 1, 1]),
+      rotation: readPropertyVectorAsArray(textureObject.properties, "Rotation", [0, 0, 0]),
+      wrapModeU: Number(textureObject.properties.get("WrapModeU") ?? 0),
+      wrapModeV: Number(textureObject.properties.get("WrapModeV") ?? 0),
+      blendMode: String(textureObject.properties.get("BlendMode") ?? "Normal"),
+      layered: Boolean(textureObject.properties.get("Layered") ?? false),
+    };
+    const bindings = (metadata.textureBindings as typeof textureBinding[] | undefined) ?? [];
+    bindings.push(textureBinding);
+    metadata.textureBindings = bindings;
     addMaterialProperty(properties, "$tex.file", semanticFromConnection(connection.property), AiPropertyTypeInfo.STRING, resolvedFilename);
   });
 
@@ -478,9 +497,20 @@ function convertMaterial(document: FbxDocument, materialObject: FbxDocument["obj
     addMaterialProperty(properties, "$clr.diffuse", AiTextureType.DIFFUSE, AiPropertyTypeInfo.FLOAT, { r: 1, g: 1, b: 1, a: 1 });
   }
 
+  if (!["Phong", "Lambert"].includes(shadingModel)) {
+    metadata.fallbackDiagnostic = {
+      code: "FBX_MATERIAL_FALLBACK",
+      severity: "warning",
+      capability: "fbx-textures-materials",
+      profile: "unity",
+      message: `Material ${materialObject.name} uses ${shadingModel}; exporter may normalize it to legacy/PBR fallback properties.`,
+    };
+  }
+
   return {
     name: materialObject.name.replace(/^Material::/, ""),
     properties,
+    metadata,
   };
 }
 
@@ -958,11 +988,17 @@ export class FBXConverter {
       }));
 
     const animationMetadata = collectAnimationMetadata(document);
+    const convertedMaterials = materials.map((material) => convertMaterial(document, material, embeddedTextureLookup));
+    convertedMaterials.forEach((material) => {
+      if (material.metadata?.fallbackDiagnostic) {
+        compatDiagnostics.push(material.metadata.fallbackDiagnostic as Record<string, unknown>);
+      }
+    });
     return {
       flags: 0 as AiSceneFlags,
       rootNode,
       meshes,
-      materials: materials.map((material) => convertMaterial(document, material, embeddedTextureLookup)),
+      materials: convertedMaterials,
       animations: this.convertAnimations(document),
       textures: embeddedTextures,
       lights,
