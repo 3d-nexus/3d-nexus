@@ -1,7 +1,7 @@
 import type { AiMaterial, AiMaterialProperty, AiMesh, AiScene, AiVector3D, SdefCoeffs } from "nexus-core";
 import { BinaryWriter } from "./BinaryWriter";
 
-type VertexBoneEntry = { boneIdx: number; weight: number; ikChain?: SdefCoeffs };
+type VertexBoneEntry = { boneIdx: number; weight: number; ikChain?: SdefCoeffs; authoredType?: number };
 
 function writeVec3(writer: BinaryWriter, value: AiVector3D): void {
   writer.writeFloat32(value.x);
@@ -9,18 +9,30 @@ function writeVec3(writer: BinaryWriter, value: AiVector3D): void {
   writer.writeFloat32(value.z);
 }
 
-function buildVertexWeightLookup(mesh: AiMesh): Map<number, VertexBoneEntry[]> {
+function buildVertexWeightLookup(mesh: AiMesh, scene: AiScene, meshIndex: number): Map<number, VertexBoneEntry[]> {
   const lookup = new Map<number, VertexBoneEntry[]>();
+  const authoredSkinning = parseMetadataArray(scene, "mmd:vertexSkinning");
+  const authoredTypeByVertex = new Map<number, number>();
+  authoredSkinning.forEach((entry) => {
+    if (Number(entry.meshIndex ?? 0) === meshIndex) {
+      authoredTypeByVertex.set(Number(entry.vertexIndex ?? -1), Number(entry.skinningType ?? 0));
+    }
+  });
 
   mesh.bones.forEach((bone, boneIdx) => {
     bone.weights.forEach((weight) => {
       const entries = lookup.get(weight.vertexId) ?? [];
       const ikChain = bone.ikChain as SdefCoeffs | undefined;
-      entries.push({
+      const entry: VertexBoneEntry = {
         boneIdx,
         weight: weight.weight,
         ...(ikChain ? { ikChain } : {}),
-      });
+      };
+      const authoredType = authoredTypeByVertex.get(weight.vertexId);
+      if (authoredType !== undefined) {
+        entry.authoredType = authoredType;
+      }
+      entries.push(entry);
       lookup.set(weight.vertexId, entries);
     });
   });
@@ -46,6 +58,7 @@ function writeVertexSkinning(writer: BinaryWriter, entries: VertexBoneEntry[]): 
   }
 
   const sdefEntry = entries.find((entry) => entry.ikChain?.type === "sdef");
+  const authoredType = entries.find((entry) => entry.authoredType === 4)?.authoredType ?? entries[0]?.authoredType;
   if (entries.length === 2 && sdefEntry?.ikChain) {
     writer.writeUint8(3);
     writer.writeInt32(entries[0]!.boneIdx);
@@ -62,6 +75,17 @@ function writeVertexSkinning(writer: BinaryWriter, entries: VertexBoneEntry[]): 
     writer.writeInt32(entries[0]!.boneIdx);
     writer.writeInt32(entries[1]!.boneIdx);
     writer.writeFloat32(entries[0]!.weight);
+    return;
+  }
+
+  if (entries.length >= 3 && authoredType === 4) {
+    writer.writeUint8(4);
+    const padded = [...entries];
+    while (padded.length < 4) {
+      padded.push({ boneIdx: 0, weight: 0 });
+    }
+    padded.forEach((entry) => writer.writeInt32(entry.boneIdx));
+    padded.forEach((entry) => writer.writeFloat32(entry.weight));
     return;
   }
 
@@ -246,17 +270,167 @@ function writeSoftBodies(writer: BinaryWriter, scene: AiScene): void {
   softBodies.forEach((entry) => {
     writer.writeString(String(entry.name ?? ""), "utf-8");
     writer.writeString(String(entry.englishName ?? entry.name ?? ""), "utf-8");
+    writer.writeUint8(Number(entry.shape ?? 0));
+    writer.writeInt32(Number(entry.materialIndex ?? -1));
+    writer.writeUint8(Number(entry.groupIndex ?? 0));
+    writer.writeUint16(Number(entry.nonCollisionMask ?? 0));
+    writer.writeUint8(Number(entry.flags ?? 0));
+    writer.writeFloat32(Number(entry.blinkDistance ?? 0));
+    writer.writeInt32(Number(entry.clusterCount ?? 0));
+    writer.writeFloat32(Number(entry.totalMass ?? 0));
+    writer.writeFloat32(Number(entry.collisionMargin ?? 0));
+    writer.writeInt32(Number(entry.aeroModel ?? 0));
   });
 }
 
 function writeMorphs(writer: BinaryWriter, scene: AiScene, mesh: AiMesh, baseVertices: AiVector3D[]): void {
-  const vertexMorphs = mesh.morphTargets.filter((target) => !target.name.startsWith("UV:"));
-  const uvMorphs = mesh.morphTargets.filter((target) => target.name.startsWith("UV:"));
+  const morphCatalog = parseMetadataArray(scene, "mmd:morphCatalog");
+  const vertexMorphs = mesh.morphTargets.filter((target) => !/^(UV|UV[1-4]):/.test(target.name));
+  const uvMorphs = mesh.morphTargets.filter((target) => /^(UV|UV[1-4]):/.test(target.name));
   const boneMorphs = parseMetadataArray(scene, "mmd:boneMorphs");
   const materialMorphs = parseMetadataArray(scene, "mmd:materialMorphs");
   const groupMorphs = parseMetadataArray(scene, "mmd:groupMorphs");
-  const totalCount = vertexMorphs.length + uvMorphs.length + boneMorphs.length + materialMorphs.length + groupMorphs.length;
+  const flipMorphs = parseMetadataArray(scene, "mmd:flipMorphs");
+  const impulseMorphs = parseMetadataArray(scene, "mmd:impulseMorphs");
+  const totalCount =
+    morphCatalog.length > 0
+      ? morphCatalog.length
+      : vertexMorphs.length + uvMorphs.length + boneMorphs.length + materialMorphs.length + groupMorphs.length + flipMorphs.length + impulseMorphs.length;
   writer.writeUint32(totalCount);
+
+  const writeNamedMorphHeader = (name: string, englishName: string, panel: number, type: number, count: number): void => {
+    writer.writeString(name, "utf-8");
+    writer.writeString(englishName, "utf-8");
+    writer.writeUint8(panel);
+    writer.writeUint8(type);
+    writer.writeInt32(count);
+  };
+
+  const findUvMorph = (entry: Record<string, unknown>): AiMesh["morphTargets"][number] | undefined => {
+    const name = String(entry.englishName ?? entry.name ?? "");
+    const type = Number(entry.type ?? 3);
+    const prefix = type === 3 ? "UV:" : `UV${type - 3}:`;
+    return uvMorphs.find((morph) => morph.name === `${prefix}${name}` || morph.name === `${prefix}${String(entry.name ?? "")}`);
+  };
+
+  const writeUvMorph = (morph: AiMesh["morphTargets"][number], type: number, panel = 0, name = morph.name, englishName = morph.name): void => {
+    const channelIndex = Math.max(0, type - 3);
+    const offsets =
+      morph.textureCoords[channelIndex]
+        ?.map((uv, index) => ({
+            vertexIndex: index,
+            uv,
+          }))
+        .filter((entry) => entry.uv && (Math.abs(entry.uv.x) + Math.abs(entry.uv.y) + Math.abs(entry.uv.z)) > 1e-6) ?? [];
+    writeNamedMorphHeader(name, englishName, panel, type, offsets.length);
+    offsets.forEach((entry) => {
+      writer.writeUint32(entry.vertexIndex);
+      writer.writeFloat32(entry.uv!.x);
+      writer.writeFloat32(entry.uv!.y);
+      writer.writeFloat32(entry.uv!.z);
+      writer.writeFloat32(0);
+    });
+  };
+
+  if (morphCatalog.length > 0) {
+    morphCatalog.forEach((entry) => {
+      const type = Number(entry.type ?? 0);
+      const name = String(entry.name ?? "Morph");
+      const englishName = String(entry.englishName ?? name);
+      const panel = Number(entry.panel ?? 0);
+      if (type === 1) {
+        const morph = vertexMorphs.find((candidate) => candidate.name === englishName || candidate.name === name);
+        if (!morph) {
+          writeNamedMorphHeader(name, englishName, panel, type, 0);
+          return;
+        }
+        const offsets = morph.vertices
+          .map((vertex, index) => ({
+            vertexIndex: index,
+            delta: {
+              x: vertex.x - (baseVertices[index]?.x ?? 0),
+              y: vertex.y - (baseVertices[index]?.y ?? 0),
+              z: vertex.z - (baseVertices[index]?.z ?? 0),
+            },
+          }))
+          .filter((row) => Math.abs(row.delta.x) + Math.abs(row.delta.y) + Math.abs(row.delta.z) > 1e-6);
+        writeNamedMorphHeader(name, englishName, panel, type, offsets.length);
+        offsets.forEach((row) => {
+          writer.writeUint32(row.vertexIndex);
+          writeVec3(writer, row.delta);
+        });
+        return;
+      }
+      if (type >= 3 && type <= 7) {
+        const morph = findUvMorph(entry);
+        if (!morph) {
+          writeNamedMorphHeader(name, englishName, panel, type, 0);
+          return;
+        }
+        writeUvMorph(morph, type, panel, name, englishName);
+        return;
+      }
+      if (type === 2) {
+        const morph = boneMorphs.find((candidate) => String(candidate.name ?? "") === englishName || String(candidate.name ?? "") === name);
+        const entries = Array.isArray(morph?.entries) ? morph.entries : [];
+        writeNamedMorphHeader(name, englishName, panel, type, entries.length);
+        entries.forEach((item) => {
+          writer.writeInt32(Number((item as { boneIndex?: number }).boneIndex ?? -1));
+          const translation = (item as { translation?: number[] }).translation ?? [0, 0, 0];
+          const rotation = (item as { rotation?: number[] }).rotation ?? [0, 0, 0, 1];
+          writeVec3(writer, { x: translation[0] ?? 0, y: translation[1] ?? 0, z: translation[2] ?? 0 });
+          rotation.forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+        });
+        return;
+      }
+      if (type === 8) {
+        const morph = materialMorphs.find((candidate) => String(candidate.name ?? "") === englishName || String(candidate.name ?? "") === name);
+        const entries = Array.isArray(morph?.entries) ? morph.entries : [];
+        writeNamedMorphHeader(name, englishName, panel, type, entries.length);
+        entries.forEach((item) => {
+          writer.writeInt32(Number((item as { materialIndex?: number }).materialIndex ?? -1));
+          writer.writeUint8(Number((item as { operation?: number }).operation ?? 0));
+          const diffuse = (item as { diffuse?: number[] }).diffuse ?? [0, 0, 0, 0];
+          const specular = (item as { specular?: number[] }).specular ?? [0, 0, 0];
+          diffuse.forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          specular.forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          writer.writeFloat32(Number((item as { shininess?: number }).shininess ?? 0));
+          ((item as { ambient?: number[] }).ambient ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          ((item as { edge?: number[] }).edge ?? [0, 0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          writer.writeFloat32(Number((item as { edgeSize?: number }).edgeSize ?? 0));
+          ((item as { texture?: number[] }).texture ?? [0, 0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          ((item as { sphereTexture?: number[] }).sphereTexture ?? [0, 0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          ((item as { toon?: number[] }).toon ?? [0, 0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+        });
+        return;
+      }
+      if (type === 0 || type === 9) {
+        const source = type === 0 ? groupMorphs : flipMorphs;
+        const morph = source.find((candidate) => String(candidate.name ?? "") === englishName || String(candidate.name ?? "") === name);
+        const entries = Array.isArray(morph?.entries) ? morph.entries : [];
+        writeNamedMorphHeader(name, englishName, panel, type, entries.length);
+        entries.forEach((item) => {
+          writer.writeInt32(Number((item as { morphIndex?: number }).morphIndex ?? -1));
+          writer.writeFloat32(Number((item as { weight?: number }).weight ?? 0));
+        });
+        return;
+      }
+      if (type === 10) {
+        const morph = impulseMorphs.find((candidate) => String(candidate.name ?? "") === englishName || String(candidate.name ?? "") === name);
+        const entries = Array.isArray(morph?.entries) ? morph.entries : [];
+        writeNamedMorphHeader(name, englishName, panel, type, entries.length);
+        entries.forEach((item) => {
+          writer.writeInt32(Number((item as { rigidBodyIndex?: number }).rigidBodyIndex ?? -1));
+          writer.writeUint8(Number((item as { localFlag?: number }).localFlag ?? 0));
+          ((item as { velocity?: number[] }).velocity ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+          ((item as { torque?: number[] }).torque ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
+        });
+        return;
+      }
+      writeNamedMorphHeader(name, englishName, panel, type, 0);
+    });
+    return;
+  }
 
   vertexMorphs.forEach((morph) => {
     const offsets = morph.vertices
@@ -281,24 +455,10 @@ function writeMorphs(writer: BinaryWriter, scene: AiScene, mesh: AiMesh, baseVer
   });
 
   uvMorphs.forEach((morph) => {
-    const offsets = morph.textureCoords[0]
-      ?.map((uv, index) => ({
-          vertexIndex: index,
-          uv,
-        }))
-      .filter((entry) => entry.uv && (Math.abs(entry.uv.x) + Math.abs(entry.uv.y) + Math.abs(entry.uv.z)) > 1e-6) ?? [];
-    writer.writeString(morph.name.replace(/^UV:/, ""), "utf-8");
-    writer.writeString(morph.name.replace(/^UV:/, ""), "utf-8");
-    writer.writeUint8(0);
-    writer.writeUint8(3);
-    writer.writeInt32(offsets.length);
-    offsets.forEach((entry) => {
-      writer.writeUint32(entry.vertexIndex);
-      writer.writeFloat32(entry.uv!.x);
-      writer.writeFloat32(entry.uv!.y);
-      writer.writeFloat32(entry.uv!.z);
-      writer.writeFloat32(0);
-    });
+    const match = morph.name.match(/^(UV|UV([1-4])):(.+)$/);
+    const type = match?.[2] ? Number(match[2]) + 3 : 3;
+    const strippedName = morph.name.replace(/^(UV|UV[1-4]):/, "");
+    writeUvMorph(morph, type, 0, strippedName, strippedName);
   });
 
   boneMorphs.forEach((morph) => {
@@ -424,7 +584,7 @@ export class MMDPmxExporter {
       throw new Error("Cannot export PMX without at least one mesh");
     }
     const meshes = scene.meshes;
-    const vertexWeightLookups = meshes.map((mesh) => buildVertexWeightLookup(mesh));
+    const vertexWeightLookups = meshes.map((mesh, meshIndex) => buildVertexWeightLookup(mesh, scene, meshIndex));
     const vertexOffsets: number[] = [];
     let runningVertexOffset = 0;
     meshes.forEach((mesh) => {

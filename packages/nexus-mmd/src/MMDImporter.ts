@@ -169,6 +169,14 @@ export function buildPmxBones(document: PmxDocument, warnings: ImportResult["war
 }
 
 function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["morphTargets"] {
+  const uvPrefixByType = new Map<number, string>([
+    [3, "UV:"],
+    [4, "UV1:"],
+    [5, "UV2:"],
+    [6, "UV3:"],
+    [7, "UV4:"],
+  ]);
+
   return document.morphs.flatMap((morph) => {
     if (morph.type === 1) {
       const overrides = new Map<number, number[]>();
@@ -199,7 +207,7 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
       ];
     }
 
-    if (morph.type === 3) {
+    if (morph.type >= 3 && morph.type <= 7) {
       const overrides = new Map<number, number[]>();
       morph.offsets.forEach((offset) => {
         if (offset && typeof offset === "object" && "vertexIndex" in offset) {
@@ -211,14 +219,14 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
       });
       return [
         {
-          name: `UV:${morph.englishName || morph.name}`,
+          name: `${uvPrefixByType.get(morph.type) ?? "UV:"}${morph.englishName || morph.name}`,
           vertices: baseMesh.vertices.map((vertex) => ({ ...vertex })),
           normals: [...baseMesh.normals],
           tangents: [],
           bitangents: [],
           colors: Array.from({ length: 8 }, () => null),
           textureCoords: baseMesh.textureCoords.map((channel, channelIndex) =>
-            channelIndex === 0
+            channelIndex === morph.type - 3
               ? baseMesh.vertices.map((_, index) => {
                   const delta = overrides.get(index) ?? [0, 0, 0, 0];
                   return { x: delta[0] ?? 0, y: delta[1] ?? 0, z: delta[2] ?? 0 };
@@ -235,6 +243,14 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
 }
 
 function collectMorphMetadata(document: PmxDocument) {
+  const morphCatalog = document.morphs.map((morph, order) => ({
+    name: morph.name,
+    englishName: morph.englishName,
+    panel: morph.panel,
+    type: morph.type,
+    order,
+    offsets: morph.offsets,
+  }));
   const encode = (type: number, key: string, mapEntry: (morph: PmxDocument["morphs"][number]) => unknown) => {
     const items = document.morphs.filter((morph) => morph.type === type).map(mapEntry);
     return items.length > 0
@@ -248,9 +264,29 @@ function collectMorphMetadata(document: PmxDocument) {
   };
 
   return {
+    ...(morphCatalog.length > 0
+      ? {
+          "mmd:morphCatalog": {
+            type: AiMetadataType.AISTRING,
+            data: JSON.stringify(morphCatalog),
+          },
+        }
+      : {}),
     ...encode(2, "mmd:boneMorphs", (morph) => ({ name: morph.englishName || morph.name, entries: morph.offsets })),
     ...encode(8, "mmd:materialMorphs", (morph) => ({ name: morph.englishName || morph.name, entries: morph.offsets })),
     ...encode(0, "mmd:groupMorphs", (morph) => ({ name: morph.englishName || morph.name, entries: morph.offsets })),
+    ...encode(9, "mmd:flipMorphs", (morph) => ({
+      name: morph.name,
+      englishName: morph.englishName,
+      panel: morph.panel,
+      entries: morph.offsets,
+    })),
+    ...encode(10, "mmd:impulseMorphs", (morph) => ({
+      name: morph.name,
+      englishName: morph.englishName,
+      panel: morph.panel,
+      entries: morph.offsets,
+    })),
   };
 }
 
@@ -315,8 +351,22 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
     },
   };
   mesh.morphTargets = buildMorphTargets(document, mesh);
+  const vertexSkinning = document.vertices.map((vertex, vertexIndex) => ({
+    meshIndex: 0,
+    vertexIndex,
+    skinningType: vertex.skinningType,
+    skinning: vertex.skinning,
+  }));
   const metadata: Record<string, { type: AiMetadataType; data: string }> = {
     ...collectMorphMetadata(document),
+    ...(vertexSkinning.some((entry) => entry.skinningType === 3 || entry.skinningType === 4)
+      ? {
+          "mmd:vertexSkinning": {
+            type: AiMetadataType.AISTRING,
+            data: JSON.stringify(vertexSkinning),
+          },
+        }
+      : {}),
     ...(document.bones.length > 0
       ? {
           "mmd:boneStructures": {

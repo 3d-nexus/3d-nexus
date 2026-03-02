@@ -81,6 +81,21 @@ export interface PmxMorph {
   offsets: unknown[];
 }
 
+export interface PmxSoftBody {
+  name: string;
+  englishName: string;
+  shape?: number;
+  materialIndex?: number;
+  groupIndex?: number;
+  nonCollisionMask?: number;
+  flags?: number;
+  blinkDistance?: number;
+  clusterCount?: number;
+  totalMass?: number;
+  collisionMargin?: number;
+  aeroModel?: number;
+}
+
 export interface PmxRigidBody {
   name: string;
   englishName?: string;
@@ -130,7 +145,7 @@ export interface PmxDocument {
   rigidBodies: PmxRigidBody[];
   joints: PmxJoint[];
   displayFrames: PmxDisplayFrame[];
-  softBodies: Array<{ name: string; englishName: string }>;
+  softBodies: PmxSoftBody[];
 }
 
 function readVector(reader: BinaryReader, size: number): number[] {
@@ -357,9 +372,10 @@ export class MMDPmxParser {
             vertexIndex: reader.readIndex(setting.vertexIndexSize, false),
             position: readVector(reader, 3),
           });
-        } else if (type === 3) {
+        } else if (type >= 3 && type <= 7) {
           offsets.push({
             vertexIndex: reader.readIndex(setting.vertexIndexSize, false),
+            channel: type - 3,
             uv: readVector(reader, 4),
           });
         } else if (type === 2) {
@@ -386,6 +402,18 @@ export class MMDPmxParser {
           offsets.push({
             morphIndex: reader.readIndex(setting.morphIndexSize),
             weight: reader.readFloat32(),
+          });
+        } else if (type === 9) {
+          offsets.push({
+            morphIndex: reader.readIndex(setting.morphIndexSize),
+            weight: reader.readFloat32(),
+          });
+        } else if (type === 10) {
+          offsets.push({
+            rigidBodyIndex: reader.readIndex(setting.rigidBodyIndexSize),
+            localFlag: reader.readUint8(),
+            velocity: readVector(reader, 3),
+            torque: readVector(reader, 3),
           });
         }
       }
@@ -480,13 +508,36 @@ export class MMDPmxParser {
       });
     }
 
-    const softBodies: Array<{ name: string; englishName: string }> = [];
+    const softBodies: PmxSoftBody[] = [];
     if (setting.version >= PMX_SOFT_BODY_VERSION_THRESHOLD && reader.position < buffer.byteLength) {
       const softBodyCount = reader.readUint32();
       for (let index = 0; index < softBodyCount; index += 1) {
         const name = reader.readTextBuffer(encoding);
         const englishName = reader.readTextBuffer(encoding);
-        softBodies.push({ name, englishName });
+        const shape = reader.position < buffer.byteLength ? reader.readUint8() : 0;
+        const materialIndex = reader.position < buffer.byteLength ? reader.readIndex(setting.materialIndexSize) : -1;
+        const groupIndex = reader.position < buffer.byteLength ? reader.readUint8() : 0;
+        const nonCollisionMask = reader.position < buffer.byteLength ? reader.readUint16() : 0;
+        const flags = reader.position < buffer.byteLength ? reader.readUint8() : 0;
+        const blinkDistance = reader.position < buffer.byteLength ? reader.readFloat32() : 0;
+        const clusterCount = reader.position < buffer.byteLength ? reader.readInt32() : 0;
+        const totalMass = reader.position < buffer.byteLength ? reader.readFloat32() : 0;
+        const collisionMargin = reader.position < buffer.byteLength ? reader.readFloat32() : 0;
+        const aeroModel = reader.position < buffer.byteLength ? reader.readInt32() : 0;
+        softBodies.push({
+          name,
+          englishName,
+          shape,
+          materialIndex,
+          groupIndex,
+          nonCollisionMask,
+          flags,
+          blinkDistance,
+          clusterCount,
+          totalMass,
+          collisionMargin,
+          aeroModel,
+        });
       }
     }
 

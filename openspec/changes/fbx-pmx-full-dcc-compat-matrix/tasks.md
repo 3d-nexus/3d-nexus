@@ -49,10 +49,10 @@
 
 ## 8. PMX Skinning, Morph, And Physics Expansion
 
-- [ ] 8.1 Preserve SDEF/QDEF authoring intent and report target-profile fallbacks explicitly
-- [ ] 8.2 Preserve extended UV, flip, impulse, and bilingual morph metadata needed for PMX re-export
-- [ ] 8.3 Preserve rigid body, joint, and soft-body-compatible metadata blocks for industrial-grade PMX round-trip
-- [ ] 8.4 Add regression tests covering impulse morphs, extended UV morphs, deform-after-physics bones, and PMX 2.1 physics extensions
+- [x] 8.1 Preserve SDEF/QDEF authoring intent and report target-profile fallbacks explicitly
+- [x] 8.2 Preserve extended UV, flip, impulse, and bilingual morph metadata needed for PMX re-export
+- [x] 8.3 Preserve rigid body, joint, and soft-body-compatible metadata blocks for industrial-grade PMX round-trip
+- [x] 8.4 Add regression tests covering impulse morphs, extended UV morphs, deform-after-physics bones, and PMX 2.1 physics extensions
 
 ## 9. VMD And Cross-Format Timing Fidelity
 
