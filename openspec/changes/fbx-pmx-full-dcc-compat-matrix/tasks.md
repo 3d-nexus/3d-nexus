@@ -14,10 +14,10 @@
 
 ## 3. FBX Scene Extras
 
-- [ ] 3.1 Import and export camera properties needed for DCC-grade round-trip
-- [ ] 3.2 Import and export light properties, including cone, intensity, color, and visibility behavior
-- [ ] 3.3 Preserve supported FBX constraints and custom user properties as structured metadata
-- [ ] 3.4 Add compatibility diagnostics and tests for unsupported scene-extra constructs
+- [x] 3.1 Import and export camera properties needed for DCC-grade round-trip
+- [x] 3.2 Import and export light properties, including cone, intensity, color, and visibility behavior
+- [x] 3.3 Preserve supported FBX constraints and custom user properties as structured metadata
+- [x] 3.4 Add compatibility diagnostics and tests for unsupported scene-extra constructs
 
 ## 4. FBX Animation Fidelity
 

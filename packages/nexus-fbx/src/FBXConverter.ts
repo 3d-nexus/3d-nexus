@@ -1,6 +1,7 @@
 import {
   AiMetadataType,
   AiAnimBehaviour,
+  AiLightSourceType,
   AiPropertyTypeInfo,
   AiPrimitiveType,
   AiSceneFlags,
@@ -13,6 +14,8 @@ import {
   invertMatrix4x4,
   multiplyMatrix4x4,
   type AiAnimation,
+  type AiCamera,
+  type AiLight,
   type AiMaterial,
   type AiMaterialProperty,
   type AiMetadata,
@@ -55,6 +58,8 @@ type FbxTransformStack = {
   sourceModelId: string;
 };
 
+type FbxObject = FbxDocument["objects"] extends Map<bigint, infer T> ? T : never;
+
 function parseNumberList(value: unknown): number[] {
   if (Array.isArray(value)) {
     return value.map((item) => Number(item));
@@ -75,6 +80,11 @@ function metadataJson(data: unknown): { type: AiMetadataType; data: string } {
     type: AiMetadataType.AISTRING,
     data: JSON.stringify(data),
   };
+}
+
+function readPropertyVectorAsArray(values: { get(name: string): unknown }, name: string, fallback: [number, number, number]): [number, number, number] {
+  const vector = readVectorProperty(values, name, vector3(fallback[0], fallback[1], fallback[2]));
+  return [vector.x, vector.y, vector.z];
 }
 
 function readVectorProperty(
@@ -169,7 +179,7 @@ function composeTransformStack(stack: FbxTransformStack): AiMatrix4x4 {
 }
 
 function readTransformStack(
-  model: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never,
+  model: FbxObject,
 ): FbxTransformStack {
   const properties = model.properties;
   return {
@@ -188,6 +198,91 @@ function readTransformStack(
     geometricScaling: readVectorProperty(properties, "GeometricScaling", vector3(1, 1, 1)),
     inheritType: readNumberProperty(properties, "InheritType", 0),
     sourceModelId: model.id.toString(),
+  };
+}
+
+const KNOWN_MODEL_PROPERTIES = new Set([
+  "Lcl Translation",
+  "Lcl Rotation",
+  "Lcl Scaling",
+  "RotationOrder",
+  "PreRotation",
+  "PostRotation",
+  "RotationPivot",
+  "RotationOffset",
+  "ScalingPivot",
+  "ScalingOffset",
+  "GeometricTranslation",
+  "GeometricRotation",
+  "GeometricScaling",
+  "InheritType",
+]);
+
+function propertyEntryValue(entry: { type: string; values: Array<string | number | boolean> }): unknown {
+  if (entry.type === "Color" || entry.type === "ColorRGB" || entry.type === "Vector3D") {
+    return {
+      x: Number(entry.values[0] ?? 0),
+      y: Number(entry.values[1] ?? 0),
+      z: Number(entry.values[2] ?? 0),
+    };
+  }
+  if (entry.values.length === 1) {
+    return entry.values[0];
+  }
+  return entry.values;
+}
+
+function collectUserProperties(model: FbxObject): Array<{ name: string; type: string; value: unknown }> {
+  return model.properties.entries
+    .filter((entry) => !KNOWN_MODEL_PROPERTIES.has(entry.name))
+    .map((entry) => ({
+      name: entry.name,
+      type: entry.type,
+      value: propertyEntryValue(entry),
+    }));
+}
+
+function convertCamera(object: FbxObject, model: FbxObject | undefined): AiCamera {
+  const modelProps = model?.properties;
+  const cameraPosition = modelProps ? readVectorProperty(modelProps, "Lcl Translation") : vector3();
+  const fov = Number(object.properties.get("FieldOfView") ?? object.properties.get("FOV") ?? 45);
+  const nearPlane = Number(object.properties.get("NearPlane") ?? 0.1);
+  const farPlane = Number(object.properties.get("FarPlane") ?? 1000);
+  const aspectWidth = Number(object.properties.get("AspectWidth") ?? 16);
+  const aspectHeight = Number(object.properties.get("AspectHeight") ?? 9);
+  return {
+    name: model?.name.replace(/^(Model|LimbNode)::/, "") ?? object.name.replace(/^Camera::/, ""),
+    position: cameraPosition,
+    up: vector3(0, 1, 0),
+    lookAt: vector3(0, 0, -1),
+    horizontalFov: (fov * Math.PI) / 180,
+    clipPlaneNear: nearPlane,
+    clipPlaneFar: farPlane,
+    aspect: aspectHeight === 0 ? 1 : aspectWidth / aspectHeight,
+  };
+}
+
+function convertLight(object: FbxObject, model: FbxObject | undefined): AiLight {
+  const modelProps = model?.properties;
+  const position = modelProps ? readVectorProperty(modelProps, "Lcl Translation") : vector3();
+  const colorValue = object.properties.get("Color") as Partial<{ r: number; g: number; b: number }> | undefined;
+  const color = {
+    r: Number(colorValue?.r ?? 1),
+    g: Number(colorValue?.g ?? 1),
+    b: Number(colorValue?.b ?? 1),
+  };
+  const lightType = Number(object.properties.get("LightType") ?? 0);
+  return {
+    name: model?.name.replace(/^(Model|LimbNode)::/, "") ?? object.name.replace(/^Light::/, ""),
+    type: lightType === 2 ? AiLightSourceType.SPOT : lightType === 1 ? AiLightSourceType.DIRECTIONAL : AiLightSourceType.POINT,
+    position,
+    direction: vector3(0, 0, -1),
+    up: vector3(0, 1, 0),
+    diffuseColor: color,
+    specularColor: color,
+    ambientColor: { r: 0, g: 0, b: 0 },
+    angleInnerCone: Number(object.properties.get("InnerAngle") ?? 30),
+    angleOuterCone: Number(object.properties.get("OuterAngle") ?? 45),
   };
 }
 
@@ -616,6 +711,7 @@ export class FBXConverter {
     const nodeById = new Map<bigint, AiNode>();
     models.forEach((model) => {
       const transformStack = readTransformStack(model);
+      const userProperties = collectUserProperties(model);
       const linkedGeometryIds = document
         .getChildObjects(model.id)
         .filter((entry) => entry.kind === "Mesh")
@@ -639,6 +735,9 @@ export class FBXConverter {
           data: determinant3x3FromMatrix4x4(transformation) < 0,
         },
       };
+      if (userProperties.length > 0) {
+        metadata["fbx:userProperties"] = metadataJson(userProperties);
+      }
       if (linkedGeometryIds.length > 0) {
         metadata["fbx:geometryIds"] = metadataJson(linkedGeometryIds.map((geometryId) => geometryId.toString()));
       }
@@ -700,6 +799,43 @@ export class FBXConverter {
       child.parent = rootNode;
     });
 
+    const cameras = [...document.objects.values()]
+      .filter((object) => object.kind === "Camera")
+      .map((camera) => {
+        const parentModel = document.getParentObjects(camera.id).find((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
+        return convertCamera(camera, parentModel);
+      });
+    const lights = [...document.objects.values()]
+      .filter((object) => object.kind === "Light")
+      .map((light) => {
+        const parentModel = document.getParentObjects(light.id).find((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
+        return convertLight(light, parentModel);
+      });
+
+    const supportedConstraints = new Set(["ConstraintAim", "ConstraintParent"]);
+    const constraints = [...document.objects.values()]
+      .filter((object) => object.kind.startsWith("Constraint"))
+      .map((object) => {
+        const parents = document.getParentObjects(object.id).filter((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
+        const children = document.getChildObjects(object.id).filter((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
+        return {
+          name: object.name,
+          type: object.kind,
+          sourceModels: parents.map((entry) => entry.name.replace(/^(Model|LimbNode)::/, "")),
+          targetModels: children.map((entry) => entry.name.replace(/^(Model|LimbNode)::/, "")),
+        };
+      });
+    const diagnostics = constraints
+      .filter((constraint) => !supportedConstraints.has(constraint.type))
+      .map((constraint) => ({
+        code: "FBX_UNSUPPORTED_SCENE_EXTRA",
+        severity: "warning",
+        capability: "fbx-scene-extras",
+        profile: "maya-fbx",
+        message: `Unsupported constraint type preserved as metadata: ${constraint.type}`,
+        details: constraint,
+      }));
+
     return {
       flags: 0 as AiSceneFlags,
       rootNode,
@@ -707,9 +843,19 @@ export class FBXConverter {
       materials: materials.map((material) => convertMaterial(document, material, embeddedTextureLookup)),
       animations: this.convertAnimations(document),
       textures: embeddedTextures,
-      lights: [],
-      cameras: [],
+      lights,
+      cameras,
       metadata: {
+        ...(constraints.length > 0
+          ? {
+              "fbx:constraints": metadataJson(constraints),
+            }
+          : {}),
+        ...(diagnostics.length > 0
+          ? {
+              "nexus:compatDiagnostics": metadataJson(diagnostics),
+            }
+          : {}),
         "fbx:sourceCoordSystem": metadataJson(coordInfo),
         "nexus:unitScaleFactor": {
           type: AiMetadataType.FLOAT,

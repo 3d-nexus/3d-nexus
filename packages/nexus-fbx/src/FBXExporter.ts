@@ -197,7 +197,25 @@ function collectSceneNodes(root: AiNode): ExportNodeDescriptor[] {
   return collected;
 }
 
-function renderModelProperties(node: AiNode): string[] {
+function renderModelProperties(node: AiNode): FbxExportNode[] {
+  const userProperties = parseJsonMetadata<Array<{ name: string; type: string; value: unknown }>>(
+    node.metadata?.["fbx:userProperties"]?.data,
+  ) ?? [];
+  const renderUserPropertyLines = (): string[] =>
+    userProperties.map((entry) => {
+      if (entry.value && typeof entry.value === "object") {
+        const vector = entry.value as Partial<{ x: number; y: number; z: number }>;
+        return `  P: "${entry.name}", "${entry.type || "Vector3D"}", "", "A", ${Number(vector.x ?? 0)}, ${Number(vector.y ?? 0)}, ${Number(vector.z ?? 0)}`;
+      }
+      if (typeof entry.value === "boolean") {
+        return `  P: "${entry.name}", "${entry.type || "bool"}", "", "A", ${entry.value ? 1 : 0}`;
+      }
+      if (typeof entry.value === "number") {
+        return `  P: "${entry.name}", "${entry.type || "double"}", "", "A", ${entry.value}`;
+      }
+      return `  P: "${entry.name}", "${entry.type || "KString"}", "", "A", "${String(entry.value ?? "")}"`;
+    });
+
   const stack = readNodeTransformStack(node);
   if (stack) {
     const translation = vectorFromUnknown(stack.translation, [0, 0, 0]);
@@ -214,7 +232,7 @@ function renderModelProperties(node: AiNode): string[] {
     const geometricScaling = vectorFromUnknown(stack.geometricScaling, [1, 1, 1]);
     const rotationOrder = Number(stack.rotationOrder === "ZYX" ? 5 : stack.rotationOrder === "ZXY" ? 4 : stack.rotationOrder === "YXZ" ? 3 : stack.rotationOrder === "YZX" ? 2 : stack.rotationOrder === "XZY" ? 1 : 0);
     return [
-      `Properties70: {`,
+      new FbxExportNode("Properties70", [], [
       `  P: "Lcl Translation", "Lcl Translation", "", "A", ${translation[0]}, ${translation[1]}, ${translation[2]}`,
       `  P: "Lcl Rotation", "Lcl Rotation", "", "A", ${rotation[0]}, ${rotation[1]}, ${rotation[2]}`,
       `  P: "Lcl Scaling", "Lcl Scaling", "", "A", ${scaling[0]}, ${scaling[1]}, ${scaling[2]}`,
@@ -229,14 +247,16 @@ function renderModelProperties(node: AiNode): string[] {
       `  P: "GeometricRotation", "Vector3D", "", "A", ${geometricRotation[0]}, ${geometricRotation[1]}, ${geometricRotation[2]}`,
       `  P: "GeometricScaling", "Vector3D", "", "A", ${geometricScaling[0]}, ${geometricScaling[1]}, ${geometricScaling[2]}`,
       `  P: "InheritType", "int", "", "A", ${Number(stack.inheritType ?? 0)}`,
-      `}`,
+      ...renderUserPropertyLines(),
+      ]),
     ];
   }
 
   return [
-    `Properties70: {`,
-    `  P: "Lcl Translation", "Lcl Translation", "", "A", ${node.transformation.data[12] ?? 0}, ${node.transformation.data[13] ?? 0}, ${node.transformation.data[14] ?? 0}`,
-    `}`,
+    new FbxExportNode("Properties70", [], [
+      `  P: "Lcl Translation", "Lcl Translation", "", "A", ${node.transformation.data[12] ?? 0}, ${node.transformation.data[13] ?? 0}, ${node.transformation.data[14] ?? 0}`,
+      ...renderUserPropertyLines(),
+    ]),
   ];
 }
 
@@ -442,7 +462,7 @@ export class FBXExporter implements BaseExporter {
       const modelId = nextId++;
       sceneNodeIdMap.set(node.name, modelId);
       modelIdMap.set(node.name, modelId);
-      objects.push(new FbxExportNode("Model", [modelId, `Model::${node.name}`, "Model"], renderModelProperties(node)));
+      objects.push(new FbxExportNode("Model", [modelId, `Model::${node.name}`, "Model"], [], renderModelProperties(node)));
     });
 
     nodeDescriptors.forEach(({ node, parent }) => {
@@ -462,6 +482,86 @@ export class FBXExporter implements BaseExporter {
         const materialId = materialIdMap.get(mesh.materialIndex);
         if (materialId) {
           connectionLines.push(`C: "OO", ${materialId}, ${modelId}`);
+        }
+      });
+    });
+
+    scene.cameras.forEach((camera) => {
+      let modelId = sceneNodeIdMap.get(camera.name);
+      if (!modelId) {
+        modelId = nextId++;
+        sceneNodeIdMap.set(camera.name, modelId);
+        objects.push(
+          new FbxExportNode("Model", [modelId, `Model::${camera.name}`, "Model"], [
+            `Properties70: {`,
+            `  P: "Lcl Translation", "Lcl Translation", "", "A", ${camera.position.x}, ${camera.position.y}, ${camera.position.z}`,
+            `}`,
+          ]),
+        );
+        connectionLines.push(`C: "OO", ${modelId}, ${ROOT_MODEL_ID}`);
+      }
+      const cameraId = nextId++;
+      const aspectHeight = camera.aspect === 0 ? 1 : 1;
+      const aspectWidth = camera.aspect === 0 ? 1 : camera.aspect;
+      objects.push(
+        new FbxExportNode("Camera", [cameraId, `Camera::${camera.name}`, "Camera"], [
+          `Properties70: {`,
+          `  P: "FieldOfView", "double", "", "A", ${(camera.horizontalFov * 180) / Math.PI}`,
+          `  P: "NearPlane", "double", "", "A", ${camera.clipPlaneNear}`,
+          `  P: "FarPlane", "double", "", "A", ${camera.clipPlaneFar}`,
+          `  P: "AspectWidth", "double", "", "A", ${aspectWidth}`,
+          `  P: "AspectHeight", "double", "", "A", ${aspectHeight}`,
+          `}`,
+        ]),
+      );
+      connectionLines.push(`C: "OO", ${cameraId}, ${modelId}`);
+    });
+
+    scene.lights.forEach((light) => {
+      let modelId = sceneNodeIdMap.get(light.name);
+      if (!modelId) {
+        modelId = nextId++;
+        sceneNodeIdMap.set(light.name, modelId);
+        objects.push(
+          new FbxExportNode("Model", [modelId, `Model::${light.name}`, "Model"], [
+            `Properties70: {`,
+            `  P: "Lcl Translation", "Lcl Translation", "", "A", ${light.position.x}, ${light.position.y}, ${light.position.z}`,
+            `}`,
+          ]),
+        );
+        connectionLines.push(`C: "OO", ${modelId}, ${ROOT_MODEL_ID}`);
+      }
+      const lightId = nextId++;
+      const lightType = light.type === 3 ? 2 : light.type === 1 ? 1 : 0;
+      objects.push(
+        new FbxExportNode("Light", [lightId, `Light::${light.name}`, "Light"], [
+          `Properties70: {`,
+          `  P: "LightType", "int", "", "A", ${lightType}`,
+          `  P: "Color", "Color", "", "A", ${light.diffuseColor.r}, ${light.diffuseColor.g}, ${light.diffuseColor.b}`,
+          `  P: "InnerAngle", "double", "", "A", ${light.angleInnerCone}`,
+          `  P: "OuterAngle", "double", "", "A", ${light.angleOuterCone}`,
+          `}`,
+        ]),
+      );
+      connectionLines.push(`C: "OO", ${lightId}, ${modelId}`);
+    });
+
+    const constraints = parseJsonMetadata<Array<{ name: string; type: string; sourceModels: string[]; targetModels: string[] }>>(
+      scene.metadata["fbx:constraints"]?.data,
+    ) ?? [];
+    constraints.forEach((constraint) => {
+      const constraintId = nextId++;
+      objects.push(new FbxExportNode(constraint.type, [constraintId, constraint.name, constraint.type]));
+      constraint.sourceModels.forEach((name) => {
+        const modelId = sceneNodeIdMap.get(name);
+        if (modelId) {
+          connectionLines.push(`C: "OO", ${modelId}, ${constraintId}`);
+        }
+      });
+      constraint.targetModels.forEach((name) => {
+        const modelId = sceneNodeIdMap.get(name);
+        if (modelId) {
+          connectionLines.push(`C: "OO", ${constraintId}, ${modelId}`);
         }
       });
     });
