@@ -5,6 +5,7 @@ export interface UiHandle {
   setWarnings(warnings: ImportResult["warnings"]): void;
   setStats(result: ImportResult | null): void;
   setDownload(fileName: string, blob: Blob | null): void;
+  setCompatibilityReport(markdown: string | null): void;
 }
 
 function countFaces(result: ImportResult): number {
@@ -20,6 +21,7 @@ export function createUi(): UiHandle {
   const warnings = document.querySelector<HTMLUListElement>("#warnings")!;
   const stats = document.querySelector<HTMLDivElement>("#stats")!;
   const download = document.querySelector<HTMLAnchorElement>("#download-link")!;
+  const compatibilityReport = document.querySelector<HTMLPreElement>("#compat-report")!;
   let currentUrl: string | null = null;
 
   return {
@@ -76,6 +78,9 @@ export function createUi(): UiHandle {
       download.download = fileName;
       download.hidden = false;
       download.textContent = `Download ${fileName}`;
+    },
+    setCompatibilityReport(markdown) {
+      compatibilityReport.textContent = markdown ?? "No report yet.";
     },
   };
 }

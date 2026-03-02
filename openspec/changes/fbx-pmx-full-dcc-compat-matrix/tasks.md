@@ -56,14 +56,14 @@
 
 ## 9. VMD And Cross-Format Timing Fidelity
 
-- [ ] 9.1 Preserve morph, camera, and light frame semantics alongside bone interpolation
-- [ ] 9.2 Track original frame indices during time-based normalization and diagnose resampling drift
-- [ ] 9.3 Add PMX/VMD to FBX and FBX to PMX conversion tests that verify morph/timing compatibility reports
-- [ ] 9.4 Validate byte-exact VMD interpolation round-trip where no normalization occurred
+- [x] 9.1 Preserve morph, camera, and light frame semantics alongside bone interpolation
+- [x] 9.2 Track original frame indices during time-based normalization and diagnose resampling drift
+- [x] 9.3 Add PMX/VMD to FBX and FBX to PMX conversion tests that verify morph/timing compatibility reports
+- [x] 9.4 Validate byte-exact VMD interpolation round-trip where no normalization occurred
 
 ## 10. Converter, Playground, And Documentation
 
-- [ ] 10.1 Expose compatibility profile selection and report output through `nexus-converter`
-- [ ] 10.2 Surface compatibility status and diagnostics in the playground validation workflow
-- [ ] 10.3 Document exact vs normalized vs degraded behavior for each profile and capability
-- [ ] 10.4 Publish a compatibility matrix summary that maps capabilities to tested tool versions and known gaps
+- [x] 10.1 Expose compatibility profile selection and report output through `nexus-converter`
+- [x] 10.2 Surface compatibility status and diagnostics in the playground validation workflow
+- [x] 10.3 Document exact vs normalized vs degraded behavior for each profile and capability
+- [x] 10.4 Publish a compatibility matrix summary that maps capabilities to tested tool versions and known gaps

@@ -1,11 +1,18 @@
 import type { ImportResult } from "nexus-core";
-import { ModelConverter, IMPORTER_REGISTRY, ModelFormat, type ModelFormat as ModelFormatValue } from "nexus-converter";
+import {
+  ModelConverter,
+  IMPORTER_REGISTRY,
+  ModelFormat,
+  renderCompatibilityReportMarkdown,
+  type ModelFormat as ModelFormatValue,
+} from "nexus-converter";
 import { createUi } from "./ui";
 
 const ui = createUi();
 const converter = new ModelConverter();
 const fileInput = document.querySelector<HTMLInputElement>("#file-input")!;
 const targetSelect = document.querySelector<HTMLSelectElement>("#target-format")!;
+const compatibilityProfileSelect = document.querySelector<HTMLSelectElement>("#compat-profile")!;
 const convertButton = document.querySelector<HTMLButtonElement>("#convert-button")!;
 const dropzone = document.querySelector<HTMLDivElement>("#dropzone")!;
 
@@ -55,6 +62,7 @@ async function loadFile(file: File): Promise<void> {
   ui.setWarnings(currentResult.warnings);
   ui.setStats(currentResult);
   ui.setDownload("", null);
+  ui.setCompatibilityReport(null);
 }
 
 async function convertCurrentFile(): Promise<void> {
@@ -66,11 +74,14 @@ async function convertCurrentFile(): Promise<void> {
   const target = targetSelect.value as ModelFormatValue;
   const buffer = await currentFile.arrayBuffer();
   ui.setStatus(`Converting ${currentFile.name} -> ${target.toUpperCase()}...`);
-  const output = converter.convert(buffer, currentFormat, target);
+  const result = converter.convertWithReport(buffer, currentFormat, target, {
+    compatibilityProfile: compatibilityProfileSelect.value as never,
+  });
   ui.setDownload(
     `${currentFile.name.replace(/\.[^.]+$/, "")}.${target}`,
-    new Blob([output], { type: "application/octet-stream" }),
+    new Blob([result.output], { type: "application/octet-stream" }),
   );
+  ui.setCompatibilityReport(result.report ? renderCompatibilityReportMarkdown(result.report) : null);
   ui.setStatus(`Converted ${currentFile.name} -> ${target.toUpperCase()}.`);
 }
 
@@ -108,3 +119,4 @@ dropzone.addEventListener("drop", (event) => {
 });
 
 ui.setWarnings([]);
+ui.setCompatibilityReport(null);

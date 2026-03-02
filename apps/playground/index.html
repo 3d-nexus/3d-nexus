@@ -116,6 +116,17 @@
         gap: 12px;
       }
 
+      pre.report {
+        margin: 0;
+        padding: 16px;
+        overflow: auto;
+        border-radius: 16px;
+        background: rgba(31, 42, 55, 0.92);
+        color: #f8fafc;
+        font: 0.9rem/1.5 "Courier New", monospace;
+        white-space: pre-wrap;
+      }
+
       .stat {
         border-radius: 16px;
         padding: 16px;
@@ -155,6 +166,16 @@
               <input id="file-input" type="file" />
               <label for="target-format">Output</label>
               <select id="target-format"></select>
+              <label for="compat-profile">Profile</label>
+              <select id="compat-profile">
+                <option value="mmd">MMD</option>
+                <option value="blender-fbx">Blender FBX</option>
+                <option value="maya-fbx">Maya FBX</option>
+                <option value="3dsmax-fbx">3ds Max FBX</option>
+                <option value="motionbuilder-fbx">MotionBuilder FBX</option>
+                <option value="unity">Unity</option>
+                <option value="unreal">Unreal</option>
+              </select>
               <button id="convert-button" type="button">Convert</button>
             </div>
           </div>
@@ -172,6 +193,10 @@
           <div class="panel">
             <h2>Mesh Stats</h2>
             <div id="stats" class="stats"></div>
+          </div>
+          <div class="panel">
+            <h2>Compatibility Report</h2>
+            <pre id="compat-report" class="report">No report yet.</pre>
           </div>
         </section>
       </section>
