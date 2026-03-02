@@ -1,4 +1,5 @@
 export * from "./interfaces";
+export * from "./types/compatibility";
 export * from "./math/utils";
 export * from "./types/anim";
 export * from "./types/camera";

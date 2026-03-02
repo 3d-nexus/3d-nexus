@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus-3d.local/openspec/compatibility/fixture-manifest.schema.json",
+  "title": "Compatibility Fixture Manifest",
+  "type": "object",
+  "required": [
+    "id",
+    "profile",
+    "label",
+    "tool",
+    "toolVersion",
+    "sourceFormat",
+    "fixturePath",
+    "capabilities"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "mmd",
+        "blender-fbx",
+        "maya-fbx",
+        "3dsmax-fbx",
+        "motionbuilder-fbx",
+        "unity",
+        "unreal"
+      ]
+    },
+    "label": { "type": "string" },
+    "tool": { "type": "string" },
+    "toolVersion": { "type": "string" },
+    "sourceFormat": { "type": "string" },
+    "fixturePath": { "type": "string" },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "expectedDiagnostics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tolerances": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "exactAbsolute": { "type": "number" },
+          "normalizedAbsolute": { "type": "number" },
+          "degradedAbsolute": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

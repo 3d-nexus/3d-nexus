@@ -1,0 +1,43 @@
+; FBX 7.4.0 project file
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 1
+  UpAxisSign: 1
+  FrontAxis: 2
+  FrontAxisSign: 1
+  CoordAxis: 0
+  CoordAxisSign: 1
+  UnitScaleFactor: 100
+}
+Objects: {
+  Geometry: 1, "Geometry::Mesh", "Mesh" {
+    Vertices: 0,0,0,1,0,0,0,1,0
+    PolygonVertexIndex: 0,1,-3
+    Normals: 0,1,0,0,1,0,0,1,0
+  }
+  Model: 2, "Model::AnimatedMesh", "Model" {
+  }
+  AnimationStack: 10, "AnimStack::Take001", "AnimationStack" {
+    LocalStart: 0
+    LocalStop: 46186158000
+  }
+  AnimationLayer: 11, "AnimLayer::BaseLayer", "AnimationLayer" {
+  }
+  AnimationCurveNode: 12, "AnimCurveNode::T_AnimatedMesh", "AnimationCurveNode" {
+  }
+  AnimationCurve: 13, "AnimCurve::AnimatedMesh_X", "AnimationCurve" {
+    KeyTime: 0,46186158000
+    KeyValueFloat: 0,5
+  }
+}
+Connections: {
+  C: "OO", 1, 2
+  C: "OO", 11, 10
+  C: "OO", 12, 11
+  C: "OO", 13, 12, "d|X"
+  C: "OO", 2, 12
+}
+Takes: {
+}

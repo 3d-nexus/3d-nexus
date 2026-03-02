@@ -1,0 +1,31 @@
+; FBX 7.4.0 project file
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 1
+  UpAxisSign: 1
+  FrontAxis: 2
+  FrontAxisSign: 1
+  CoordAxis: 0
+  CoordAxisSign: 1
+  UnitScaleFactor: 100
+}
+Objects: {
+  Geometry: 1, "Geometry::Mesh", "Mesh" {
+    Vertices: 0,0,0,1,0,0,0,1,0
+    PolygonVertexIndex: 0,1,-3
+    Normals: 0,1,0,0,1,0,0,1,0
+  }
+  Model: 2, "Model::MirroredMesh", "Model" {
+    Properties70: {
+      P: "Lcl Scaling", "Lcl Scaling", "", "A", -1,1,1
+      P: "ScalingPivot", "Vector3D", "", "A", 0,0,0
+    }
+  }
+}
+Connections: {
+  C: "OO", 1, 2
+}
+Takes: {
+}

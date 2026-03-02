@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus-3d.local/openspec/compatibility/compatibility-report.schema.json",
+  "title": "Compatibility Report",
+  "type": "object",
+  "required": [
+    "profile",
+    "generatedAt",
+    "checks",
+    "summary"
+  ],
+  "properties": {
+    "profile": { "type": "string" },
+    "generatedAt": { "type": "string" },
+    "sourceFormat": { "type": "string" },
+    "targetFormat": { "type": "string" },
+    "fixtureId": { "type": "string" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "capability",
+          "outcome",
+          "diagnostics"
+        ],
+        "properties": {
+          "capability": { "type": "string" },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "normalized",
+              "degraded",
+              "unsupported"
+            ]
+          },
+          "difference": { "type": "number" },
+          "expected": {},
+          "actual": {},
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "severity",
+                "capability",
+                "profile"
+              ],
+              "properties": {
+                "code": { "type": "string" },
+                "message": { "type": "string" },
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "info",
+                    "warning",
+                    "error"
+                  ]
+                },
+                "capability": { "type": "string" },
+                "profile": { "type": "string" },
+                "details": {}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "exact",
+        "normalized",
+        "degraded",
+        "unsupported",
+        "passed"
+      ],
+      "properties": {
+        "exact": { "type": "integer" },
+        "normalized": { "type": "integer" },
+        "degraded": { "type": "integer" },
+        "unsupported": { "type": "integer" },
+        "passed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,46 @@
+{
+  "profiles": [
+    {
+      "name": "mmd",
+      "label": "MikuMikuDance / PMX+VMD",
+      "format": "pmx",
+      "notes": "Primary profile for PMX, VMD, and MMD-authored metadata round-trip."
+    },
+    {
+      "name": "blender-fbx",
+      "label": "Blender FBX",
+      "format": "fbx",
+      "notes": "Validation profile for Blender-authored FBX interchange."
+    },
+    {
+      "name": "maya-fbx",
+      "label": "Autodesk Maya FBX",
+      "format": "fbx",
+      "notes": "Validation profile for Maya-authored FBX scenes and animation."
+    },
+    {
+      "name": "3dsmax-fbx",
+      "label": "Autodesk 3ds Max FBX",
+      "format": "fbx",
+      "notes": "Validation profile for 3ds Max pivot, transform, and material semantics."
+    },
+    {
+      "name": "motionbuilder-fbx",
+      "label": "Autodesk MotionBuilder FBX",
+      "format": "fbx",
+      "notes": "Validation profile for animation stack and retarget-friendly FBX exports."
+    },
+    {
+      "name": "unity",
+      "label": "Unity Runtime Interchange",
+      "format": "fbx",
+      "notes": "Runtime-oriented validation profile for Unity import/export behavior."
+    },
+    {
+      "name": "unreal",
+      "label": "Unreal Runtime Interchange",
+      "format": "fbx",
+      "notes": "Runtime-oriented validation profile for Unreal import/export behavior."
+    }
+  ]
+}

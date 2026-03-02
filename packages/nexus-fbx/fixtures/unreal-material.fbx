@@ -1,0 +1,48 @@
+; FBX 7.4.0 project file
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 1
+  UpAxisSign: 1
+  FrontAxis: 2
+  FrontAxisSign: 1
+  CoordAxis: 0
+  CoordAxisSign: 1
+  UnitScaleFactor: 100
+}
+Objects: {
+  Geometry: 1, "Geometry::Mesh", "Mesh" {
+    Vertices: 0,0,0,1,0,0,0,1,0
+    PolygonVertexIndex: 0,1,-3
+    Normals: 0,1,0,0,1,0,0,1,0
+    LayerElementUV: 0 {
+      MappingInformationType: "ByVertice"
+      ReferenceInformationType: "Direct"
+      UV: 0,0,1,0,0,1
+    }
+    LayerElementUV: 1 {
+      MappingInformationType: "ByVertice"
+      ReferenceInformationType: "Direct"
+      UV: 0.1,0.1,0.9,0.1,0.1,0.9
+    }
+  }
+  Material: 2, "Material::UnrealMat", "Material" {
+    Properties70: {
+      P: "DiffuseColor", "Color", "", "A", 0.7,0.7,0.7
+      P: "TransparencyFactor", "Number", "", "A", 0.1
+    }
+  }
+  Texture: 3, "Texture::UnrealNormal", "TextureVideoClip" {
+    RelativeFilename: "Textures/unreal_normal.png"
+  }
+  Model: 4, "Model::UnrealMesh", "Model" {
+  }
+}
+Connections: {
+  C: "OO", 1, 4
+  C: "OO", 2, 4
+  C: "OO", 3, 2, "NormalMap"
+}
+Takes: {
+}

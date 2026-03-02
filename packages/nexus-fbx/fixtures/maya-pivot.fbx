@@ -1,0 +1,39 @@
+; FBX 7.4.0 project file
+FBXHeaderExtension: {
+  FBXVersion: 7400
+}
+GlobalSettings: {
+  UpAxis: 2
+  UpAxisSign: 1
+  FrontAxis: 1
+  FrontAxisSign: -1
+  CoordAxis: 0
+  CoordAxisSign: 1
+  UnitScaleFactor: 100
+}
+Objects: {
+  Geometry: 1, "Geometry::Mesh", "Mesh" {
+    Vertices: 0,0,0,2,0,0,0,2,0
+    PolygonVertexIndex: 0,1,-3
+    Normals: 0,1,0,0,1,0,0,1,0
+  }
+  Model: 2, "Model::MayaMesh", "Model" {
+    Properties70: {
+      P: "PreRotation", "Vector3D", "", "A", 0,45,0
+      P: "RotationOrder", "enum", "", "A", 5
+      P: "RotationPivot", "Vector3D", "", "A", 1,0,0
+    }
+  }
+  AnimationStack: 10, "AnimStack::Take001", "AnimationStack" {
+    LocalStart: 0
+    LocalStop: 923723160
+  }
+  AnimationLayer: 11, "AnimLayer::BaseLayer", "AnimationLayer" {
+  }
+}
+Connections: {
+  C: "OO", 1, 2
+  C: "OO", 11, 10
+}
+Takes: {
+}

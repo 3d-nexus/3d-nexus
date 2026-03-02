@@ -1,5 +1,7 @@
 export * from "./ConvertOptions";
 export * from "./ModelConverter";
+export * from "./compatibility/fixtures";
+export * from "./compatibility/report";
 export * from "./formats";
 export * from "./postprocess/FlipUVsStep";
 export * from "./postprocess/GenerateNormalsStep";
