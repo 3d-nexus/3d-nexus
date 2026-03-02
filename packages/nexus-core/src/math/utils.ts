@@ -11,6 +11,87 @@ export function createIdentityMatrix4x4(): AiMatrix4x4 {
   };
 }
 
+export function createTranslationMatrix4x4(x: number, y: number, z: number): AiMatrix4x4 {
+  return {
+    data: new Float32Array([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      x, y, z, 1,
+    ]),
+  };
+}
+
+export function createScalingMatrix4x4(x: number, y: number, z: number): AiMatrix4x4 {
+  return {
+    data: new Float32Array([
+      x, 0, 0, 0,
+      0, y, 0, 0,
+      0, 0, z, 0,
+      0, 0, 0, 1,
+    ]),
+  };
+}
+
+export function createRotationXMatrix4x4(radians: number): AiMatrix4x4 {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  return {
+    data: new Float32Array([
+      1, 0, 0, 0,
+      0, c, s, 0,
+      0, -s, c, 0,
+      0, 0, 0, 1,
+    ]),
+  };
+}
+
+export function createRotationYMatrix4x4(radians: number): AiMatrix4x4 {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  return {
+    data: new Float32Array([
+      c, 0, -s, 0,
+      0, 1, 0, 0,
+      s, 0, c, 0,
+      0, 0, 0, 1,
+    ]),
+  };
+}
+
+export function createRotationZMatrix4x4(radians: number): AiMatrix4x4 {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  return {
+    data: new Float32Array([
+      c, s, 0, 0,
+      -s, c, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]),
+  };
+}
+
+export function createEulerRotationMatrix4x4(
+  xDegrees: number,
+  yDegrees: number,
+  zDegrees: number,
+  order = "XYZ",
+): AiMatrix4x4 {
+  const radians = {
+    X: (xDegrees * Math.PI) / 180,
+    Y: (yDegrees * Math.PI) / 180,
+    Z: (zDegrees * Math.PI) / 180,
+  };
+  const rotations: Record<string, AiMatrix4x4> = {
+    X: createRotationXMatrix4x4(radians.X),
+    Y: createRotationYMatrix4x4(radians.Y),
+    Z: createRotationZMatrix4x4(radians.Z),
+  };
+
+  return [...order].reduce((acc, axis) => multiplyMatrix4x4(acc, rotations[axis] ?? createIdentityMatrix4x4()), createIdentityMatrix4x4());
+}
+
 export function multiplyMatrix4x4(left: AiMatrix4x4, right: AiMatrix4x4): AiMatrix4x4 {
   const out = new Float32Array(16);
   const a = left.data;
@@ -100,4 +181,13 @@ export function normalizeVector3(vector: AiVector3D): AiVector3D {
     y: vector.y / length,
     z: vector.z / length,
   };
+}
+
+export function determinant3x3FromMatrix4x4(matrix: AiMatrix4x4): number {
+  const m = matrix.data;
+  return (
+    m[0]! * (m[5]! * m[10]! - m[6]! * m[9]!) -
+    m[4]! * (m[1]! * m[10]! - m[2]! * m[9]!) +
+    m[8]! * (m[1]! * m[6]! - m[2]! * m[5]!)
+  );
 }

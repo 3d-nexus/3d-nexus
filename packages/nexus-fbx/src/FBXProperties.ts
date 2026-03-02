@@ -32,7 +32,7 @@ export class PropertyTable {
           b: Number(valueParts[2] ?? 0),
           a: 1,
         });
-      } else if (type === "Lcl Translation") {
+      } else if (type === "Lcl Translation" || type === "Lcl Rotation" || type === "Lcl Scaling" || type === "Vector3D") {
         this.values.set(String(name), {
           x: Number(valueParts[0] ?? 0),
           y: Number(valueParts[1] ?? 0),

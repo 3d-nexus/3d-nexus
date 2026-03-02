@@ -4,6 +4,7 @@ import {
   type AiAnimation,
   type AiMaterial,
   type AiMaterialProperty,
+  type AiNode,
   type AiQuaternion,
   type AiScene,
   type BaseExporter,
@@ -14,6 +15,11 @@ import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
 const ROOT_MODEL_ID = 100000;
 const BASE_NODE_ID = 100001;
+
+type ExportNodeDescriptor = {
+  node: AiNode;
+  parent: AiNode | null;
+};
 
 function flattenVertices(mesh: AiScene["meshes"][number]): string {
   return mesh.vertices.flatMap((vertex) => [vertex.x, vertex.y, vertex.z]).join(",");
@@ -158,6 +164,82 @@ function texturePropertyName(semantic: AiTextureType): string {
   }
 }
 
+function parseJsonMetadata<T>(raw: unknown): T | null {
+  if (typeof raw !== "string") {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function readNodeTransformStack(node: AiNode): Record<string, unknown> | null {
+  return parseJsonMetadata<Record<string, unknown>>(node.metadata?.["fbx:transformStack"]?.data);
+}
+
+function vectorFromUnknown(value: unknown, fallback: [number, number, number]): [number, number, number] {
+  if (value && typeof value === "object") {
+    const vector = value as Partial<{ x: number; y: number; z: number }>;
+    return [Number(vector.x ?? fallback[0]), Number(vector.y ?? fallback[1]), Number(vector.z ?? fallback[2])];
+  }
+  return fallback;
+}
+
+function collectSceneNodes(root: AiNode): ExportNodeDescriptor[] {
+  const collected: ExportNodeDescriptor[] = [];
+  const visit = (node: AiNode, parent: AiNode | null): void => {
+    collected.push({ node, parent });
+    node.children.forEach((child) => visit(child, node));
+  };
+  root.children.forEach((child) => visit(child, root));
+  return collected;
+}
+
+function renderModelProperties(node: AiNode): string[] {
+  const stack = readNodeTransformStack(node);
+  if (stack) {
+    const translation = vectorFromUnknown(stack.translation, [0, 0, 0]);
+    const rotation = vectorFromUnknown(stack.rotation, [0, 0, 0]);
+    const scaling = vectorFromUnknown(stack.scaling, [1, 1, 1]);
+    const preRotation = vectorFromUnknown(stack.preRotation, [0, 0, 0]);
+    const postRotation = vectorFromUnknown(stack.postRotation, [0, 0, 0]);
+    const rotationPivot = vectorFromUnknown(stack.rotationPivot, [0, 0, 0]);
+    const rotationOffset = vectorFromUnknown(stack.rotationOffset, [0, 0, 0]);
+    const scalingPivot = vectorFromUnknown(stack.scalingPivot, [0, 0, 0]);
+    const scalingOffset = vectorFromUnknown(stack.scalingOffset, [0, 0, 0]);
+    const geometricTranslation = vectorFromUnknown(stack.geometricTranslation, [0, 0, 0]);
+    const geometricRotation = vectorFromUnknown(stack.geometricRotation, [0, 0, 0]);
+    const geometricScaling = vectorFromUnknown(stack.geometricScaling, [1, 1, 1]);
+    const rotationOrder = Number(stack.rotationOrder === "ZYX" ? 5 : stack.rotationOrder === "ZXY" ? 4 : stack.rotationOrder === "YXZ" ? 3 : stack.rotationOrder === "YZX" ? 2 : stack.rotationOrder === "XZY" ? 1 : 0);
+    return [
+      `Properties70: {`,
+      `  P: "Lcl Translation", "Lcl Translation", "", "A", ${translation[0]}, ${translation[1]}, ${translation[2]}`,
+      `  P: "Lcl Rotation", "Lcl Rotation", "", "A", ${rotation[0]}, ${rotation[1]}, ${rotation[2]}`,
+      `  P: "Lcl Scaling", "Lcl Scaling", "", "A", ${scaling[0]}, ${scaling[1]}, ${scaling[2]}`,
+      `  P: "RotationOrder", "enum", "", "A", ${rotationOrder}`,
+      `  P: "PreRotation", "Vector3D", "", "A", ${preRotation[0]}, ${preRotation[1]}, ${preRotation[2]}`,
+      `  P: "PostRotation", "Vector3D", "", "A", ${postRotation[0]}, ${postRotation[1]}, ${postRotation[2]}`,
+      `  P: "RotationPivot", "Vector3D", "", "A", ${rotationPivot[0]}, ${rotationPivot[1]}, ${rotationPivot[2]}`,
+      `  P: "RotationOffset", "Vector3D", "", "A", ${rotationOffset[0]}, ${rotationOffset[1]}, ${rotationOffset[2]}`,
+      `  P: "ScalingPivot", "Vector3D", "", "A", ${scalingPivot[0]}, ${scalingPivot[1]}, ${scalingPivot[2]}`,
+      `  P: "ScalingOffset", "Vector3D", "", "A", ${scalingOffset[0]}, ${scalingOffset[1]}, ${scalingOffset[2]}`,
+      `  P: "GeometricTranslation", "Vector3D", "", "A", ${geometricTranslation[0]}, ${geometricTranslation[1]}, ${geometricTranslation[2]}`,
+      `  P: "GeometricRotation", "Vector3D", "", "A", ${geometricRotation[0]}, ${geometricRotation[1]}, ${geometricRotation[2]}`,
+      `  P: "GeometricScaling", "Vector3D", "", "A", ${geometricScaling[0]}, ${geometricScaling[1]}, ${geometricScaling[2]}`,
+      `  P: "InheritType", "int", "", "A", ${Number(stack.inheritType ?? 0)}`,
+      `}`,
+    ];
+  }
+
+  return [
+    `Properties70: {`,
+    `  P: "Lcl Translation", "Lcl Translation", "", "A", ${node.transformation.data[12] ?? 0}, ${node.transformation.data[13] ?? 0}, ${node.transformation.data[14] ?? 0}`,
+    `}`,
+  ];
+}
+
 function writeAnimations(
   animations: AiAnimation[],
   nodeIdMap: Map<string, number>,
@@ -229,6 +311,7 @@ export class FBXExporter implements BaseExporter {
     const connectionLines: string[] = [];
     const materialIdMap = new Map<number, number>();
     const modelIdMap = new Map<string, number>();
+    const geometryIdMap = new Map<number, number>();
     const embeddedVideoIdMap = new Map<string, number>();
     let nextId = BASE_NODE_ID;
 
@@ -245,7 +328,7 @@ export class FBXExporter implements BaseExporter {
 
     scene.meshes.forEach((mesh, meshIndex) => {
       const geometryId = nextId++;
-      const modelId = nextId++;
+      geometryIdMap.set(meshIndex, geometryId);
       objects.push(
         new FbxExportNode(
           "Geometry",
@@ -258,10 +341,6 @@ export class FBXExporter implements BaseExporter {
           ],
         ),
       );
-      objects.push(new FbxExportNode("Model", [modelId, `Model::${mesh.name || `Mesh_${meshIndex}`}`, "Model"]));
-      modelIdMap.set(mesh.name || `Mesh_${meshIndex}`, modelId);
-      connectionLines.push(`C: "OO", ${modelId}, ${geometryId}`);
-      connectionLines.push(`C: "OO", ${modelId}, ${ROOT_MODEL_ID}`);
 
       if (!materialIdMap.has(mesh.materialIndex)) {
         const materialId = nextId++;
@@ -298,7 +377,6 @@ export class FBXExporter implements BaseExporter {
             connectionLines.push(`C: "OO", ${videoId}, ${textureId}`);
           });
       }
-      connectionLines.push(`C: "OO", ${materialIdMap.get(mesh.materialIndex)}, ${modelId}`);
 
       if (mesh.bones.length > 0) {
         const skinId = nextId++;
@@ -339,6 +417,53 @@ export class FBXExporter implements BaseExporter {
           connectionLines.push(`C: "OO", ${shapeId}, ${channelId}`);
         });
       }
+    });
+
+    const nodeDescriptors = collectSceneNodes(scene.rootNode);
+    if (nodeDescriptors.length === 0 && scene.rootNode.meshIndices.length > 0) {
+      scene.rootNode.meshIndices.forEach((meshIndex) => {
+        const mesh = scene.meshes[meshIndex];
+        nodeDescriptors.push({
+          node: {
+            name: mesh?.name ?? `${scene.rootNode.name}_Mesh_${meshIndex}`,
+            transformation: scene.rootNode.transformation,
+            parent: null,
+            children: [],
+            meshIndices: [meshIndex],
+            metadata: scene.rootNode.metadata ?? null,
+          },
+          parent: scene.rootNode,
+        });
+      });
+    }
+
+    const sceneNodeIdMap = new Map<string, number>();
+    nodeDescriptors.forEach(({ node }) => {
+      const modelId = nextId++;
+      sceneNodeIdMap.set(node.name, modelId);
+      modelIdMap.set(node.name, modelId);
+      objects.push(new FbxExportNode("Model", [modelId, `Model::${node.name}`, "Model"], renderModelProperties(node)));
+    });
+
+    nodeDescriptors.forEach(({ node, parent }) => {
+      const modelId = sceneNodeIdMap.get(node.name);
+      if (!modelId) {
+        return;
+      }
+      const parentId = parent && parent !== scene.rootNode ? sceneNodeIdMap.get(parent.name) ?? ROOT_MODEL_ID : ROOT_MODEL_ID;
+      connectionLines.push(`C: "OO", ${modelId}, ${parentId}`);
+      node.meshIndices.forEach((meshIndex) => {
+        const geometryId = geometryIdMap.get(meshIndex);
+        const mesh = scene.meshes[meshIndex];
+        if (!geometryId || !mesh) {
+          return;
+        }
+        connectionLines.push(`C: "OO", ${geometryId}, ${modelId}`);
+        const materialId = materialIdMap.get(mesh.materialIndex);
+        if (materialId) {
+          connectionLines.push(`C: "OO", ${materialId}, ${modelId}`);
+        }
+      });
     });
 
     objects.push(new FbxExportNode("Model", [ROOT_MODEL_ID, "Model::Root", "Model"]));

@@ -7,10 +7,10 @@
 
 ## 2. FBX Transform Fidelity
 
-- [ ] 2.1 Preserve FBX transform stack terms on import, including pivots, offsets, pre/post rotation, inherit type, and geometric transforms
-- [ ] 2.2 Reconstruct FBX transform stack terms on export from preserved metadata
-- [ ] 2.3 Preserve instancing relationships and mirrored handedness metadata during import/export
-- [ ] 2.4 Add fixture-driven tests for Maya/3ds Max pivot scenes and negative-scale cases
+- [x] 2.1 Preserve FBX transform stack terms on import, including pivots, offsets, pre/post rotation, inherit type, and geometric transforms
+- [x] 2.2 Reconstruct FBX transform stack terms on export from preserved metadata
+- [x] 2.3 Preserve instancing relationships and mirrored handedness metadata during import/export
+- [x] 2.4 Add fixture-driven tests for Maya/3ds Max pivot scenes and negative-scale cases
 
 ## 3. FBX Scene Extras
 

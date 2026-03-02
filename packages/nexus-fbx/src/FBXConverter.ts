@@ -5,16 +5,24 @@ import {
   AiPrimitiveType,
   AiSceneFlags,
   AiTextureType,
+  createEulerRotationMatrix4x4,
   createIdentityMatrix4x4,
+  createScalingMatrix4x4,
+  createTranslationMatrix4x4,
+  determinant3x3FromMatrix4x4,
+  invertMatrix4x4,
+  multiplyMatrix4x4,
   type AiAnimation,
   type AiMaterial,
   type AiMaterialProperty,
+  type AiMetadata,
   type AiMesh,
   type AiMatrix4x4,
   type AiNode,
   type AiNodeAnim,
   type AiScene,
   type AiTexture,
+  type AiVector3D,
 } from "nexus-core";
 import { FbxAnimationStack, FbxBlendShape, FbxDocument, FbxSkin, FbxVideo } from "./FBXDocument";
 import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
@@ -29,6 +37,24 @@ type CoordSystemInfo = {
   unitScaleFactor: number;
 };
 
+type FbxTransformStack = {
+  translation: AiVector3D;
+  rotation: AiVector3D;
+  scaling: AiVector3D;
+  rotationOrder: string;
+  preRotation: AiVector3D;
+  postRotation: AiVector3D;
+  rotationPivot: AiVector3D;
+  rotationOffset: AiVector3D;
+  scalingPivot: AiVector3D;
+  scalingOffset: AiVector3D;
+  geometricTranslation: AiVector3D;
+  geometricRotation: AiVector3D;
+  geometricScaling: AiVector3D;
+  inheritType: number;
+  sourceModelId: string;
+};
+
 function parseNumberList(value: unknown): number[] {
   if (Array.isArray(value)) {
     return value.map((item) => Number(item));
@@ -38,6 +64,131 @@ function parseNumberList(value: unknown): number[] {
     .map((part) => part.trim())
     .filter(Boolean)
     .map(Number);
+}
+
+function vector3(x = 0, y = 0, z = 0): AiVector3D {
+  return { x, y, z };
+}
+
+function metadataJson(data: unknown): { type: AiMetadataType; data: string } {
+  return {
+    type: AiMetadataType.AISTRING,
+    data: JSON.stringify(data),
+  };
+}
+
+function readVectorProperty(
+  values: { get(name: string): unknown },
+  name: string,
+  fallback = vector3(),
+): AiVector3D {
+  const value = values.get(name) as Partial<AiVector3D> | number[] | undefined;
+  if (Array.isArray(value)) {
+    return vector3(Number(value[0] ?? fallback.x), Number(value[1] ?? fallback.y), Number(value[2] ?? fallback.z));
+  }
+  if (value && typeof value === "object") {
+    return vector3(Number(value.x ?? fallback.x), Number(value.y ?? fallback.y), Number(value.z ?? fallback.z));
+  }
+  return fallback;
+}
+
+function readNumberProperty(values: { get(name: string): unknown }, name: string, fallback = 0): number {
+  const value = values.get(name);
+  return value === undefined ? fallback : Number(value);
+}
+
+function rotationOrderFromValue(value: number): string {
+  switch (value) {
+    case 1:
+      return "XZY";
+    case 2:
+      return "YZX";
+    case 3:
+      return "YXZ";
+    case 4:
+      return "ZXY";
+    case 5:
+      return "ZYX";
+    default:
+      return "XYZ";
+  }
+}
+
+function composeTransformStack(stack: FbxTransformStack): AiMatrix4x4 {
+  const localTranslation = createTranslationMatrix4x4(stack.translation.x, stack.translation.y, stack.translation.z);
+  const rotationOffset = createTranslationMatrix4x4(stack.rotationOffset.x, stack.rotationOffset.y, stack.rotationOffset.z);
+  const rotationPivot = createTranslationMatrix4x4(stack.rotationPivot.x, stack.rotationPivot.y, stack.rotationPivot.z);
+  const inverseRotationPivot = invertMatrix4x4(rotationPivot);
+  const scalingOffset = createTranslationMatrix4x4(stack.scalingOffset.x, stack.scalingOffset.y, stack.scalingOffset.z);
+  const scalingPivot = createTranslationMatrix4x4(stack.scalingPivot.x, stack.scalingPivot.y, stack.scalingPivot.z);
+  const inverseScalingPivot = invertMatrix4x4(scalingPivot);
+  const preRotation = createEulerRotationMatrix4x4(
+    stack.preRotation.x,
+    stack.preRotation.y,
+    stack.preRotation.z,
+    stack.rotationOrder,
+  );
+  const rotation = createEulerRotationMatrix4x4(stack.rotation.x, stack.rotation.y, stack.rotation.z, stack.rotationOrder);
+  const inversePostRotation = invertMatrix4x4(
+    createEulerRotationMatrix4x4(stack.postRotation.x, stack.postRotation.y, stack.postRotation.z, stack.rotationOrder),
+  );
+  const scaling = createScalingMatrix4x4(stack.scaling.x, stack.scaling.y, stack.scaling.z);
+  const geometricTranslation = createTranslationMatrix4x4(
+    stack.geometricTranslation.x,
+    stack.geometricTranslation.y,
+    stack.geometricTranslation.z,
+  );
+  const geometricRotation = createEulerRotationMatrix4x4(
+    stack.geometricRotation.x,
+    stack.geometricRotation.y,
+    stack.geometricRotation.z,
+    stack.rotationOrder,
+  );
+  const geometricScaling = createScalingMatrix4x4(
+    stack.geometricScaling.x,
+    stack.geometricScaling.y,
+    stack.geometricScaling.z,
+  );
+
+  return [
+    localTranslation,
+    rotationOffset,
+    rotationPivot,
+    preRotation,
+    rotation,
+    inversePostRotation,
+    inverseRotationPivot,
+    scalingOffset,
+    scalingPivot,
+    scaling,
+    inverseScalingPivot,
+    geometricTranslation,
+    geometricRotation,
+    geometricScaling,
+  ].reduce((acc, matrix) => multiplyMatrix4x4(acc, matrix), createIdentityMatrix4x4());
+}
+
+function readTransformStack(
+  model: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never,
+): FbxTransformStack {
+  const properties = model.properties;
+  return {
+    translation: readVectorProperty(properties, "Lcl Translation"),
+    rotation: readVectorProperty(properties, "Lcl Rotation"),
+    scaling: readVectorProperty(properties, "Lcl Scaling", vector3(1, 1, 1)),
+    rotationOrder: rotationOrderFromValue(readNumberProperty(properties, "RotationOrder", 0)),
+    preRotation: readVectorProperty(properties, "PreRotation"),
+    postRotation: readVectorProperty(properties, "PostRotation"),
+    rotationPivot: readVectorProperty(properties, "RotationPivot"),
+    rotationOffset: readVectorProperty(properties, "RotationOffset"),
+    scalingPivot: readVectorProperty(properties, "ScalingPivot"),
+    scalingOffset: readVectorProperty(properties, "ScalingOffset"),
+    geometricTranslation: readVectorProperty(properties, "GeometricTranslation"),
+    geometricRotation: readVectorProperty(properties, "GeometricRotation"),
+    geometricScaling: readVectorProperty(properties, "GeometricScaling", vector3(1, 1, 1)),
+    inheritType: readNumberProperty(properties, "InheritType", 0),
+    sourceModelId: model.id.toString(),
+  };
 }
 
 export function buildAxisSwapMatrix(
@@ -314,7 +465,7 @@ export class FBXConverter {
     const coordInfo = parseGlobalSettings(document);
     const geometries = [...document.objects.values()].filter((object) => object.kind === "Mesh");
     const materials = [...document.objects.values()].filter((object) => object.kind === "Material");
-    const models = [...document.objects.values()].filter((object) => object.kind === "Model");
+    const models = [...document.objects.values()].filter((object) => ["Model", "LimbNode", "Null"].includes(object.kind));
     const videos = [...document.objects.values()].filter((object) => object.kind === "Video").map((object) => new FbxVideo(object));
     const embeddedTextures: AiTexture[] = [];
     const embeddedTextureLookup = new Map<string, string>();
@@ -334,7 +485,18 @@ export class FBXConverter {
       embeddedTextureLookup.set(video.name, filename);
     });
 
+    const geometryIndexMap = new Map<bigint, number>();
+    const geometryParentCounts = new Map<bigint, number>();
+    document.connectionRecords.forEach((connection) => {
+      const child = document.objects.get(connection.childId);
+      const parent = document.objects.get(connection.parentId);
+      if (child?.kind === "Mesh" && parent && ["Model", "LimbNode", "Null"].includes(parent.kind)) {
+        geometryParentCounts.set(child.id, (geometryParentCounts.get(child.id) ?? 0) + 1);
+      }
+    });
+
     const meshes = geometries.map((geometry, geometryIndex) => {
+      geometryIndexMap.set(geometry.id, geometryIndex);
       const vertices = parseNumberList(geometry.element.values.Vertices?.[0] ?? []).reduce<
         Array<{ x: number; y: number; z: number }>
       >((acc, value, index, all) => {
@@ -451,14 +613,71 @@ export class FBXConverter {
       return mesh;
     });
 
-    const childNodes: AiNode[] = models.map((model, index) => ({
-      name: model.name,
-      transformation: createIdentityMatrix4x4(),
-      parent: null,
-      children: [],
-      meshIndices: meshes[index] ? [index] : [],
-      metadata: null,
-    }));
+    const nodeById = new Map<bigint, AiNode>();
+    models.forEach((model) => {
+      const transformStack = readTransformStack(model);
+      const linkedGeometryIds = document
+        .getChildObjects(model.id)
+        .filter((entry) => entry.kind === "Mesh")
+        .map((entry) => entry.id);
+      const meshIndices = linkedGeometryIds
+        .map((geometryId) => geometryIndexMap.get(geometryId))
+        .filter((entry): entry is number => entry !== undefined);
+      const transformation = composeTransformStack(transformStack);
+      const metadata: AiMetadata = {
+        "fbx:transformStack": metadataJson(transformStack),
+        "fbx:sourceModelId": {
+          type: AiMetadataType.AISTRING,
+          data: transformStack.sourceModelId,
+        },
+        "fbx:inheritsType": {
+          type: AiMetadataType.INT32,
+          data: transformStack.inheritType,
+        },
+        "fbx:mirrored": {
+          type: AiMetadataType.BOOL,
+          data: determinant3x3FromMatrix4x4(transformation) < 0,
+        },
+      };
+      if (linkedGeometryIds.length > 0) {
+        metadata["fbx:geometryIds"] = metadataJson(linkedGeometryIds.map((geometryId) => geometryId.toString()));
+      }
+      if (linkedGeometryIds.some((geometryId) => (geometryParentCounts.get(geometryId) ?? 0) > 1)) {
+        metadata["fbx:instanceOf"] = metadataJson(
+          linkedGeometryIds
+            .filter((geometryId) => (geometryParentCounts.get(geometryId) ?? 0) > 1)
+            .map((geometryId) => geometryId.toString()),
+        );
+      }
+      nodeById.set(model.id, {
+        name: model.name.replace(/^(Model|LimbNode)::/, ""),
+        transformation,
+        parent: null,
+        children: [],
+        meshIndices,
+        metadata,
+      });
+    });
+
+    const childNodes: AiNode[] = [];
+    models.forEach((model) => {
+      const node = nodeById.get(model.id);
+      if (!node) {
+        return;
+      }
+      const parentNode = document
+        .getParentObjects(model.id)
+        .find((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
+      if (parentNode) {
+        const parent = nodeById.get(parentNode.id);
+        if (parent) {
+          node.parent = parent;
+          parent.children.push(node);
+          return;
+        }
+      }
+      childNodes.push(node);
+    });
     const rootNode: AiNode = {
       name: "FBXRoot",
       transformation: applyScale(
@@ -491,6 +710,7 @@ export class FBXConverter {
       lights: [],
       cameras: [],
       metadata: {
+        "fbx:sourceCoordSystem": metadataJson(coordInfo),
         "nexus:unitScaleFactor": {
           type: AiMetadataType.FLOAT,
           data: coordInfo.unitScaleFactor / 100,
