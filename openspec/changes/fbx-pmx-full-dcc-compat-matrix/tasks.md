@@ -28,10 +28,10 @@
 
 ## 5. FBX Skinning And Blendshape Fidelity
 
-- [ ] 5.1 Preserve bind pose, transform link matrices, and cluster link modes in import/export paths
-- [ ] 5.2 Surface dual-quaternion flags and runtime influence-limit degradations in compatibility reports
-- [ ] 5.3 Preserve blendshape channel full-weight values, in-between targets, and animated weight bindings
-- [ ] 5.4 Add regression tests for additive skinning, DQ skin hints, and in-between blendshape fixtures
+- [x] 5.1 Preserve bind pose, transform link matrices, and cluster link modes in import/export paths
+- [x] 5.2 Surface dual-quaternion flags and runtime influence-limit degradations in compatibility reports
+- [x] 5.3 Preserve blendshape channel full-weight values, in-between targets, and animated weight bindings
+- [x] 5.4 Add regression tests for additive skinning, DQ skin hints, and in-between blendshape fixtures
 
 ## 6. FBX Materials, Media, And UV Semantics
 

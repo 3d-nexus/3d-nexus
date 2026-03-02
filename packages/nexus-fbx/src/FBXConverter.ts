@@ -507,6 +507,7 @@ function collectAnimationMetadata(document: FbxDocument): {
 
   const cameraCurves: Array<Record<string, unknown>> = [];
   const lightCurves: Array<Record<string, unknown>> = [];
+  const blendShapeCurves: Array<Record<string, unknown>> = [];
   const diagnostics: Array<Record<string, unknown>> = [];
 
   stacks.forEach((stack) => {
@@ -521,7 +522,10 @@ function collectAnimationMetadata(document: FbxDocument): {
     }
     stack.layers.forEach((layer) => {
       layer.curveNodes.forEach((curveNode) => {
-        const collectTarget = (prefix: "CameraProperty::" | "LightProperty::", sink: Array<Record<string, unknown>>): void => {
+        const collectTarget = (
+          prefix: "CameraProperty::" | "LightProperty::" | "BlendShapeProperty::",
+          sink: Array<Record<string, unknown>>,
+        ): void => {
           if (!curveNode.name.startsWith(prefix)) {
             return;
           }
@@ -544,6 +548,7 @@ function collectAnimationMetadata(document: FbxDocument): {
         };
         collectTarget("CameraProperty::", cameraCurves);
         collectTarget("LightProperty::", lightCurves);
+        collectTarget("BlendShapeProperty::", blendShapeCurves);
       });
     });
   });
@@ -557,6 +562,9 @@ function collectAnimationMetadata(document: FbxDocument): {
   }
   if (lightCurves.length > 0) {
     metadata["fbx:lightAnimationCurves"] = metadataJson(lightCurves);
+  }
+  if (blendShapeCurves.length > 0) {
+    metadata["fbx:blendShapeAnimationCurves"] = metadataJson(blendShapeCurves);
   }
   return { metadata, diagnostics };
 }
@@ -644,6 +652,8 @@ export class FBXConverter {
     const videos = [...document.objects.values()].filter((object) => object.kind === "Video").map((object) => new FbxVideo(object));
     const embeddedTextures: AiTexture[] = [];
     const embeddedTextureLookup = new Map<string, string>();
+    const compatDiagnostics: Array<Record<string, unknown>> = [];
+    const blendShapeChannelsMetadata: Array<Record<string, unknown>> = [];
     videos.forEach((video, index) => {
       if (!video.content) {
         return;
@@ -742,6 +752,22 @@ export class FBXConverter {
               name: cluster.linkedModel?.name ?? cluster.name,
               weights: [] as Array<{ vertexId: number; weight: number }>,
               offsetMatrix: { data: Float32Array.from(cluster.transformMatrix, (value) => Number(value)) },
+              node: {
+                name: cluster.linkedModel?.name ?? cluster.name,
+                transformation: createIdentityMatrix4x4(),
+                parent: null,
+                children: [],
+                meshIndices: [],
+                metadata: {
+                  "fbx:skinCluster": metadataJson({
+                    linkMode: cluster.linkMode,
+                    transformMatrix: Array.from(cluster.transformMatrix),
+                    transformLinkMatrix: Array.from(cluster.transformLinkMatrix),
+                    skinningType: skin.skinningType,
+                    deformAccuracy: skin.deformAccuracy,
+                  }),
+                },
+              },
             };
           }),
         );
@@ -753,6 +779,15 @@ export class FBXConverter {
           entries.forEach((entry) => {
             bones[entry.boneIdx]?.weights.push({ vertexId, weight: entry.weight / total });
           });
+          if (entries.filter((entry) => entry.weight > 1e-6).length > 4) {
+            compatDiagnostics.push({
+              code: "FBX_RUNTIME_INFLUENCE_LIMIT",
+              severity: "warning",
+              capability: "fbx-skinning",
+              profile: "unity",
+              message: `Vertex ${vertexId} uses more than 4 influences; runtime-target fallback may be required.`,
+            });
+          }
         });
         mesh.bones = bones;
       }
@@ -772,6 +807,12 @@ export class FBXConverter {
                 z: (mesh.vertices[vertexIndex]?.z ?? 0) + Number(channel.shapeVertices[base + 2] ?? 0),
               };
             });
+            blendShapeChannelsMetadata.push({
+              meshName: mesh.name,
+              channelName: channel.name,
+              deformPercent: channel.deformPercent,
+              fullWeights: channel.fullWeights,
+            });
             return {
               name: channel.name,
               vertices: verticesCopy,
@@ -780,7 +821,7 @@ export class FBXConverter {
               bitangents: [],
               colors: Array.from({ length: 8 }, () => null),
               textureCoords: mesh.textureCoords.map((channelUvs) => channelUvs?.map((uv) => ({ ...uv })) ?? null),
-              weight: 0,
+              weight: channel.fullWeights[0] ?? channel.deformPercent,
             };
           }),
         );
@@ -928,18 +969,20 @@ export class FBXConverter {
       cameras,
       metadata: {
         ...animationMetadata.metadata,
-        ...(animationMetadata.diagnostics.length > 0
+        ...(blendShapeChannelsMetadata.length > 0
+          ? {
+              "fbx:blendShapeChannels": metadataJson(blendShapeChannelsMetadata),
+            }
+          : {}),
+        ...((animationMetadata.diagnostics.length > 0 || diagnostics.length > 0 || compatDiagnostics.length > 0)
           ? {
               "nexus:compatDiagnostics": metadataJson([
                 ...animationMetadata.diagnostics,
                 ...diagnostics,
+                ...compatDiagnostics,
               ]),
             }
-          : diagnostics.length > 0
-            ? {
-                "nexus:compatDiagnostics": metadataJson(diagnostics),
-              }
-            : {}),
+          : {}),
         ...(constraints.length > 0
           ? {
               "fbx:constraints": metadataJson(constraints),

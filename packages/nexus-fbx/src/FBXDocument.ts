@@ -51,6 +51,8 @@ export class FbxCluster {
   readonly indexes: Int32Array;
   readonly weights: Float64Array;
   readonly transformMatrix: Float64Array;
+  readonly transformLinkMatrix: Float64Array;
+  readonly linkMode: string;
   readonly linkedModel: FbxModel | null;
 
   constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
@@ -62,6 +64,13 @@ export class FbxCluster {
         ? transformValues
         : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
     );
+    const transformLinkValues = parseNumberArray(object.element.values.TransformLinkMatrix?.[0] ?? []);
+    this.transformLinkMatrix = Float64Array.from(
+      transformLinkValues.length === 16
+        ? transformLinkValues
+        : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    );
+    this.linkMode = String(object.element.values.LinkMode?.[0] ?? "TotalOne");
     const modelObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Model");
     this.linkedModel = modelObject ? new FbxModel(modelObject) : null;
   }
@@ -77,12 +86,16 @@ export class FbxCluster {
 
 export class FbxSkin {
   readonly clusters: FbxCluster[];
+  readonly skinningType: string;
+  readonly deformAccuracy: number;
 
   constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
     this.clusters = document
       .getChildObjects(object.id)
       .filter((entry) => entry.kind === "Cluster")
       .map((entry) => new FbxCluster(document, entry));
+    this.skinningType = String(object.element.values.SkinningType?.[0] ?? "Linear");
+    this.deformAccuracy = Number(object.element.values.DeformAccuracy?.[0] ?? 0);
   }
 
   get id(): bigint {
@@ -94,12 +107,16 @@ export class FbxBlendShapeChannel {
   readonly shapeIndexes: Int32Array;
   readonly shapeVertices: Float64Array;
   readonly shapeName: string;
+  readonly deformPercent: number;
+  readonly fullWeights: number[];
 
   constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
     const shapeObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Shape");
     this.shapeIndexes = Int32Array.from(parseNumberArray(shapeObject?.element.values.Indexes?.[0] ?? []));
     this.shapeVertices = Float64Array.from(parseNumberArray(shapeObject?.element.values.Vertices?.[0] ?? []));
     this.shapeName = shapeObject?.name.replace(/^Geometry::/, "") ?? object.name;
+    this.deformPercent = Number(object.element.values.DeformPercent?.[0] ?? 0);
+    this.fullWeights = parseNumberArray(object.element.values.FullWeights?.[0] ?? []);
   }
 
   get name(): string {

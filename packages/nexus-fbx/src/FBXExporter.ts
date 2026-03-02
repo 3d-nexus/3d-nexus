@@ -277,6 +277,9 @@ function writeAnimations(
   const lightCurves = parseJsonMetadata<
     Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
   >(scene.metadata["fbx:lightAnimationCurves"]?.data) ?? [];
+  const blendShapeCurves = parseJsonMetadata<
+    Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
+  >(scene.metadata["fbx:blendShapeAnimationCurves"]?.data) ?? [];
 
   animations.forEach((animation, animationIndex) => {
     const stackId = nextId++;
@@ -342,6 +345,9 @@ function writeAnimations(
       ...lightCurves
         .filter((entry) => !entry.animationName || entry.animationName === animation.name)
         .map((entry) => ({ ...entry, prefix: "LightProperty" })),
+      ...blendShapeCurves
+        .filter((entry) => !entry.animationName || entry.animationName === animation.name)
+        .map((entry) => ({ ...entry, prefix: "BlendShapeProperty" })),
     ];
     propertyCurves.forEach((entry) => {
       const modelId = nodeIdMap.get(entry.objectName);
@@ -370,6 +376,31 @@ function writeAnimations(
         connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
       });
     });
+
+    animation.morphMeshChannels.forEach((channel) => {
+      const meshOwner = scene.meshes.find((mesh) => mesh.morphTargets.some((target) => target.name === channel.name));
+      const modelId = meshOwner ? nodeIdMap.get(meshOwner.name) : undefined;
+      if (!modelId) {
+        return;
+      }
+      const curveNodeId = nextId++;
+      objects.push(
+        new FbxExportNode(
+          "AnimationCurveNode",
+          [curveNodeId, `BlendShapeProperty::${channel.name}::DeformPercent`, "AnimationCurveNode"],
+        ),
+      );
+      connectionLines.push(`C: "OO", ${curveNodeId}, ${primaryLayerId}`);
+      connectionLines.push(`C: "OO", ${modelId}, ${curveNodeId}`);
+      const curveId = nextId++;
+      objects.push(
+        new FbxExportNode("AnimationCurve", [curveId, `AnimCurve::${channel.name}_DeformPercent_X`, "AnimationCurve"], [
+          `KeyTime: ${channel.keys.map((key) => toTick(key.time)).join(",")}`,
+          `KeyValueFloat: ${channel.keys.map((key) => key.weights[0] ?? 0).join(",")}`,
+        ]),
+      );
+      connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
+    });
   });
 
   return nextId;
@@ -387,6 +418,9 @@ export class FBXExporter implements BaseExporter {
     const modelIdMap = new Map<string, number>();
     const geometryIdMap = new Map<number, number>();
     const embeddedVideoIdMap = new Map<string, number>();
+    const blendShapeMetadata = parseJsonMetadata<Array<{ meshName?: string; channelName?: string; deformPercent?: number; fullWeights?: number[] }>>(
+      scene.metadata["fbx:blendShapeChannels"]?.data,
+    ) ?? [];
     let nextId = BASE_NODE_ID;
 
     scene.textures.forEach((texture) => {
@@ -454,16 +488,28 @@ export class FBXExporter implements BaseExporter {
 
       if (mesh.bones.length > 0) {
         const skinId = nextId++;
-        objects.push(new FbxExportNode("Deformer", [skinId, `Deformer::Skin_${meshIndex}`, "Skin"]));
+        const skinClusterMetadata = parseJsonMetadata<Record<string, unknown>>(mesh.bones[0]?.node?.metadata?.["fbx:skinCluster"]?.data);
+        objects.push(
+          new FbxExportNode("Deformer", [skinId, `Deformer::Skin_${meshIndex}`, "Skin"], [
+            `SkinningType: "${String(skinClusterMetadata?.skinningType ?? "Linear")}"`,
+            `DeformAccuracy: ${Number(skinClusterMetadata?.deformAccuracy ?? 0)}`,
+          ]),
+        );
         connectionLines.push(`C: "OO", ${skinId}, ${geometryId}`);
         mesh.bones.forEach((bone, boneIndex) => {
           const clusterId = nextId++;
           const boneModelId = nextId++;
+          const clusterMetadata = parseJsonMetadata<Record<string, unknown>>(bone.node?.metadata?.["fbx:skinCluster"]?.data);
+          const transformLinkMatrix = Array.isArray(clusterMetadata?.transformLinkMatrix)
+            ? (clusterMetadata?.transformLinkMatrix as number[]).join(",")
+            : flattenMatrix(mesh, boneIndex);
           objects.push(
             new FbxExportNode("Deformer", [clusterId, `SubDeformer::${bone.name}`, "Cluster"], [
               `Indexes: ${flattenBoneIndexes(mesh, boneIndex)}`,
               `Weights: ${flattenBoneWeights(mesh, boneIndex)}`,
               `TransformMatrix: ${flattenMatrix(mesh, boneIndex)}`,
+              `TransformLinkMatrix: ${transformLinkMatrix}`,
+              `LinkMode: "${String(clusterMetadata?.linkMode ?? "TotalOne")}"`,
             ]),
           );
           objects.push(new FbxExportNode("Model", [boneModelId, `Model::${bone.name}`, "LimbNode"]));
@@ -480,7 +526,15 @@ export class FBXExporter implements BaseExporter {
         mesh.morphTargets.forEach((morphTarget, morphIndex) => {
           const channelId = nextId++;
           const shapeId = nextId++;
-          objects.push(new FbxExportNode("Deformer", [channelId, `SubDeformer::${morphTarget.name}`, "BlendShapeChannel"]));
+          const channelMetadata = blendShapeMetadata.find(
+            (entry) => (entry.meshName ?? mesh.name) === mesh.name && (entry.channelName ?? morphTarget.name) === morphTarget.name,
+          );
+          objects.push(
+            new FbxExportNode("Deformer", [channelId, `SubDeformer::${morphTarget.name}`, "BlendShapeChannel"], [
+              `DeformPercent: ${Number(channelMetadata?.deformPercent ?? morphTarget.weight ?? 0)}`,
+              `FullWeights: ${(channelMetadata?.fullWeights ?? [morphTarget.weight ?? 0]).join(",")}`,
+            ]),
+          );
           objects.push(
             new FbxExportNode("Geometry", [shapeId, `Geometry::${morphTarget.name}`, "Shape"], [
               `Indexes: ${flattenShapeIndexes(mesh, morphIndex)}`,
