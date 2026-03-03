@@ -10,6 +10,7 @@ import {
   type CompatibilityReport,
   type CompatibilityTolerance,
 } from "nexus-core";
+import { analyzeBvhFrameDrift } from "nexus-bvh";
 
 export interface CompatibilityScalarCheckInput {
   capability: string;
@@ -224,6 +225,133 @@ export function createSceneCompatibilityReport(input: CreateSceneCompatibilityRe
       driftDiagnostics,
     ),
   );
+
+  const bvhInvolved = input.profile === "bvh" || input.sourceFormat === "bvh" || input.targetFormat === "bvh";
+  if (bvhInvolved) {
+    const bvhLayout = readSceneArray(input.scene, "bvh:jointChannelLayout");
+    const bvhDrift = analyzeBvhFrameDrift(input.scene);
+    const bvhAnimationDiagnostics = [
+      ...bvhDrift.diagnostics,
+      ...diagnostics
+        .filter((entry) => String(entry.capability ?? "") === "bvh-animation-fidelity")
+        .map((entry) =>
+          createCompatibilityDiagnostic(
+            input.profile,
+            "bvh-animation-fidelity",
+            String(entry.code ?? "BVH_FRAME_DRIFT"),
+            String(entry.message ?? "BVH animation drift detected."),
+            "warning",
+            entry.details,
+          ),
+        ),
+    ];
+
+    let skeletonOutcome: CompatibilityCheckResult["outcome"] = "exact";
+    const skeletonDiagnostics: CompatibilityDiagnostic[] = [];
+    if (input.sourceFormat === "bvh" && input.targetFormat === "fbx") {
+      skeletonOutcome = "normalized";
+      skeletonDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-skeleton-motion",
+          "BVH_TO_FBX_CHANNEL_LAYOUT_NORMALIZED",
+          "BVH channel layout is normalized when exported into FBX transform curves.",
+          "warning",
+        ),
+      );
+    } else if (input.sourceFormat === "fbx" && input.targetFormat === "bvh") {
+      skeletonOutcome = "normalized";
+      skeletonDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-skeleton-motion",
+          "FBX_TO_BVH_SKELETON_NORMALIZED",
+          "FBX skeleton transforms are flattened into canonical BVH hierarchy and channel layout.",
+          "warning",
+        ),
+      );
+    } else if (input.sourceFormat === "bvh" && (input.targetFormat === "pmx" || input.targetFormat === "vmd")) {
+      skeletonOutcome = "degraded";
+      skeletonDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-skeleton-motion",
+          "BVH_SKELETON_DEGRADED",
+          `Target ${input.targetFormat} cannot preserve BVH hierarchy and channel layout exactly.`,
+          "warning",
+          { targetFormat: input.targetFormat },
+        ),
+      );
+    } else if (input.targetFormat === "bvh" && bvhLayout.length === 0) {
+      skeletonOutcome = "normalized";
+      skeletonDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-skeleton-motion",
+          "BVH_CANONICAL_LAYOUT",
+          "BVH export falls back to canonical channel layout because original BVH metadata is absent.",
+          "warning",
+        ),
+      );
+    }
+    checks.push(createOutcomeCheck(input.profile, "bvh-skeleton-motion", skeletonOutcome, skeletonDiagnostics));
+
+    let animationOutcome: CompatibilityCheckResult["outcome"] = bvhAnimationDiagnostics.length > 0 ? "degraded" : "exact";
+    if (animationOutcome === "exact" && input.sourceFormat === "bvh" && input.targetFormat === "fbx") {
+      animationOutcome = "normalized";
+      bvhAnimationDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-animation-fidelity",
+          "BVH_TO_FBX_TIMING_NORMALIZED",
+          "BVH frame-based timing is normalized into FBX curve time while preserving authored cadence metadata.",
+          "warning",
+        ),
+      );
+    } else if (animationOutcome === "exact" && input.sourceFormat === "fbx" && input.targetFormat === "bvh") {
+      animationOutcome = "normalized";
+      bvhAnimationDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-animation-fidelity",
+          "FBX_TO_BVH_TIMING_NORMALIZED",
+          "FBX animation keys are resampled into BVH frame timing.",
+          "warning",
+        ),
+      );
+    } else if (animationOutcome === "exact" && input.sourceFormat === "bvh" && input.targetFormat === "pmx") {
+      animationOutcome = "degraded";
+      bvhAnimationDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-animation-fidelity",
+          "BVH_TO_PMX_ANIMATION_DEGRADED",
+          "PMX targets do not preserve standalone BVH animation semantics exactly.",
+          "warning",
+        ),
+      );
+    } else if (animationOutcome === "exact" && input.sourceFormat === "bvh" && input.targetFormat === "vmd") {
+      animationOutcome = "normalized";
+      bvhAnimationDiagnostics.push(
+        createCompatibilityDiagnostic(
+          input.profile,
+          "bvh-animation-fidelity",
+          "BVH_TO_VMD_TIMING_NORMALIZED",
+          "BVH animation is mapped into VMD frame channels with normalized rotation conventions.",
+          "warning",
+        ),
+      );
+    }
+    checks.push(createOutcomeCheck(input.profile, "bvh-animation-fidelity", animationOutcome, bvhAnimationDiagnostics));
+
+    const workflowOutcome =
+      skeletonOutcome === "degraded" || animationOutcome === "degraded"
+        ? "degraded"
+        : skeletonOutcome === "normalized" || animationOutcome === "normalized"
+          ? "normalized"
+          : "exact";
+    checks.push(createOutcomeCheck(input.profile, "bvh-conversion-workflow", workflowOutcome));
+  }
 
   return createCompatibilityReport({
     profile: input.profile,

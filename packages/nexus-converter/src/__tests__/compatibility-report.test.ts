@@ -1,9 +1,20 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+import { BVHExporter } from "nexus-bvh";
 import { FBXExporter } from "nexus-fbx";
 import { MMDExporter } from "nexus-mmd";
 import { ModelConverter } from "../ModelConverter";
 import { ModelFormat } from "../formats";
+
+function loadBvhFixture(name: string): ArrayBuffer {
+  const fixturesDir = resolve(fileURLToPath(new URL("../../../../packages/nexus-bvh/fixtures", import.meta.url)));
+  const file = readFileSync(resolve(fixturesDir, name));
+  return file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
+}
 
 function createBaseScene(): AiScene {
   return {
@@ -126,5 +137,67 @@ describe("converter compatibility reports", () => {
     expect(result.output.byteLength).toBeGreaterThan(0);
     expect(result.report?.checks.find((entry) => entry.capability === "pmx-morphs")?.outcome).toBe("exact");
     expect(result.report?.targetFormat).toBe("pmx");
+  });
+
+  it("reports exact BVH compatibility for unchanged BVH round-trips", () => {
+    const input = loadBvhFixture("minimal.bvh");
+    const result = new ModelConverter().convertWithReport(input, ModelFormat.BVH, ModelFormat.BVH, {
+      compatibilityProfile: "bvh",
+    });
+
+    expect(result.output.byteLength).toBeGreaterThan(0);
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-skeleton-motion")?.outcome).toBe("exact");
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.outcome).toBe("exact");
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-conversion-workflow")?.outcome).toBe("exact");
+  });
+
+  it("reports normalized BVH compatibility for BVH to FBX conversion", () => {
+    const input = loadBvhFixture("minimal.bvh");
+    const result = new ModelConverter().convertWithReport(input, ModelFormat.BVH, ModelFormat.FBX, {
+      compatibilityProfile: "bvh",
+    });
+
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-skeleton-motion")?.outcome).toBe("normalized");
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.outcome).toBe("normalized");
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-conversion-workflow")?.outcome).toBe("normalized");
+  });
+
+  it("reports degraded BVH animation fidelity when frame timing drifts off integer frames", () => {
+    const input = new BVHExporter().write(createBaseScene(), { format: "bvh" });
+    const result = new ModelConverter().convertWithReport(input, ModelFormat.BVH, ModelFormat.BVH, {
+      compatibilityProfile: "bvh",
+      postProcess: [
+        {
+          process(scene) {
+            scene.animations = [
+              {
+                name: "Drift",
+                duration: 1.25,
+                ticksPerSecond: 30,
+                channels: [
+                  {
+                    nodeName: "Root",
+                    positionKeys: [
+                      { time: 0, value: { x: 0, y: 0, z: 0 } },
+                      { time: 1.25, value: { x: 1, y: 0, z: 0 } },
+                    ],
+                    rotationKeys: [],
+                    scalingKeys: [],
+                    preState: 0,
+                    postState: 0,
+                  },
+                ],
+                meshChannels: [],
+                morphMeshChannels: [],
+              },
+            ];
+            return scene;
+          },
+        },
+      ],
+    });
+
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.outcome).toBe("degraded");
+    expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.diagnostics[0]?.code).toBe("BVH_FRAME_DRIFT");
   });
 });

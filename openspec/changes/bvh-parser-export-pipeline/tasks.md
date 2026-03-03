@@ -35,10 +35,10 @@
 
 ## 6. Converter And Compatibility Reporting
 
-- [ ] 6.1 在 `nexus-converter` 中暴露 `convertWithReport()` 的 BVH 输入输出路径
-- [ ] 6.2 为 `dcc-compatibility-matrix` 扩展 `bvh` profile、fixture manifest 和 capability 映射
-- [ ] 6.3 为 `BVH -> FBX`、`FBX -> BVH`、`BVH -> PMX/VMD` 的归一化/降级场景增加 compatibility checks
-- [ ] 6.4 添加 converter tests，验证 BVH report 中的 `exact`、`normalized`、`degraded` 输出
+- [x] 6.1 在 `nexus-converter` 中暴露 `convertWithReport()` 的 BVH 输入输出路径
+- [x] 6.2 为 `dcc-compatibility-matrix` 扩展 `bvh` profile、fixture manifest 和 capability 映射
+- [x] 6.3 为 `BVH -> FBX`、`FBX -> BVH`、`BVH -> PMX/VMD` 的归一化/降级场景增加 compatibility checks
+- [x] 6.4 添加 converter tests，验证 BVH report 中的 `exact`、`normalized`、`degraded` 输出
 
 ## 7. Cross-Format Bridge
 
