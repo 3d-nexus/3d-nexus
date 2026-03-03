@@ -33,6 +33,9 @@ function nextTargetFormat(inputFormat: ModelFormatValue): ModelFormatValue {
   if (inputFormat === ModelFormat.PMX || inputFormat === ModelFormat.PMD || inputFormat === ModelFormat.VMD) {
     return ModelFormat.OBJ;
   }
+  if (inputFormat === ModelFormat.BVH) {
+    return ModelFormat.FBX;
+  }
   if (inputFormat === ModelFormat.OBJ) {
     return ModelFormat.FBX;
   }

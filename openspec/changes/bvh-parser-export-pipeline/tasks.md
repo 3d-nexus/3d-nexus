@@ -42,10 +42,10 @@
 
 ## 7. Cross-Format Bridge
 
-- [ ] 7.1 定义 BVH 与 `FBX` skeleton/animation IR 映射规则并添加 regression tests
-- [ ] 7.2 定义 BVH 与 `PMX/VMD` frame-based animation 映射规则并添加 diagnostics
-- [ ] 7.3 处理无 mesh BVH scene 在 converter/playground 中的统计与展示路径
-- [ ] 7.4 增加至少一个 BVH cross-format smoke test，覆盖导入、转换、导出闭环
+- [x] 7.1 定义 BVH 与 `FBX` skeleton/animation IR 映射规则并添加 regression tests
+- [x] 7.2 定义 BVH 与 `PMX/VMD` frame-based animation 映射规则并添加 diagnostics
+- [x] 7.3 处理无 mesh BVH scene 在 converter/playground 中的统计与展示路径
+- [x] 7.4 增加至少一个 BVH cross-format smoke test，覆盖导入、转换、导出闭环
 
 ## 8. Playground And Fixtures
 

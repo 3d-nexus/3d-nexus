@@ -16,6 +16,23 @@ function countVertices(result: ImportResult): number {
   return result.scene.meshes.reduce((sum, mesh) => sum + mesh.vertices.length, 0);
 }
 
+function countJoints(result: ImportResult): number {
+  let count = 0;
+  const walk = (node: ImportResult["scene"]["rootNode"] | null | undefined): void => {
+    if (!node) {
+      return;
+    }
+    count += 1;
+    node.children.forEach(walk);
+  };
+  walk(result.scene.rootNode);
+  return Math.max(0, count - 1);
+}
+
+function countAnimatedChannels(result: ImportResult): number {
+  return result.scene.animations.reduce((sum, animation) => sum + animation.channels.length, 0);
+}
+
 export function createUi(): UiHandle {
   const status = document.querySelector<HTMLParagraphElement>("#status")!;
   const warnings = document.querySelector<HTMLUListElement>("#warnings")!;
@@ -51,6 +68,8 @@ export function createUi(): UiHandle {
       const values = [
         ["Vertices", String(countVertices(result))],
         ["Faces", String(countFaces(result))],
+        ["Joints", String(countJoints(result))],
+        ["Channels", String(countAnimatedChannels(result))],
         ["Materials", String(result.scene.materials.length)],
         ["Animations", String(result.scene.animations.length)],
       ];
