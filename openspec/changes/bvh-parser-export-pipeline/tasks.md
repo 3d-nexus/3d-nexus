@@ -14,10 +14,10 @@
 
 ## 3. BVH Importer To IR
 
-- [ ] 3.1 将 BVH hierarchy 映射到 `AiNode` 树并保留 `bvh:*` 结构 metadata
-- [ ] 3.2 将 frame-based motion 映射到 `AiAnimation.channels` 与 root motion keyframes
-- [ ] 3.3 保留 `Frame Time`、original frame index、channel order、rotation order 到 scene/node metadata
-- [ ] 3.4 添加 importer roundtrip fixture tests，覆盖 root motion、End Site 和 rotation order
+- [x] 3.1 将 BVH hierarchy 映射到 `AiNode` 树并保留 `bvh:*` 结构 metadata
+- [x] 3.2 将 frame-based motion 映射到 `AiAnimation.channels` 与 root motion keyframes
+- [x] 3.3 保留 `Frame Time`、original frame index、channel order、rotation order 到 scene/node metadata
+- [x] 3.4 添加 importer roundtrip fixture tests，覆盖 root motion、End Site 和 rotation order
 
 ## 4. BVH Exporter
 

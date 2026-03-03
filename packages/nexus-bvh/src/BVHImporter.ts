@@ -1,10 +1,79 @@
-import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, type AiAnimation, type AiNode, type AiNodeAnim, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "nexus-core";
+import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, createTranslationMatrix4x4, type AiAnimation, type AiNode, type AiNodeAnim, type AiQuaternion, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "nexus-core";
 import { BVHParser, countChannels, type BvhJoint } from "./BVHParser";
+
+type JointChannelLayout = {
+  name: string;
+  type: BvhJoint["type"];
+  channelCount: number;
+  channels: string[];
+  rotationOrder: string | null;
+  startIndex: number;
+};
+
+function metadataJson(data: unknown) {
+  return {
+    type: AiMetadataType.AISTRING,
+    data: JSON.stringify(data),
+  };
+}
+
+function axisQuaternion(axis: "X" | "Y" | "Z", degrees: number): AiQuaternion {
+  const halfAngle = (degrees * Math.PI) / 360;
+  const s = Math.sin(halfAngle);
+  const c = Math.cos(halfAngle);
+  if (axis === "X") {
+    return { x: s, y: 0, z: 0, w: c };
+  }
+  if (axis === "Y") {
+    return { x: 0, y: s, z: 0, w: c };
+  }
+  return { x: 0, y: 0, z: s, w: c };
+}
+
+function multiplyQuaternions(left: AiQuaternion, right: AiQuaternion): AiQuaternion {
+  return {
+    x: left.w * right.x + left.x * right.w + left.y * right.z - left.z * right.y,
+    y: left.w * right.y - left.x * right.z + left.y * right.w + left.z * right.x,
+    z: left.w * right.z + left.x * right.y - left.y * right.x + left.z * right.w,
+    w: left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z,
+  };
+}
+
+function normalizeQuaternion(quaternion: AiQuaternion): AiQuaternion {
+  const length = Math.hypot(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  if (!length) {
+    return { x: 0, y: 0, z: 0, w: 1 };
+  }
+  return {
+    x: quaternion.x / length,
+    y: quaternion.y / length,
+    z: quaternion.z / length,
+    w: quaternion.w / length,
+  };
+}
+
+function quaternionFromChannels(channels: string[], values: number[]): AiQuaternion {
+  const rotationChannels = channels
+    .map((channel, index) => ({ channel, value: Number(values[index] ?? 0) }))
+    .filter((entry) => entry.channel.endsWith("rotation"));
+
+  return normalizeQuaternion(
+    rotationChannels.reduce<AiQuaternion>(
+      (current, entry) => multiplyQuaternions(current, axisQuaternion(entry.channel[0] as "X" | "Y" | "Z", entry.value)),
+      { x: 0, y: 0, z: 0, w: 1 },
+    ),
+  );
+}
+
+function readChannelValue(channels: string[], values: number[], channelName: string): number {
+  const index = channels.indexOf(channelName);
+  return index >= 0 ? Number(values[index] ?? 0) : 0;
+}
 
 function createNodeTree(joint: BvhJoint, parent: AiNode | null): AiNode {
   const node: AiNode = {
     name: joint.name,
-    transformation: createIdentityMatrix4x4(),
+    transformation: createTranslationMatrix4x4(joint.offset[0], joint.offset[1], joint.offset[2]),
     parent,
     children: [],
     meshIndices: [],
@@ -13,13 +82,15 @@ function createNodeTree(joint: BvhJoint, parent: AiNode | null): AiNode {
         type: AiMetadataType.AISTRING,
         data: joint.type,
       },
-      "bvh:offset": {
-        type: AiMetadataType.AISTRING,
-        data: JSON.stringify(joint.offset),
+      "bvh:offset": metadataJson(joint.offset),
+      "bvh:channels": metadataJson(joint.channels),
+      "bvh:channelCount": {
+        type: AiMetadataType.INT32,
+        data: joint.channelCount,
       },
-      "bvh:channels": {
+      "bvh:rotationOrder": {
         type: AiMetadataType.AISTRING,
-        data: JSON.stringify(joint.channels),
+        data: joint.rotationOrder ?? "",
       },
     },
   };
@@ -61,20 +132,41 @@ export class BVHImporter implements BaseImporter {
 
     const joints = collectAnimatedJoints(document.root);
     let cursor = 0;
+    const jointLayouts: JointChannelLayout[] = [];
     const channels: AiNodeAnim[] = joints.map((joint) => {
       const jointCursor = cursor;
       cursor += joint.channels.length;
+      jointLayouts.push({
+        name: joint.name,
+        type: joint.type,
+        channelCount: joint.channelCount,
+        channels: [...joint.channels],
+        rotationOrder: joint.rotationOrder,
+        startIndex: jointCursor,
+      });
+
       return {
         nodeName: joint.name,
         positionKeys: document.motionValues.map((frameValues, frameIndex) => ({
           time: frameIndex,
+          value: (() => {
+            const jointValues = frameValues.slice(jointCursor, jointCursor + joint.channels.length);
+            return {
+              x: readChannelValue(joint.channels, jointValues, "Xposition"),
+              y: readChannelValue(joint.channels, jointValues, "Yposition"),
+              z: readChannelValue(joint.channels, jointValues, "Zposition"),
+            };
+          })(),
+        })),
+        rotationKeys: document.motionValues.map((frameValues, frameIndex) => ({
+          time: frameIndex,
           value: {
-            x: Number(frameValues[jointCursor] ?? 0),
-            y: Number(frameValues[jointCursor + 1] ?? 0),
-            z: Number(frameValues[jointCursor + 2] ?? 0),
+            ...quaternionFromChannels(
+              joint.channels,
+              frameValues.slice(jointCursor, jointCursor + joint.channels.length),
+            ),
           },
         })),
-        rotationKeys: [],
         scalingKeys: [],
         preState: AiAnimBehaviour.DEFAULT,
         postState: AiAnimBehaviour.DEFAULT,
@@ -112,10 +204,9 @@ export class BVHImporter implements BaseImporter {
           type: AiMetadataType.AISTRING,
           data: String(countChannels(document.root)),
         },
-        "bvh:motionValues": {
-          type: AiMetadataType.AISTRING,
-          data: JSON.stringify(document.motionValues),
-        },
+        "bvh:motionValues": metadataJson(document.motionValues),
+        "bvh:frameIndices": metadataJson(Array.from({ length: document.frameCount }, (_, frameIndex) => frameIndex)),
+        "bvh:jointChannelLayout": metadataJson(jointLayouts),
       },
     };
 
