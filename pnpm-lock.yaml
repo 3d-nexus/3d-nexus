@@ -42,8 +42,17 @@ importers:
         specifier: workspace:*
         version: link:../../packages/nexus-obj
 
+  packages/nexus-bvh:
+    dependencies:
+      nexus-core:
+        specifier: workspace:*
+        version: link:../nexus-core
+
   packages/nexus-converter:
     dependencies:
+      nexus-bvh:
+        specifier: workspace:*
+        version: link:../nexus-bvh
       nexus-core:
         specifier: workspace:*
         version: link:../nexus-core

@@ -2,6 +2,17 @@ import type { CompatibilityFixtureManifest } from "nexus-core";
 
 export const BUILTIN_COMPATIBILITY_FIXTURES: CompatibilityFixtureManifest[] = [
   {
+    id: "bvh-minimal-motion",
+    profile: "bvh",
+    label: "Baseline BVH skeleton motion round-trip",
+    tool: "Canonical BVH",
+    toolVersion: "1.0",
+    sourceFormat: "bvh",
+    fixturePath: "packages/nexus-bvh/fixtures/minimal.bvh",
+    capabilities: ["bvh-skeleton-motion", "bvh-animation-fidelity", "bvh-conversion-workflow"],
+    tags: ["baseline", "bvh"],
+  },
+  {
     id: "mmd-model-baseline",
     profile: "mmd",
     label: "Baseline PMX model round-trip",

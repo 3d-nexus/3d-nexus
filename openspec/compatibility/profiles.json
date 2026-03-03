@@ -1,6 +1,12 @@
 {
   "profiles": [
     {
+      "name": "bvh",
+      "label": "BVH Skeleton Motion",
+      "format": "bvh",
+      "notes": "Validation profile for BVH hierarchy, frame-based motion, and rotation-order fidelity."
+    },
+    {
       "name": "mmd",
       "label": "MikuMikuDance / PMX+VMD",
       "format": "pmx",

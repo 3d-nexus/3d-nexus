@@ -1,5 +1,5 @@
 {
-  "name": "nexus-converter",
+  "name": "nexus-bvh",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,11 +9,7 @@
     "dist"
   ],
   "dependencies": {
-    "nexus-bvh": "workspace:*",
-    "nexus-core": "workspace:*",
-    "nexus-fbx": "workspace:*",
-    "nexus-mmd": "workspace:*",
-    "nexus-obj": "workspace:*"
+    "nexus-core": "workspace:*"
   },
   "scripts": {
     "build": "vite build",

@@ -6,6 +6,7 @@ export const COMPATIBILITY_PROFILES = [
   "motionbuilder-fbx",
   "unity",
   "unreal",
+  "bvh",
 ] as const;
 
 export type CompatibilityProfileName = (typeof COMPATIBILITY_PROFILES)[number];

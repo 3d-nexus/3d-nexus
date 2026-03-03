@@ -16,6 +16,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
+      "nexus-bvh": ["packages/nexus-bvh/src/index.ts"],
       "nexus-core": ["packages/nexus-core/src/index.ts"],
       "nexus-obj": ["packages/nexus-obj/src/index.ts"],
       "nexus-mmd": ["packages/nexus-mmd/src/index.ts"],
