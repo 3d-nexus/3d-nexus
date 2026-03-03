@@ -1,37 +1,28 @@
 # fbx-blendshape Specification
 
 ## Purpose
-TBD - created by archiving change pmx-fbx-industrial-grade. Update Purpose after archive.
+Preserve FBX blendshape channel identity, in-between targets, and animated weight semantics across import/export and conversion.
+
 ## Requirements
-### Requirement: BlendShape deformer traversal
-The `FBXConverter` SHALL, for each `FbxGeometry`, query child `FbxDeformer` objects with `DeformerType = "BlendShape"`. For each BlendShape, it SHALL collect child `FbxDeformer` objects with `DeformerType = "BlendShapeChannel"`.
 
-#### Scenario: BlendShape chain connected
-- **WHEN** a geometry has one BlendShape with 4 BlendShapeChannel children
-- **THEN** `FbxDocument.getChildren(blendShapeId)` SHALL yield 4 channel objects
+### Requirement: Blendshape channel weights and in-between targets are preserved
+The `FBXConverter` SHALL preserve each BlendShapeChannel's deform percent, full-weight target value, and any in-between shape thresholds needed for re-export. The `FBXExporter` SHALL reconstruct channel settings and SHALL not collapse authored in-between targets into a single end-state target without a diagnostic.
 
-### Requirement: BlendShapeChannel → AiAnimMesh delta expansion
-For each `BlendShapeChannel`, the `FBXConverter` SHALL find its connected `Shape` (a `FbxGeometry` with type `"Shape"`). The Shape contains `Indexes` (sparse int32 array of affected vertex indices) and `Vertices` (float64 array of length `3 × Indexes.length` representing position deltas). The converter SHALL expand this into a dense `AiAnimMesh`:
-- `AiAnimMesh.vertices[i] = baseMesh.vertices[i] + delta` for `i` in Indexes
-- `AiAnimMesh.vertices[j] = baseMesh.vertices[j]` for all other `j`
-- `AiAnimMesh.name` = BlendShapeChannel name
+#### Scenario: Full-weight target retained
+- **WHEN** a BlendShapeChannel uses a full-weight value other than 100
+- **THEN** the imported metadata SHALL preserve that authored value for export
 
-#### Scenario: Sparse delta expanded to dense
-- **WHEN** a BlendShapeChannel affects 3 of 500 vertices
-- **THEN** the resulting `AiAnimMesh.vertices.length` SHALL be 500
+#### Scenario: In-between targets remain distinguishable
+- **WHEN** a blendshape channel contains multiple in-between targets
+- **THEN** export SHALL preserve the thresholds for each target or emit a degradation diagnostic if only the final target can be represented
 
-#### Scenario: Delta position applied
-- **WHEN** Shape.Indexes = [10] and Shape.Vertices = [0.0, 5.0, 0.0] (delta +5 on Y)
-- **THEN** `animMesh.vertices[10].y` SHALL equal `baseMesh.vertices[10].y + 5.0`
+### Requirement: Animated blendshape weights remain bound to authored channels
+The system SHALL preserve animation curves that drive blendshape channel weights and SHALL keep channel identity stable so animated morph behavior survives import/export and cross-format conversion.
 
-### Requirement: FBX exporter writes BlendShape deformer nodes
-The `FBXExporter` SHALL, for each `AiMesh` with non-empty `morphTargets[]`, emit one `Deformer:BlendShape`, one `Deformer:BlendShapeChannel` per morph target, and one `Geometry:Shape` node per channel. The Shape `Indexes` and `Vertices` arrays SHALL be the sparse non-base-identical entries (diff from base mesh). `Connections` SHALL include BlendShapeChannel→BlendShape, BlendShape→Geometry, Shape→BlendShapeChannel.
+#### Scenario: Blendshape animation curve preserved
+- **WHEN** a blendshape channel named `blink_L` has animated weights
+- **THEN** the imported animation metadata SHALL reference `blink_L` and export SHALL not rename or merge it unexpectedly
 
-#### Scenario: BlendShape node written
-- **WHEN** exporting a mesh with 2 morph targets
-- **THEN** the FBX output SHALL contain one `Deformer:BlendShape` and 2 `Deformer:BlendShapeChannel` nodes
-
-#### Scenario: Shape sparse delta written correctly
-- **WHEN** morph target "blink" deforms only 8 vertices
-- **THEN** the `Shape` node for that channel SHALL have `Indexes: *8 { … }` and `Vertices: *24 { … }` (8×3 floats)
-
+#### Scenario: Weight-only conversion reports fidelity
+- **WHEN** conversion to a target format can preserve weight animation but not in-between targets
+- **THEN** the compatibility report SHALL mark the channel as `degraded` with the exact fallback reason
