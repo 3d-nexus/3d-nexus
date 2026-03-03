@@ -21,10 +21,10 @@
 
 ## 4. BVH Exporter
 
-- [ ] 4.1 实现 `BVHExporter`，从 IR skeleton 和 animation 生成稳定的 `HIERARCHY` 文本
-- [ ] 4.2 使用保留的 `bvh:*` metadata 重建 joint channel order、rotation order、End Site 与 frame timing
-- [ ] 4.3 在 metadata 缺失时输出 canonical BVH hierarchy/channel layout
-- [ ] 4.4 为 import -> export -> import roundtrip 添加 parser/exporter 一致性测试
+- [x] 4.1 实现 `BVHExporter`，从 IR skeleton 和 animation 生成稳定的 `HIERARCHY` 文本
+- [x] 4.2 使用保留的 `bvh:*` metadata 重建 joint channel order、rotation order、End Site 与 frame timing
+- [x] 4.3 在 metadata 缺失时输出 canonical BVH hierarchy/channel layout
+- [x] 4.4 为 import -> export -> import roundtrip 添加 parser/exporter 一致性测试
 
 ## 5. BVH Animation Fidelity
 
