@@ -2,7 +2,9 @@ export interface BvhJoint {
   name: string;
   type: "ROOT" | "JOINT" | "EndSite";
   offset: [number, number, number];
+  channelCount: number;
   channels: string[];
+  rotationOrder: string | null;
   children: BvhJoint[];
 }
 
@@ -15,6 +17,28 @@ export interface BvhDocument {
 
 function linesFromBuffer(buffer: ArrayBuffer): string[] {
   return new TextDecoder().decode(buffer).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+}
+
+function parseVector(parts: string[], errorMessage: string): [number, number, number] {
+  if (parts.length !== 4 || parts[0] !== "OFFSET") {
+    throw new Error(errorMessage);
+  }
+
+  const values = parts.slice(1).map(Number);
+  if (values.some((value) => !Number.isFinite(value))) {
+    throw new Error(errorMessage);
+  }
+
+  return [values[0]!, values[1]!, values[2]!];
+}
+
+function parseRotationOrder(channels: string[]): string | null {
+  const order = channels
+    .filter((channel) => channel.endsWith("rotation"))
+    .map((channel) => channel[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return order.length > 0 ? order : null;
 }
 
 export class BVHParser {
@@ -37,17 +61,16 @@ export class BVHParser {
         }
         const offsetLine = lines[index++];
         const offsetParts = offsetLine?.split(/\s+/) ?? [];
-        if (offsetParts[0] !== "OFFSET" || offsetParts.length !== 4) {
-          throw new Error("Invalid BVH: malformed End Site OFFSET");
-        }
         if (lines[index++] !== "}") {
           throw new Error("Invalid BVH: unterminated End Site block");
         }
         return {
           name: "EndSite",
           type: "EndSite",
-          offset: [Number(offsetParts[1]), Number(offsetParts[2]), Number(offsetParts[3])],
+          offset: parseVector(offsetParts, "Invalid BVH: malformed End Site OFFSET"),
+          channelCount: 0,
           channels: [],
+          rotationOrder: null,
           children: [],
         };
       }
@@ -61,15 +84,15 @@ export class BVHParser {
       }
       const offsetLine = lines[index++];
       const offsetParts = offsetLine?.split(/\s+/) ?? [];
-      if (offsetParts[0] !== "OFFSET" || offsetParts.length !== 4) {
-        throw new Error("Invalid BVH: malformed OFFSET");
-      }
       const channelLine = lines[index++];
       const channelParts = channelLine?.split(/\s+/) ?? [];
       if (channelParts[0] !== "CHANNELS" || channelParts.length < 2) {
         throw new Error("Invalid BVH: malformed CHANNELS");
       }
       const declaredCount = Number(channelParts[1] ?? 0);
+      if (!Number.isInteger(declaredCount) || declaredCount < 0) {
+        throw new Error("Invalid BVH: malformed CHANNELS");
+      }
       const channels = channelParts.slice(2);
       if (channels.length !== declaredCount) {
         throw new Error("Invalid BVH: channel count mismatch");
@@ -77,6 +100,9 @@ export class BVHParser {
 
       const children: BvhJoint[] = [];
       while (index < lines.length && lines[index] !== "}") {
+        if (lines[index] === "MOTION") {
+          throw new Error("Invalid BVH: unterminated joint block");
+        }
         children.push(parseJoint());
       }
       if (lines[index++] !== "}") {
@@ -85,13 +111,18 @@ export class BVHParser {
       return {
         name: nameParts.join(" "),
         type,
-        offset: [Number(offsetParts[1]), Number(offsetParts[2]), Number(offsetParts[3])],
+        offset: parseVector(offsetParts, "Invalid BVH: malformed OFFSET"),
+        channelCount: declaredCount,
         channels,
+        rotationOrder: parseRotationOrder(channels),
         children,
       };
     };
 
     const root = parseJoint();
+    if (root.type !== "ROOT") {
+      throw new Error("Invalid BVH: hierarchy must start with ROOT");
+    }
     if (lines[index++] !== "MOTION") {
       throw new Error("Invalid BVH: missing MOTION section");
     }
@@ -101,9 +132,18 @@ export class BVHParser {
     const frameTimeParts = frameTimeLine.split(/[:\s]+/).filter(Boolean);
     const frameCount = Number(frameCountParts[frameCountParts.length - 1] ?? 0);
     const frameTime = Number(frameTimeParts[frameTimeParts.length - 1] ?? 0);
+    if (!Number.isInteger(frameCount) || frameCount < 0) {
+      throw new Error("Invalid BVH: malformed Frames line");
+    }
+    if (!Number.isFinite(frameTime) || frameTime <= 0) {
+      throw new Error("Invalid BVH: malformed Frame Time line");
+    }
     const channelCount = countChannels(root);
     const motionValues = lines.slice(index).map((line) => {
       const values = line.split(/\s+/).map(Number);
+      if (values.some((value) => !Number.isFinite(value))) {
+        throw new Error("Invalid BVH: malformed motion value");
+      }
       if (values.length !== channelCount) {
         throw new Error("Invalid BVH: motion channel count mismatch");
       }
