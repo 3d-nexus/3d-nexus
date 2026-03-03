@@ -28,10 +28,10 @@
 
 ## 5. BVH Animation Fidelity
 
-- [ ] 5.1 保留 BVH frame index 语义，避免 time normalization 后静默漂移
-- [ ] 5.2 为 off-frame 编辑或无法精确回写的场景增加 drift diagnostics 模型
-- [ ] 5.3 验证 frame time、frame count、root translation 与 Euler order 的 roundtrip 保真
-- [ ] 5.4 添加 byte-stable 或 text-stable 导出测试，确保未编辑场景的 BVH 导出稳定
+- [x] 5.1 保留 BVH frame index 语义，避免 time normalization 后静默漂移
+- [x] 5.2 为 off-frame 编辑或无法精确回写的场景增加 drift diagnostics 模型
+- [x] 5.3 验证 frame time、frame count、root translation 与 Euler order 的 roundtrip 保真
+- [x] 5.4 添加 byte-stable 或 text-stable 导出测试，确保未编辑场景的 BVH 导出稳定
 
 ## 6. Converter And Compatibility Reporting
 
