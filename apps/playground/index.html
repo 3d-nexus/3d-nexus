@@ -157,11 +157,11 @@
       <section class="hero">
         <div>
           <h1>Nexus 3D Playground</h1>
-          <p>Drop a model, inspect the parsed scene summary, then convert it into another format entirely in the browser.</p>
+          <p>Drop a model or motion clip, inspect the parsed scene summary, then convert it into another format entirely in the browser.</p>
         </div>
         <div class="panel">
           <div id="dropzone" class="dropzone">
-            <strong>Drop a `.obj`, `.fbx`, `.pmx`, `.pmd`, or `.vmd` file here</strong>
+            <strong>Drop a `.obj`, `.fbx`, `.pmx`, `.pmd`, `.vmd`, or `.bvh` file here</strong>
             <div class="controls">
               <input id="file-input" type="file" />
               <label for="target-format">Output</label>
@@ -175,6 +175,7 @@
                 <option value="motionbuilder-fbx">MotionBuilder FBX</option>
                 <option value="unity">Unity</option>
                 <option value="unreal">Unreal</option>
+                <option value="bvh">BVH</option>
               </select>
               <button id="convert-button" type="button">Convert</button>
             </div>
@@ -191,7 +192,7 @@
             <ul id="warnings"></ul>
           </div>
           <div class="panel">
-            <h2>Mesh Stats</h2>
+            <h2>Scene Stats</h2>
             <div id="stats" class="stats"></div>
           </div>
           <div class="panel">

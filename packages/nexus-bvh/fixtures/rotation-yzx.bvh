@@ -1,0 +1,20 @@
+HIERARCHY
+ROOT Pivot
+{
+  OFFSET 0 0 0
+  CHANNELS 6 Xposition Yposition Zposition Yrotation Zrotation Xrotation
+  JOINT Arm
+  {
+    OFFSET 5 0 0
+    CHANNELS 3 Yrotation Zrotation Xrotation
+    End Site
+    {
+      OFFSET 4 0 0
+    }
+  }
+}
+MOTION
+Frames: 2
+Frame Time: 0.0333333
+0 0 0 0 0 0 0 0 0
+0 0 0 15 25 35 5 10 20

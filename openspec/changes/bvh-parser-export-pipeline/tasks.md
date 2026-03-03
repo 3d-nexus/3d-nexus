@@ -49,10 +49,10 @@
 
 ## 8. Playground And Fixtures
 
-- [ ] 8.1 在 browser playground 中支持 `.bvh` 文件加载、格式选择和 compatibility profile 选择
-- [ ] 8.2 在 playground 中显示 BVH 相关 compatibility report 与 diagnostics
-- [ ] 8.3 增加 canonical BVH fixtures，覆盖 basic skeleton、root motion、不同 rotation order
-- [ ] 8.4 添加面向 playground 的验证测试或手工验证脚本说明
+- [x] 8.1 在 browser playground 中支持 `.bvh` 文件加载、格式选择和 compatibility profile 选择
+- [x] 8.2 在 playground 中显示 BVH 相关 compatibility report 与 diagnostics
+- [x] 8.3 增加 canonical BVH fixtures，覆盖 basic skeleton、root motion、不同 rotation order
+- [x] 8.4 添加面向 playground 的验证测试或手工验证脚本说明
 
 ## 9. Documentation And Validation
 
