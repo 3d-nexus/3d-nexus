@@ -2,11 +2,9 @@
 
 ## Purpose
 Define compatibility profiles, fixture manifests, and report semantics for industrial-grade DCC and runtime validation.
-
 ## Requirements
-
 ### Requirement: Compatibility profiles and fixture manifests
-The system SHALL define named compatibility profiles for `mmd`, `blender-fbx`, `maya-fbx`, `3dsmax-fbx`, `motionbuilder-fbx`, `unity`, and `unreal`. Each profile SHALL reference one or more fixture manifests that declare source tool/version, covered capabilities, expected diagnostics, and numeric tolerances for validation.
+The system SHALL define named compatibility profiles for `mmd`, `blender-fbx`, `maya-fbx`, `3dsmax-fbx`, `motionbuilder-fbx`, `unity`, `unreal`, and `bvh`. Each profile SHALL reference one or more fixture manifests that declare source tool/version, covered capabilities, expected diagnostics, and numeric tolerances for validation.
 
 #### Scenario: Profile manifest declares tool version
 - **WHEN** a fixture is registered for the `maya-fbx` profile
@@ -15,6 +13,10 @@ The system SHALL define named compatibility profiles for `mmd`, `blender-fbx`, `
 #### Scenario: Capability coverage is explicit
 - **WHEN** a fixture only validates pivots and bind poses
 - **THEN** the manifest SHALL list only those capabilities instead of implying full-profile coverage
+
+#### Scenario: BVH fixture profile is explicit
+- **WHEN** a fixture is registered for the `bvh` profile
+- **THEN** its manifest SHALL identify the BVH-producing tool or canonical source together with the covered skeleton and animation capabilities
 
 ### Requirement: Compatibility reports distinguish exact, normalized, and degraded outcomes
 Every import, export, or conversion validation run SHALL produce a compatibility report that classifies each checked capability as `exact`, `normalized`, `degraded`, or `unsupported`, together with structured diagnostics describing the fallback or loss.
@@ -26,3 +28,8 @@ Every import, export, or conversion validation run SHALL produce a compatibility
 #### Scenario: Unsupported construct is visible in report
 - **WHEN** a fixture contains a native feature that the IR cannot round-trip exactly
 - **THEN** the report SHALL include at least one diagnostic entry with the capability name, severity, and fallback action
+
+#### Scenario: BVH timing drift is surfaced
+- **WHEN** conversion produces BVH key times that cannot be reconstructed as exact source frames
+- **THEN** the compatibility report SHALL include a BVH-specific diagnostic that identifies the affected capability and frame drift
+
