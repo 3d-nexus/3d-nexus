@@ -78,3 +78,18 @@ npm i @3d-nexus/converter
 ```
 
 GitHub 仓库：[`3d-nexus/3d-nexus`](https://github.com/3d-nexus/3d-nexus)
+
+## Release Flow
+
+| 步骤 | 命令 / 说明 |
+|---|---|
+| 1 | 功能或修复完成后执行 `pnpm changeset`，为受影响的 `@3d-nexus/*` 包写变更说明 |
+| 2 | 本地验证执行 `pnpm release:check` |
+| 3 | 执行 `pnpm version-packages` 更新版本，再执行 `pnpm tag:release` 创建仓库级 tag |
+| 4 | 推送到 `master` 后，GitHub Actions 会创建版本 PR 或自动发布 |
+
+GitHub Actions 发布依赖仓库 Secret：
+
+| Secret | 用途 |
+|---|---|
+| `NPM_TOKEN` | npm 发布 token，需具备发布 `@3d-nexus/*` 的权限 |

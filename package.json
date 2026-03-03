@@ -13,12 +13,17 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "check": "pnpm build && pnpm test",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
+    "tag:release": "node scripts/tag-release.mjs",
     "pack:dry-run": "pnpm -r --filter \"./packages/*\" exec npm pack --dry-run",
     "release:check": "pnpm check && pnpm pack:dry-run",
     "publish:packages": "pnpm -r --filter \"./packages/*\" publish --access public",
     "dev": "pnpm --filter playground dev"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "@types/node": "^24.10.1",
     "typescript": "^5.9.3",
     "vite": "^7.1.12",

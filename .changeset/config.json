@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@3d-nexus/core",
+      "@3d-nexus/obj",
+      "@3d-nexus/bvh",
+      "@3d-nexus/mmd",
+      "@3d-nexus/fbx",
+      "@3d-nexus/converter"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "master",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "playground"
+  ]
+}
