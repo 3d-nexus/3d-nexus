@@ -11,6 +11,9 @@
 | `pmx-morphs` | `mmd` plus cross-format report paths | PMX extended UV, flip, impulse morph regression tests | FBX/runtime targets report degraded PMX-only morph semantics |
 | `pmx-physics-export` | `mmd` plus cross-format report paths | PMX rigid body, joint, soft-body-compatible regression tests | Soft-body blocks stay metadata-backed outside PMX round-trip |
 | `vmd-interpolation` | `mmd`, `motionbuilder-fbx` report path | Bone interpolation byte-roundtrip, morph/camera/light frame tests | Off-frame editing paths are diagnosed as drift instead of silently resampled |
+| `bvh-skeleton-motion` | `bvh` plus BVH cross-format report paths | Canonical BVH basic skeleton, root motion, FBX roundtrip smoke tests | FBX and VMD bridges normalize hierarchy/channel layout; PMX paths degrade BVH-only structure |
+| `bvh-animation-fidelity` | `bvh` plus BVH cross-format report paths | Frame-time roundtrip, rotation-order preservation, frame-drift diagnostics tests | Off-frame edits degrade timing fidelity and FBX/VMD bridges normalize frame semantics |
+| `bvh-conversion-workflow` | `bvh` | Converter report tests, playground BVH loading path, manual browser validation guide | Browser flow is validated with canonical fixtures, not external DCC-authored BVH corpora |
 
 ## Current Validation Scope
 
@@ -20,3 +23,4 @@
 | FBX profile regression suite | Active in `packages/nexus-fbx` |
 | Converter compatibility reports | Active in `packages/nexus-converter` |
 | Playground compatibility visualization | Active in `apps/playground` |
+| BVH parser/exporter/fidelity regression suite | Active in `packages/nexus-bvh` |

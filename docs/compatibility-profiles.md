@@ -9,6 +9,7 @@
 | `motionbuilder-fbx` | MotionBuilder animation exchange | Integer-frame timing and authored animation stacks | Sampling kept on-frame with stable curve identity | Cross-format timing paths that cannot preserve authored stack semantics |
 | `unity` | Runtime-target FBX | Meshes, materials, skeletal animation inside runtime limits | Material fallback from DCC shading to runtime PBR/legacy equivalents | PMX-specific morph/physics semantics and DCC-only evaluation metadata |
 | `unreal` | Runtime-target FBX | Meshes, skeletal animation, material bindings that map to runtime assets | Coordinate and shading normalization for import pipeline expectations | PMX-only authoring metadata and unsupported FBX extras |
+| `bvh` | BVH skeleton/motion exchange | Authored hierarchy, channel order, frame cadence, root motion, and Euler rotation order stay available for re-export | Cross-format bridges may rewrite BVH into canonical skeleton or time-curve representations while preserving intent | Off-frame edits, non-BVH-native targets, or hierarchy/channel loss must emit explicit drift or degradation diagnostics |
 
 ## Outcome Semantics
 

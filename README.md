@@ -1,6 +1,6 @@
 # Nexus 3D
 
-`Nexus 3D` 是一个基于 `pnpm` workspace 的 3D 格式转换与兼容性验证仓库，当前聚焦于 `OBJ`、`FBX`、`PMX/PMD`、`VMD` 的导入、导出、浏览器内转换，以及面向 DCC/runtime profile 的 compatibility report。
+`Nexus 3D` 是一个基于 `pnpm` workspace 的 3D 格式转换与兼容性验证仓库，当前聚焦于 `OBJ`、`FBX`、`PMX/PMD`、`VMD`、`BVH` 的导入、导出、浏览器内转换，以及面向 DCC/runtime profile 的 compatibility report。
 
 ## Workspace
 
@@ -10,6 +10,7 @@
 | `packages/nexus-obj` | OBJ / MTL 导入导出 |
 | `packages/nexus-fbx` | FBX 导入导出、scene extras、animation、material fidelity |
 | `packages/nexus-mmd` | PMX / PMD / VMD 导入导出与 MMD 相关保真逻辑 |
+| `packages/nexus-bvh` | BVH skeleton/motion 解析、导入导出、frame timing fidelity |
 | `packages/nexus-converter` | 格式转换管线、post-process、compatibility report |
 | `apps/playground` | 浏览器内加载、转换、下载、查看 compatibility report |
 | `openspec` | 变更提案、主 specs、兼容矩阵规范 |
@@ -29,7 +30,7 @@ pnpm --filter playground build
 
 | 步骤 | 做什么 |
 |---|---|
-| 1 | 用对应 importer 读取 `PMX / VMD / FBX / OBJ` |
+| 1 | 用对应 importer 读取 `PMX / VMD / FBX / OBJ / BVH` |
 | 2 | 通过 `ModelConverter.convertWithReport()` 执行转换 |
 | 3 | 传入 `compatibilityProfile` 生成 profile-aware report |
 | 4 | 用 `renderCompatibilityReportMarkdown()` 渲染报告 |
@@ -59,6 +60,7 @@ const markdown = result.report ? renderCompatibilityReportMarkdown(result.report
 | `motionbuilder-fbx` | MotionBuilder timing / animation stack 路径 |
 | `unity` | runtime-oriented FBX compatibility |
 | `unreal` | Unreal import-oriented FBX compatibility |
+| `bvh` | BVH skeleton motion / frame timing / drift diagnostics 路径 |
 
 更完整的语义说明见：
 
@@ -71,10 +73,11 @@ const markdown = result.report ? renderCompatibilityReportMarkdown(result.report
 
 | 能力 | 说明 |
 |---|---|
-| 文件拖拽/选择 | 加载 `.obj` `.fbx` `.pmx` `.pmd` `.vmd` |
+| 文件拖拽/选择 | 加载 `.obj` `.fbx` `.pmx` `.pmd` `.vmd` `.bvh` |
 | 输出格式选择 | 浏览器内转换并下载 |
 | Compatibility Profile 选择 | 切换报告目标 profile |
 | Compatibility Report 面板 | 查看 `exact / normalized / degraded / unsupported` 结果 |
+| Scene Stats | 对 meshless BVH scene 显示 joints / channels / animations |
 
 启动方式：
 

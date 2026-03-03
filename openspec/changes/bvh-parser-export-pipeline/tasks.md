@@ -56,7 +56,7 @@
 
 ## 9. Documentation And Validation
 
-- [ ] 9.1 更新根目录与 `docs` 中的 format support / compatibility workflow 文档，纳入 BVH
-- [ ] 9.2 在 compatibility matrix 文档中加入 BVH profile、能力范围、已知 gaps
-- [ ] 9.3 运行 `nexus-bvh`、`nexus-converter`、`playground` 的测试与构建验证
-- [ ] 9.4 通过 `openspec validate "bvh-parser-export-pipeline" --type change --strict` 校验 change 完整性
+- [x] 9.1 更新根目录与 `docs` 中的 format support / compatibility workflow 文档，纳入 BVH
+- [x] 9.2 在 compatibility matrix 文档中加入 BVH profile、能力范围、已知 gaps
+- [x] 9.3 运行 `nexus-bvh`、`nexus-converter`、`playground` 的测试与构建验证
+- [x] 9.4 通过 `openspec validate "bvh-parser-export-pipeline" --type change --strict` 校验 change 完整性
