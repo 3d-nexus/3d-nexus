@@ -1,4 +1,4 @@
-import type { AiColor4D, AiVector3D } from "nexus-core";
+﻿import type { AiColor4D, AiVector3D } from "@3d-nexus/core";
 import type { FBXElement } from "./FBXParser";
 
 export interface PropertyEntry {
@@ -48,3 +48,4 @@ export class PropertyTable {
     return this.values.get(name);
   }
 }
+

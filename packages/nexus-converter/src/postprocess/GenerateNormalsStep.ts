@@ -1,4 +1,4 @@
-import { normalizeVector3, type AiScene } from "nexus-core";
+﻿import { normalizeVector3, type AiScene } from "@3d-nexus/core";
 import type { PostProcessStep } from "./PostProcessStep";
 
 function cross(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
@@ -37,3 +37,4 @@ export class GenerateNormalsStep implements PostProcessStep {
     };
   }
 }
+

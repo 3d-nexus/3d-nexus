@@ -1,4 +1,4 @@
-import {
+﻿import {
   AiPropertyTypeInfo,
   AiTextureType,
   type AiAnimation,
@@ -9,7 +9,7 @@ import {
   type AiScene,
   type BaseExporter,
   type ExportSettings,
-} from "nexus-core";
+} from "@3d-nexus/core";
 import { FbxExportNode } from "./FBXExportNode";
 import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
@@ -715,7 +715,7 @@ export class FBXExporter implements BaseExporter {
 
     const text = [
       "; FBX 7.4.0 project file",
-      "; Created by nexus-fbx",
+      "; Created by 3d-nexus/fbx",
       "FBXHeaderExtension: {",
       "  FBXVersion: 7400",
       "}",
@@ -737,3 +737,4 @@ export class FBXExporter implements BaseExporter {
     return new TextEncoder().encode(text).buffer;
   }
 }
+

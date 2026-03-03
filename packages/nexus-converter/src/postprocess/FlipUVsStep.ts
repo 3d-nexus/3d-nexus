@@ -1,4 +1,4 @@
-import { type AiScene } from "nexus-core";
+﻿import { type AiScene } from "@3d-nexus/core";
 import type { PostProcessStep } from "./PostProcessStep";
 
 export class FlipUVsStep implements PostProcessStep {
@@ -14,3 +14,4 @@ export class FlipUVsStep implements PostProcessStep {
     };
   }
 }
+

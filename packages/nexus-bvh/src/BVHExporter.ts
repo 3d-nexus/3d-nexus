@@ -1,4 +1,4 @@
-import { type AiAnimation, type AiNode, type AiScene, type BaseExporter, type ExportSettings } from "nexus-core";
+﻿import { type AiAnimation, type AiNode, type AiScene, type BaseExporter, type ExportSettings } from "@3d-nexus/core";
 
 type BvhJointType = "ROOT" | "JOINT" | "EndSite";
 
@@ -178,3 +178,4 @@ export class BVHExporter implements BaseExporter {
     return new TextEncoder().encode(text).buffer;
   }
 }
+

@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   AiAnimBehaviour,
   AiMetadataType,
   AiPrimitiveType,
   createIdentityMatrix4x4,
   type AiScene,
-} from "nexus-core";
+} from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -135,3 +135,4 @@ describe("FBX skinning and blendshape fidelity", () => {
     expect(blendShapeAnimationCurves[0]?.objectName).toBe("Blink");
   });
 });
+

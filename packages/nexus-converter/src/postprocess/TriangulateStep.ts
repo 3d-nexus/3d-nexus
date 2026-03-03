@@ -1,4 +1,4 @@
-import { type AiScene } from "nexus-core";
+﻿import { type AiScene } from "@3d-nexus/core";
 import type { PostProcessStep } from "./PostProcessStep";
 
 export class TriangulateStep implements PostProcessStep {
@@ -19,3 +19,4 @@ export class TriangulateStep implements PostProcessStep {
     };
   }
 }
+

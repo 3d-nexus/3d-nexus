@@ -1,15 +1,21 @@
 {
-  "name": "nexus-3d",
+  "name": "3d-nexus",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.24.0",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
+    "clean": "node -e \"const { rmSync } = require('node:fs'); for (const path of ['packages/nexus-bvh/dist','packages/nexus-converter/dist','packages/nexus-core/dist','packages/nexus-fbx/dist','packages/nexus-mmd/dist','packages/nexus-obj/dist','apps/playground/dist']) rmSync(path, { recursive: true, force: true });\"",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
+    "check": "pnpm build && pnpm test",
+    "pack:dry-run": "pnpm -r --filter \"./packages/*\" exec npm pack --dry-run",
+    "release:check": "pnpm check && pnpm pack:dry-run",
+    "publish:packages": "pnpm -r --filter \"./packages/*\" publish --access public",
     "dev": "pnpm --filter playground dev"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { MMDImporter } from "../MMDImporter";
 import { MMDPmxExporter } from "../MMDPmxExporter";
 import { MMDPmxParser } from "../MMDPmxParser";
@@ -218,3 +218,4 @@ describe("PMX industrial fidelity", () => {
     expect(softBodies[0]?.aeroModel).toBe(2);
   });
 });
+

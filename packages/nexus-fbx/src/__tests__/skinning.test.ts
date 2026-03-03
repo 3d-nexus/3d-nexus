@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -74,3 +74,4 @@ describe("FBX skinning", () => {
     expect(scene.meshes[0]?.bones[0]?.weights.length).toBeGreaterThan(0);
   });
 });
+

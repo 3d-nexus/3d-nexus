@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { MMDImporter } from "../MMDImporter";
 import { MMDPmxExporter } from "../MMDPmxExporter";
 
@@ -154,3 +154,4 @@ describe("PMX morph pipeline", () => {
     expect(totalMorphCount(reparsed.scene)).toBe(5);
   });
 });
+

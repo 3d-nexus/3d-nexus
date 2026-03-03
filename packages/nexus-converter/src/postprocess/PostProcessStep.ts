@@ -1,5 +1,6 @@
-import type { AiScene } from "nexus-core";
+﻿import type { AiScene } from "@3d-nexus/core";
 
 export interface PostProcessStep {
   process(scene: AiScene): AiScene;
 }
+

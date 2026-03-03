@@ -1,16 +1,46 @@
 {
-  "name": "nexus-fbx",
+  "name": "@3d-nexus/fbx",
   "version": "0.1.0",
+  "description": "FBX import/export support with scene and animation fidelity for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "keywords": [
+    "3d",
+    "nexus",
+    "fbx",
+    "animation",
+    "scene",
+    "importer"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/3d-nexus/3d-nexus.git",
+    "directory": "packages/nexus-fbx"
+  },
+  "homepage": "https://github.com/3d-nexus/3d-nexus#readme",
+  "bugs": {
+    "url": "https://github.com/3d-nexus/3d-nexus/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
   "dependencies": {
-    "fflate": "^0.8.2",
-    "nexus-core": "workspace:*"
+    "@3d-nexus/core": "workspace:*",
+    "fflate": "^0.8.2"
   },
   "scripts": {
     "build": "vite build",

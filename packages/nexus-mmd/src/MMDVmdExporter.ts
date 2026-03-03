@@ -1,4 +1,4 @@
-import type { AiAnimation, AiQuatKey, AiScene, AiVectorKey } from "nexus-core";
+﻿import type { AiAnimation, AiQuatKey, AiScene, AiVectorKey } from "@3d-nexus/core";
 import { BinaryWriter } from "./BinaryWriter";
 import type { VmdInterpolation } from "./MMDVmdParser";
 
@@ -183,3 +183,4 @@ export class MMDVmdExporter {
     return writer.toArrayBuffer();
   }
 }
+

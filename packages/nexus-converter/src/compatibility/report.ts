@@ -1,4 +1,4 @@
-import {
+﻿import {
   createCompatibilityDiagnostic,
   type AiScene,
   determineCompatibilityOutcome,
@@ -9,8 +9,8 @@ import {
   type CompatibilityProfileName,
   type CompatibilityReport,
   type CompatibilityTolerance,
-} from "nexus-core";
-import { analyzeBvhFrameDrift } from "nexus-bvh";
+} from "@3d-nexus/core";
+import { analyzeBvhFrameDrift } from "@3d-nexus/bvh";
 
 export interface CompatibilityScalarCheckInput {
   capability: string;
@@ -360,3 +360,4 @@ export function createSceneCompatibilityReport(input: CreateSceneCompatibilityRe
     checks,
   });
 }
+

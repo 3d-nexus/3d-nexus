@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { describe, expect, it } from "vitest";
 
 import { BVHExporter } from "../BVHExporter";
@@ -103,3 +103,4 @@ describe("BVHExporter", () => {
     expect(output).toContain("3 4 5 0 0 0");
   });
 });
+

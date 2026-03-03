@@ -1,4 +1,4 @@
-import type { CompatibilityFixtureManifest } from "nexus-core";
+﻿import type { CompatibilityFixtureManifest } from "@3d-nexus/core";
 
 export const BUILTIN_COMPATIBILITY_FIXTURES: CompatibilityFixtureManifest[] = [
   {
@@ -109,3 +109,4 @@ export function listBuiltInCompatibilityFixtures(): CompatibilityFixtureManifest
     return next;
   });
 }
+

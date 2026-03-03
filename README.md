@@ -1,29 +1,28 @@
-# Nexus 3D
+# 3d-nexus
 
-`Nexus 3D` 是一个基于 `pnpm` workspace 的 3D 格式转换与兼容性验证仓库，当前聚焦于 `OBJ`、`FBX`、`PMX/PMD`、`VMD`、`BVH` 的导入、导出、浏览器内转换，以及面向 DCC/runtime profile 的 compatibility report。
+`3d-nexus` 是一个基于 `pnpm` workspace 的 3D 格式转换与兼容性验证仓库，当前聚焦于 `OBJ`、`FBX`、`PMX/PMD`、`VMD`、`BVH` 的导入、导出、浏览器内转换，以及面向 DCC/runtime profile 的 compatibility report。
 
 ## Workspace
 
-| 路径 | 作用 |
-|---|---|
-| `packages/nexus-core` | 通用 IR、数学类型、兼容性类型 |
-| `packages/nexus-obj` | OBJ / MTL 导入导出 |
-| `packages/nexus-fbx` | FBX 导入导出、scene extras、animation、material fidelity |
-| `packages/nexus-mmd` | PMX / PMD / VMD 导入导出与 MMD 相关保真逻辑 |
-| `packages/nexus-bvh` | BVH skeleton/motion 解析、导入导出、frame timing fidelity |
-| `packages/nexus-converter` | 格式转换管线、post-process、compatibility report |
-| `apps/playground` | 浏览器内加载、转换、下载、查看 compatibility report |
-| `openspec` | 变更提案、主 specs、兼容矩阵规范 |
-| `docs` | profile 语义与 capability/tool-version 兼容矩阵说明 |
+| 路径 | 发布包名 | 作用 |
+|---|---|---|
+| `packages/nexus-core` | `@3d-nexus/core` | 通用 IR、数学类型、兼容性类型 |
+| `packages/nexus-obj` | `@3d-nexus/obj` | OBJ / MTL 导入导出 |
+| `packages/nexus-fbx` | `@3d-nexus/fbx` | FBX 导入导出、scene extras、animation、material fidelity |
+| `packages/nexus-mmd` | `@3d-nexus/mmd` | PMX / PMD / VMD 导入导出与 MMD 相关保真逻辑 |
+| `packages/nexus-bvh` | `@3d-nexus/bvh` | BVH skeleton/motion 解析、导入导出、frame timing fidelity |
+| `packages/nexus-converter` | `@3d-nexus/converter` | 格式转换管线、post-process、compatibility report |
+| `apps/playground` | private | 浏览器内加载、转换、下载、查看 compatibility report |
 
 ## 常用命令
 
 ```bash
 pnpm install
-pnpm --filter nexus-mmd test
-pnpm --filter nexus-fbx test
-pnpm --filter nexus-converter test
-pnpm --filter playground build
+pnpm --filter ./packages/nexus-mmd test
+pnpm --filter ./packages/nexus-fbx test
+pnpm --filter ./packages/nexus-converter test
+pnpm --filter ./apps/playground build
+pnpm release:check
 ```
 
 ## Compatibility Workflow
@@ -39,7 +38,7 @@ pnpm --filter playground build
 示例：
 
 ```ts
-import { ModelConverter, ModelFormat, renderCompatibilityReportMarkdown } from "nexus-converter";
+import { ModelConverter, ModelFormat, renderCompatibilityReportMarkdown } from "@3d-nexus/converter";
 
 const converter = new ModelConverter();
 const result = converter.convertWithReport(inputBuffer, ModelFormat.PMX, ModelFormat.FBX, {
@@ -67,30 +66,15 @@ const markdown = result.report ? renderCompatibilityReportMarkdown(result.report
 - [compatibility-profiles.md](C:/Workspace/Coding/nexus-3d/docs/compatibility-profiles.md)
 - [compatibility-matrix.md](C:/Workspace/Coding/nexus-3d/docs/compatibility-matrix.md)
 
-## Playground
-
-`apps/playground` 支持：
-
-| 能力 | 说明 |
-|---|---|
-| 文件拖拽/选择 | 加载 `.obj` `.fbx` `.pmx` `.pmd` `.vmd` `.bvh` |
-| 输出格式选择 | 浏览器内转换并下载 |
-| Compatibility Profile 选择 | 切换报告目标 profile |
-| Compatibility Report 面板 | 查看 `exact / normalized / degraded / unsupported` 结果 |
-| Scene Stats | 对 meshless BVH scene 显示 joints / channels / animations |
-
-启动方式：
+## 发布包
 
 ```bash
-pnpm --filter playground dev
+npm i @3d-nexus/core
+npm i @3d-nexus/obj
+npm i @3d-nexus/fbx
+npm i @3d-nexus/mmd
+npm i @3d-nexus/bvh
+npm i @3d-nexus/converter
 ```
 
-## OpenSpec
-
-当前工业级 FBX/PMX 兼容矩阵 change 已归档到：
-
-- `openspec/changes/archive/2026-03-02-fbx-pmx-full-dcc-compat-matrix`
-
-主 specs 已同步回：
-
-- `openspec/specs`
+GitHub 仓库：[`3d-nexus/3d-nexus`](https://github.com/3d-nexus/3d-nexus)

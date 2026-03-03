@@ -1,4 +1,4 @@
-import type { AiColor3D } from "nexus-core";
+﻿import type { AiColor3D } from "@3d-nexus/core";
 import type { ObjMaterial } from "./ObjFileData";
 
 const COLOR_DIRECTIVES = new Set(["Ka", "Kd", "Ks", "Ke"]);
@@ -92,3 +92,4 @@ export class ObjFileMtlParser {
     return materials;
   }
 }
+

@@ -1,15 +1,45 @@
 {
-  "name": "nexus-obj",
+  "name": "@3d-nexus/obj",
   "version": "0.1.0",
+  "description": "OBJ and MTL import/export support for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "keywords": [
+    "3d",
+    "nexus",
+    "obj",
+    "mtl",
+    "importer",
+    "exporter"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/3d-nexus/3d-nexus.git",
+    "directory": "packages/nexus-obj"
+  },
+  "homepage": "https://github.com/3d-nexus/3d-nexus#readme",
+  "bugs": {
+    "url": "https://github.com/3d-nexus/3d-nexus/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
   "dependencies": {
-    "nexus-core": "workspace:*"
+    "@3d-nexus/core": "workspace:*"
   },
   "scripts": {
     "build": "vite build",

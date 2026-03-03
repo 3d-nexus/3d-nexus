@@ -1,4 +1,4 @@
-import {
+﻿import {
   AiPrimitiveType,
   AiPropertyTypeInfo,
   AiSceneFlags,
@@ -13,7 +13,7 @@ import {
   type BaseImporter,
   type ImportResult,
   type ImportSettings,
-} from "nexus-core";
+} from "@3d-nexus/core";
 import type { ObjFace, ObjMaterial, ObjModel } from "./ObjFileData";
 import { ObjFileMtlParser } from "./ObjFileMtlParser";
 import { ObjFileParser } from "./ObjFileParser";
@@ -261,3 +261,4 @@ export class ObjFileImporter implements BaseImporter {
     return { scene, warnings };
   }
 }
+

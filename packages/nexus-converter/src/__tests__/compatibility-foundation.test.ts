@@ -1,11 +1,11 @@
-import { existsSync, readFileSync } from "node:fs";
+﻿import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   determineCompatibilityOutcome,
   isCompatibilityProfileName,
   type CompatibilityFixtureManifest,
-} from "nexus-core";
+} from "@3d-nexus/core";
 import {
   createCompatibilityReport,
   createScalarCompatibilityCheck,
@@ -86,3 +86,4 @@ describe("compatibility foundation", () => {
     expect(markdown).toContain("| unsupported-cap | unsupported |");
   });
 });
+

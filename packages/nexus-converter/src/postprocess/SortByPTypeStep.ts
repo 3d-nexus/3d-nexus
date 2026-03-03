@@ -1,4 +1,4 @@
-import { AiPrimitiveType, type AiScene } from "nexus-core";
+﻿import { AiPrimitiveType, type AiScene } from "@3d-nexus/core";
 import type { PostProcessStep } from "./PostProcessStep";
 
 export class SortByPTypeStep implements PostProcessStep {
@@ -27,3 +27,4 @@ export class SortByPTypeStep implements PostProcessStep {
     };
   }
 }
+

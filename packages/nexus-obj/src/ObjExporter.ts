@@ -1,4 +1,4 @@
-import {
+﻿import {
   AiPropertyTypeInfo,
   AiTextureType,
   type AiMaterial,
@@ -6,7 +6,7 @@ import {
   type AiScene,
   type BaseExporter,
   type ExportSettings,
-} from "nexus-core";
+} from "@3d-nexus/core";
 
 function getMaterialProperty(material: AiMaterial, key: string, semantic: AiTextureType): unknown {
   return material.properties.find((property) => property.key === key && property.semantic === semantic)?.data;
@@ -24,7 +24,7 @@ export class ObjExporter implements BaseExporter {
   }
 
   write(scene: AiScene, settings?: ExportSettings): ArrayBuffer {
-    const objLines: string[] = ["# Exported by nexus-obj"];
+    const objLines: string[] = ["# Exported by 3d-nexus/obj"];
     const mtlFileName = settings?.mtlFileName ?? "scene.mtl";
 
     if (scene.materials.length > 0) {
@@ -119,3 +119,4 @@ export class ObjExporter implements BaseExporter {
     return `${vertexIndex}`;
   }
 }
+

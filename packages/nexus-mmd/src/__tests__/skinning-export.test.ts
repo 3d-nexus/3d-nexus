@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { MMDImporter } from "../MMDImporter";
 import { MMDPmxExporter } from "../MMDPmxExporter";
 
@@ -93,3 +93,4 @@ describe("PMX skinning export", () => {
     expect(bones[3]?.weights.find((entry) => entry.vertexId === 1)?.weight).toBeCloseTo(0.25);
   });
 });
+

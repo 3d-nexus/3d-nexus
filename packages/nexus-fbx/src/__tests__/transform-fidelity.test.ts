@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -158,3 +158,4 @@ describe("FBX transform fidelity", () => {
     expect(text).toContain('P: "Lcl Scaling", "Lcl Scaling", "", "A", -1, 1, 1');
   });
 });
+

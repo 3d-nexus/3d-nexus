@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { MMDPmxExporter } from "../MMDPmxExporter";
 import { MMDPmxParser } from "../MMDPmxParser";
 
@@ -100,3 +100,4 @@ describe("PMX multi-mesh export", () => {
     expect(document.textures).toEqual(["shared.png"]);
   });
 });
+

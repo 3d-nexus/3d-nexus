@@ -1,8 +1,8 @@
-import type { BaseExporter, BaseImporter } from "nexus-core";
-import { BVHExporter, BVHImporter } from "nexus-bvh";
-import { FBXExporter, FBXImporter } from "nexus-fbx";
-import { MMDExporter, MMDImporter } from "nexus-mmd";
-import { ObjExporter, ObjFileImporter } from "nexus-obj";
+﻿import type { BaseExporter, BaseImporter } from "@3d-nexus/core";
+import { BVHExporter, BVHImporter } from "@3d-nexus/bvh";
+import { FBXExporter, FBXImporter } from "@3d-nexus/fbx";
+import { MMDExporter, MMDImporter } from "@3d-nexus/mmd";
+import { ObjExporter, ObjFileImporter } from "@3d-nexus/obj";
 
 export const ModelFormat = {
   OBJ: "obj",
@@ -32,3 +32,4 @@ export const EXPORTER_REGISTRY: Record<ModelFormat, BaseExporter> = {
   vmd: new MMDExporter(),
   bvh: new BVHExporter(),
 };
+

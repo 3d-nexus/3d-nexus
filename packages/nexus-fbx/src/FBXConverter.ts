@@ -1,4 +1,4 @@
-import {
+﻿import {
   AiMetadataType,
   AiAnimBehaviour,
   AiLightSourceType,
@@ -26,7 +26,7 @@ import {
   type AiScene,
   type AiTexture,
   type AiVector3D,
-} from "nexus-core";
+} from "@3d-nexus/core";
 import { FbxAnimationStack, FbxBlendShape, FbxDocument, FbxSkin, FbxVideo } from "./FBXDocument";
 import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
@@ -1033,3 +1033,4 @@ export class FBXConverter {
     };
   }
 }
+

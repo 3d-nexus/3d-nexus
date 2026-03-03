@@ -1,4 +1,4 @@
-import type { ImportResult } from "nexus-core";
+﻿import type { ImportResult } from "@3d-nexus/core";
 
 export interface UiHandle {
   setStatus(message: string): void;
@@ -103,3 +103,4 @@ export function createUi(): UiHandle {
     },
   };
 }
+

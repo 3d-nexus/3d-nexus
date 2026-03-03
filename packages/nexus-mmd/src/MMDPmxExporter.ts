@@ -1,4 +1,4 @@
-import type { AiMaterial, AiMaterialProperty, AiMesh, AiScene, AiVector3D, SdefCoeffs } from "nexus-core";
+﻿import type { AiMaterial, AiMaterialProperty, AiMesh, AiScene, AiVector3D, SdefCoeffs } from "@3d-nexus/core";
 import { BinaryWriter } from "./BinaryWriter";
 
 type VertexBoneEntry = { boneIdx: number; weight: number; ikChain?: SdefCoeffs; authoredType?: number };
@@ -689,3 +689,4 @@ export class MMDPmxExporter {
     return writer.toArrayBuffer();
   }
 }
+

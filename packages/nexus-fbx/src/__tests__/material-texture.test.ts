@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AiPropertyTypeInfo, AiTextureType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { AiPropertyTypeInfo, AiTextureType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -92,3 +92,4 @@ describe("FBX material and texture pipeline", () => {
     ).toBe(true);
   });
 });
+

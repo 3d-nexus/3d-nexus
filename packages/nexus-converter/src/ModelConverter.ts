@@ -1,4 +1,4 @@
-import type { ImportResult } from "nexus-core";
+﻿import type { ImportResult } from "@3d-nexus/core";
 import { EXPORTER_REGISTRY, IMPORTER_REGISTRY, type ModelFormat } from "./formats";
 import type { ConvertOptions } from "./ConvertOptions";
 import { createSceneCompatibilityReport } from "./compatibility/report";
@@ -43,3 +43,4 @@ export class ModelConverter {
     };
   }
 }
+

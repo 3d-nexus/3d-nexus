@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "nexus-converter": "workspace:*",
-    "nexus-core": "workspace:*",
-    "nexus-fbx": "workspace:*",
-    "nexus-mmd": "workspace:*",
-    "nexus-obj": "workspace:*"
+    "@3d-nexus/converter": "workspace:*",
+    "@3d-nexus/core": "workspace:*",
+    "@3d-nexus/fbx": "workspace:*",
+    "@3d-nexus/mmd": "workspace:*",
+    "@3d-nexus/obj": "workspace:*"
   },
   "scripts": {
     "dev": "vite",

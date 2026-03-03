@@ -1,4 +1,4 @@
-import { AiSceneFlags, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "nexus-core";
+﻿import { AiSceneFlags, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "@3d-nexus/core";
 import { FBXAsciiTokenizer } from "./FBXAsciiTokenizer";
 import { FBXBinaryTokenizer } from "./FBXBinaryTokenizer";
 import { FBXConverter } from "./FBXConverter";
@@ -58,3 +58,4 @@ export class FBXImporter implements BaseImporter {
     return { scene: this.converter.convert(document), warnings: [] };
   }
 }
+

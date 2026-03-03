@@ -1,4 +1,4 @@
-import type { CompatibilityProfileName, ExportSettings, ImportSettings } from "nexus-core";
+﻿import type { CompatibilityProfileName, ExportSettings, ImportSettings } from "@3d-nexus/core";
 import type { PostProcessStep } from "./postprocess/PostProcessStep";
 
 export interface ConvertOptions {
@@ -7,3 +7,4 @@ export interface ConvertOptions {
   exportSettings?: ExportSettings;
   compatibilityProfile?: CompatibilityProfileName;
 }
+

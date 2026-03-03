@@ -34,6 +34,8 @@ export function createLibraryConfig(options: PackageBuildOptions): UserConfig {
       dts({
         entryRoot: "src",
         insertTypesEntry: true,
+        pathsToAliases: false,
+        exclude: ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"],
       }),
     ],
     test: {

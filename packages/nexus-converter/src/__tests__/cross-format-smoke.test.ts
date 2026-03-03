@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { FBXImporter } from "nexus-fbx";
-import { ObjFileImporter } from "nexus-obj";
+import { FBXImporter } from "@3d-nexus/fbx";
+import { ObjFileImporter } from "@3d-nexus/obj";
 import { ModelConverter } from "../ModelConverter";
 
 function readFixture(pathParts: string[]): ArrayBuffer {
@@ -54,3 +54,4 @@ describe("ModelConverter cross-format smoke", () => {
     expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.outcome).toBe("normalized");
   });
 });
+

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AiPrimitiveType, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { AiPrimitiveType, type AiScene } from "@3d-nexus/core";
 import { FlipUVsStep } from "../postprocess/FlipUVsStep";
 import { GenerateNormalsStep } from "../postprocess/GenerateNormalsStep";
 import { OptimizeMeshesStep } from "../postprocess/OptimizeMeshesStep";
@@ -87,3 +87,4 @@ describe("postprocess steps", () => {
     expect(scene.meshes).toHaveLength(1);
   });
 });
+

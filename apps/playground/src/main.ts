@@ -1,11 +1,11 @@
-import type { ImportResult } from "nexus-core";
+﻿import type { ImportResult } from "@3d-nexus/core";
 import {
   ModelConverter,
   IMPORTER_REGISTRY,
   ModelFormat,
   renderCompatibilityReportMarkdown,
   type ModelFormat as ModelFormatValue,
-} from "nexus-converter";
+} from "@3d-nexus/converter";
 import { createUi } from "./ui";
 
 const ui = createUi();
@@ -123,3 +123,4 @@ dropzone.addEventListener("drop", (event) => {
 
 ui.setWarnings([]);
 ui.setCompatibilityReport(null);
+

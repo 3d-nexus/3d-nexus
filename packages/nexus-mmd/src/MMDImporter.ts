@@ -1,4 +1,4 @@
-import {
+﻿import {
   AiAnimBehaviour,
   AiMetadataType,
   AiPrimitiveType,
@@ -17,7 +17,7 @@ import {
   type BaseImporter,
   type ImportResult,
   type ImportSettings,
-} from "nexus-core";
+} from "@3d-nexus/core";
 import { MMDPmdParser } from "./MMDPmdParser";
 import { MMDPmxParser, type PmxBone, type PmxDocument, type PmxVertex } from "./MMDPmxParser";
 import { MMDVmdParser } from "./MMDVmdParser";
@@ -674,3 +674,4 @@ export class MMDImporter implements BaseImporter {
     return { scene, warnings };
   }
 }
+

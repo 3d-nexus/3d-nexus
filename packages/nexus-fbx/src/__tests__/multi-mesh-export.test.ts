@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 
 function createScene(): AiScene {
@@ -57,3 +57,4 @@ describe("FBX multi-mesh export", () => {
     expect(output.match(/^\s*Material:/gm)).toHaveLength(2);
   });
 });
+

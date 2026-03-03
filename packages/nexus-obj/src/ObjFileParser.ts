@@ -1,4 +1,4 @@
-import type { AiVector2D, AiVector3D } from "nexus-core";
+﻿import type { AiVector2D, AiVector3D } from "@3d-nexus/core";
 import type { ObjFace, ObjFaceVertex, ObjGroup, ObjModel, ObjObject } from "./ObjFileData";
 
 function createObject(name: string): ObjObject {
@@ -140,3 +140,4 @@ export class ObjFileParser {
     return model;
   }
 }
+

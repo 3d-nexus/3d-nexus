@@ -1,4 +1,4 @@
-import { createCompatibilityDiagnostic, type AiAnimation, type AiScene, type CompatibilityDiagnostic } from "nexus-core";
+﻿import { createCompatibilityDiagnostic, type AiAnimation, type AiScene, type CompatibilityDiagnostic } from "@3d-nexus/core";
 
 export type BvhFrameDriftSummary = {
   maxFrameDrift: number;
@@ -51,3 +51,4 @@ export function analyzeBvhFrameDrift(scene: AiScene): BvhFrameDriftSummary {
     ],
   };
 }
+

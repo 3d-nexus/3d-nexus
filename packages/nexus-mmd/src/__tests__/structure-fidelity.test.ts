@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AiMetadataType, AiPropertyTypeInfo, AiTextureType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { AiMetadataType, AiPropertyTypeInfo, AiTextureType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { MMDExporter } from "../MMDExporter";
 import { MMDImporter } from "../MMDImporter";
 
@@ -113,3 +113,4 @@ describe("PMX structure fidelity", () => {
     expect(material.properties.find((entry) => entry.key === "mmd:sphereMode")?.data).toBe(2);
   });
 });
+

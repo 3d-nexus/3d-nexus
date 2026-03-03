@@ -1,4 +1,4 @@
-import type { AiScene, BaseExporter, ExportSettings } from "nexus-core";
+﻿import type { AiScene, BaseExporter, ExportSettings } from "@3d-nexus/core";
 import { MMDPmxExporter } from "./MMDPmxExporter";
 import { MMDVmdExporter } from "./MMDVmdExporter";
 
@@ -14,3 +14,4 @@ export class MMDExporter implements BaseExporter {
     return settings?.format === "vmd" ? this.vmdExporter.write(scene) : this.pmxExporter.write(scene);
   }
 }
+

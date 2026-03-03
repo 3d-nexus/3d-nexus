@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AiAnimBehaviour, AiLightSourceType, AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { AiAnimBehaviour, AiLightSourceType, AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -172,3 +172,4 @@ describe("FBX animation fidelity", () => {
     expect(diagnostics.some((entry: { code?: string }) => entry.code === "FBX_ANIMATION_LAYER_MERGED")).toBe(true);
   });
 });
+

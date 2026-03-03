@@ -26,43 +26,43 @@ importers:
 
   apps/playground:
     dependencies:
-      nexus-converter:
+      '@3d-nexus/converter':
         specifier: workspace:*
         version: link:../../packages/nexus-converter
-      nexus-core:
+      '@3d-nexus/core':
         specifier: workspace:*
         version: link:../../packages/nexus-core
-      nexus-fbx:
+      '@3d-nexus/fbx':
         specifier: workspace:*
         version: link:../../packages/nexus-fbx
-      nexus-mmd:
+      '@3d-nexus/mmd':
         specifier: workspace:*
         version: link:../../packages/nexus-mmd
-      nexus-obj:
+      '@3d-nexus/obj':
         specifier: workspace:*
         version: link:../../packages/nexus-obj
 
   packages/nexus-bvh:
     dependencies:
-      nexus-core:
+      '@3d-nexus/core':
         specifier: workspace:*
         version: link:../nexus-core
 
   packages/nexus-converter:
     dependencies:
-      nexus-bvh:
+      '@3d-nexus/bvh':
         specifier: workspace:*
         version: link:../nexus-bvh
-      nexus-core:
+      '@3d-nexus/core':
         specifier: workspace:*
         version: link:../nexus-core
-      nexus-fbx:
+      '@3d-nexus/fbx':
         specifier: workspace:*
         version: link:../nexus-fbx
-      nexus-mmd:
+      '@3d-nexus/mmd':
         specifier: workspace:*
         version: link:../nexus-mmd
-      nexus-obj:
+      '@3d-nexus/obj':
         specifier: workspace:*
         version: link:../nexus-obj
 
@@ -70,22 +70,22 @@ importers:
 
   packages/nexus-fbx:
     dependencies:
+      '@3d-nexus/core':
+        specifier: workspace:*
+        version: link:../nexus-core
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
-      nexus-core:
-        specifier: workspace:*
-        version: link:../nexus-core
 
   packages/nexus-mmd:
     dependencies:
-      nexus-core:
+      '@3d-nexus/core':
         specifier: workspace:*
         version: link:../nexus-core
 
   packages/nexus-obj:
     dependencies:
-      nexus-core:
+      '@3d-nexus/core':
         specifier: workspace:*
         version: link:../nexus-core
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AiAnimBehaviour, createIdentityMatrix4x4, type AiScene } from "nexus-core";
+﻿import { describe, expect, it } from "vitest";
+import { AiAnimBehaviour, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -79,3 +79,4 @@ describe("FBX animation", () => {
     expect(scene.animations[0]?.channels[0]?.positionKeys[1]?.time).toBeCloseTo(1.5, 5);
   });
 });
+

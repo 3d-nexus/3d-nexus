@@ -1,12 +1,12 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
-import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "nexus-core";
-import { BVHExporter } from "nexus-bvh";
-import { FBXExporter } from "nexus-fbx";
-import { MMDExporter } from "nexus-mmd";
+import { AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
+import { BVHExporter } from "@3d-nexus/bvh";
+import { FBXExporter } from "@3d-nexus/fbx";
+import { MMDExporter } from "@3d-nexus/mmd";
 import { ModelConverter } from "../ModelConverter";
 import { ModelFormat } from "../formats";
 
@@ -201,3 +201,4 @@ describe("converter compatibility reports", () => {
     expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.diagnostics[0]?.code).toBe("BVH_FRAME_DRIFT");
   });
 });
+

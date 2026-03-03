@@ -1,4 +1,4 @@
-import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, createTranslationMatrix4x4, type AiAnimation, type AiNode, type AiNodeAnim, type AiQuaternion, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "nexus-core";
+﻿import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, createTranslationMatrix4x4, type AiAnimation, type AiNode, type AiNodeAnim, type AiQuaternion, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "@3d-nexus/core";
 import { BVHParser, countChannels, type BvhJoint } from "./BVHParser";
 
 type JointChannelLayout = {
@@ -213,3 +213,4 @@ export class BVHImporter implements BaseImporter {
     return { scene, warnings: [] };
   }
 }
+

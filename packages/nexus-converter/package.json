@@ -1,19 +1,49 @@
 {
-  "name": "nexus-converter",
+  "name": "@3d-nexus/converter",
   "version": "0.1.0",
+  "description": "Cross-format 3D conversion and compatibility reporting for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "keywords": [
+    "3d",
+    "nexus",
+    "converter",
+    "compatibility",
+    "fbx",
+    "mmd"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/3d-nexus/3d-nexus.git",
+    "directory": "packages/nexus-converter"
+  },
+  "homepage": "https://github.com/3d-nexus/3d-nexus#readme",
+  "bugs": {
+    "url": "https://github.com/3d-nexus/3d-nexus/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
   "dependencies": {
-    "nexus-bvh": "workspace:*",
-    "nexus-core": "workspace:*",
-    "nexus-fbx": "workspace:*",
-    "nexus-mmd": "workspace:*",
-    "nexus-obj": "workspace:*"
+    "@3d-nexus/bvh": "workspace:*",
+    "@3d-nexus/core": "workspace:*",
+    "@3d-nexus/fbx": "workspace:*",
+    "@3d-nexus/mmd": "workspace:*",
+    "@3d-nexus/obj": "workspace:*"
   },
   "scripts": {
     "build": "vite build",

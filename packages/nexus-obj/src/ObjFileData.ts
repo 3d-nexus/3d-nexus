@@ -1,4 +1,4 @@
-import type { AiColor3D, AiVector2D, AiVector3D } from "nexus-core";
+﻿import type { AiColor3D, AiVector2D, AiVector3D } from "@3d-nexus/core";
 
 export interface ObjFaceVertex {
   vertexIndex: number;
@@ -52,3 +52,4 @@ export interface ObjModel {
   materialLibraries: string[];
   materials: ObjMaterial[];
 }
+
