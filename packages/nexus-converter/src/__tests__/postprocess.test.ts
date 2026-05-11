@@ -87,4 +87,3 @@ describe("postprocess steps", () => {
     expect(scene.meshes).toHaveLength(1);
   });
 });
-

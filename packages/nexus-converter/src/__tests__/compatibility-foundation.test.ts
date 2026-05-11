@@ -1,17 +1,8 @@
 ﻿import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  determineCompatibilityOutcome,
-  isCompatibilityProfileName,
-  type CompatibilityFixtureManifest,
-} from "@3d-nexus/core";
-import {
-  createCompatibilityReport,
-  createScalarCompatibilityCheck,
-  listBuiltInCompatibilityFixtures,
-  renderCompatibilityReportMarkdown,
-} from "../index";
+import { determineCompatibilityOutcome, isCompatibilityProfileName, type CompatibilityFixtureManifest } from "@3d-nexus/core";
+import { createCompatibilityReport, createScalarCompatibilityCheck, listBuiltInCompatibilityFixtures, renderCompatibilityReportMarkdown } from "../index";
 
 function readJson(pathParts: string[]): unknown {
   const file = readFileSync(join(import.meta.dirname, ...pathParts), "utf8");
@@ -86,4 +77,3 @@ describe("compatibility foundation", () => {
     expect(markdown).toContain("| unsupported-cap | unsupported |");
   });
 });
-

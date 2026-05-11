@@ -36,8 +36,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify workspace
-        run: pnpm check
+      - name: Verify formatting
+        run: pnpm format:check
+
+      - name: Verify types
+        run: pnpm typecheck
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
 
       - name: Verify tarballs
         run: pnpm pack:dry-run

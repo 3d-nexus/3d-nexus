@@ -52,4 +52,3 @@ export interface ObjModel {
   materialLibraries: string[];
   materials: ObjMaterial[];
 }
-

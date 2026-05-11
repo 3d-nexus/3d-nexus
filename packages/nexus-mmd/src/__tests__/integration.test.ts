@@ -20,10 +20,14 @@ describe("MMD integration fixture", () => {
     expect(mesh.vertices.length).toBe(EXPECTED_VERTICES);
     expect(mesh.bones.length).toBe(EXPECTED_BONES);
     expect(mesh.morphTargets.length).toBe(EXPECTED_MORPHS);
-    expect(mesh.morphTargets.some((target, index) => target.vertices.some((vertex, vertexIndex) => {
-      const base = mesh.vertices[vertexIndex]!;
-      return index === 0 && (vertex.x !== base.x || vertex.y !== base.y || vertex.z !== base.z);
-    }))).toBe(true);
+    expect(
+      mesh.morphTargets.some((target, index) =>
+        target.vertices.some((vertex, vertexIndex) => {
+          const base = mesh.vertices[vertexIndex]!;
+          return index === 0 && (vertex.x !== base.x || vertex.y !== base.y || vertex.z !== base.z);
+        }),
+      ),
+    ).toBe(true);
     expect(scene.metadata["mmd:rigidBodies"]).toBeDefined();
   });
 });

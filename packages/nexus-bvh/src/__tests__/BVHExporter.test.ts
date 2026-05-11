@@ -87,10 +87,12 @@ describe("BVHExporter", () => {
     );
     expect(reimported.rootNode.children[0]?.children[0]?.metadata?.["bvh:jointType"]?.data).toBe("EndSite");
     expect(reimported.metadata["bvh:frameTime"]?.data).toBe("0.0333333");
-    expect(reimported.metadata["bvh:motionValues"]?.data).toBe(JSON.stringify([
-      [0, 0, 0, 0, 0, 0],
-      [1, 2, 3, 10, 20, 30],
-    ]));
+    expect(reimported.metadata["bvh:motionValues"]?.data).toBe(
+      JSON.stringify([
+        [0, 0, 0, 0, 0, 0],
+        [1, 2, 3, 10, 20, 30],
+      ]),
+    );
   });
 
   it("exports a canonical hierarchy when BVH metadata is absent", () => {
@@ -103,4 +105,3 @@ describe("BVHExporter", () => {
     expect(output).toContain("3 4 5 0 0 0");
   });
 });
-

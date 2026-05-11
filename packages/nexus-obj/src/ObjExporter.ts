@@ -1,12 +1,4 @@
-﻿import {
-  AiPropertyTypeInfo,
-  AiTextureType,
-  type AiMaterial,
-  type AiMesh,
-  type AiScene,
-  type BaseExporter,
-  type ExportSettings,
-} from "@3d-nexus/core";
+﻿import { AiPropertyTypeInfo, AiTextureType, type AiMaterial, type AiMesh, type AiScene, type BaseExporter, type ExportSettings } from "@3d-nexus/core";
 
 function getMaterialProperty(material: AiMaterial, key: string, semantic: AiTextureType): unknown {
   return material.properties.find((property) => property.key === key && property.semantic === semantic)?.data;
@@ -38,9 +30,7 @@ export class ObjExporter implements BaseExporter {
 
     scene.materials.forEach((material) => {
       mtlLines.push(`newmtl ${material.name}`);
-      const diffuse = getMaterialProperty(material, "$clr.diffuse", AiTextureType.DIFFUSE) as
-        | { r: number; g: number; b: number; a?: number }
-        | undefined;
+      const diffuse = getMaterialProperty(material, "$clr.diffuse", AiTextureType.DIFFUSE) as { r: number; g: number; b: number; a?: number } | undefined;
       if (diffuse) {
         mtlLines.push(`Kd ${diffuse.r} ${diffuse.g} ${diffuse.b}`);
         if (typeof diffuse.a === "number") {
@@ -76,9 +66,7 @@ export class ObjExporter implements BaseExporter {
       });
 
       mesh.faces.forEach((face) => {
-        const tokens = face.indices.map((faceIndex) =>
-          this.formatFaceVertex(mesh, faceIndex, vertexOffset, uvOffset, normalOffset),
-        );
+        const tokens = face.indices.map((faceIndex) => this.formatFaceVertex(mesh, faceIndex, vertexOffset, uvOffset, normalOffset));
         objLines.push(`f ${tokens.join(" ")}`);
       });
 
@@ -93,13 +81,7 @@ export class ObjExporter implements BaseExporter {
     return new TextEncoder().encode(objLines.join("\n")).buffer;
   }
 
-  private formatFaceVertex(
-    mesh: AiMesh,
-    faceIndex: number,
-    vertexOffset: number,
-    uvOffset: number,
-    normalOffset: number,
-  ): string {
+  private formatFaceVertex(mesh: AiMesh, faceIndex: number, vertexOffset: number, uvOffset: number, normalOffset: number): string {
     const vertexIndex = vertexOffset + faceIndex;
     const hasUvs = Boolean(mesh.textureCoords[0]?.[faceIndex]);
     const hasNormals = Boolean(mesh.normals[faceIndex]);
@@ -119,4 +101,3 @@ export class ObjExporter implements BaseExporter {
     return `${vertexIndex}`;
   }
 }
-

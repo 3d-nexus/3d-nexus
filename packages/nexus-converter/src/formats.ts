@@ -32,4 +32,3 @@ export const EXPORTER_REGISTRY: Record<ModelFormat, BaseExporter> = {
   vmd: new MMDExporter(),
   bvh: new BVHExporter(),
 };
-

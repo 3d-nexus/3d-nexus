@@ -16,7 +16,11 @@ export interface BvhDocument {
 }
 
 function linesFromBuffer(buffer: ArrayBuffer): string[] {
-  return new TextDecoder().decode(buffer).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  return new TextDecoder()
+    .decode(buffer)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function parseVector(parts: string[], errorMessage: string): [number, number, number] {

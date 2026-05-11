@@ -1,11 +1,5 @@
 ﻿import { describe, expect, it } from "vitest";
-import {
-  AiAnimBehaviour,
-  AiMetadataType,
-  AiPrimitiveType,
-  createIdentityMatrix4x4,
-  type AiScene,
-} from "@3d-nexus/core";
+import { AiAnimBehaviour, AiMetadataType, AiPrimitiveType, createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
 import { FBXImporter } from "../FBXImporter";
 
@@ -70,7 +64,20 @@ function createScene(): AiScene {
         ],
         tangents: [],
         bitangents: [],
-        textureCoords: [[{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], null, null, null, null, null, null, null],
+        textureCoords: [
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 1, y: 0, z: 0 },
+            { x: 0, y: 1, z: 0 },
+          ],
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
         colors: Array.from({ length: 8 }, () => null),
         faces: [{ indices: [0, 1, 2] }],
         bones,
@@ -91,7 +98,20 @@ function createScene(): AiScene {
             tangents: [],
             bitangents: [],
             colors: Array.from({ length: 8 }, () => null),
-            textureCoords: [[{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], null, null, null, null, null, null, null],
+            textureCoords: [
+              [
+                { x: 0, y: 0, z: 0 },
+                { x: 1, y: 0, z: 0 },
+                { x: 0, y: 1, z: 0 },
+              ],
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+            ],
             weight: 75,
           },
         ],
@@ -106,7 +126,15 @@ function createScene(): AiScene {
         ticksPerSecond: 1,
         channels: [],
         meshChannels: [],
-        morphMeshChannels: [{ name: "Blink", keys: [{ time: 0, values: [0], weights: [0] }, { time: 1, values: [0], weights: [1] }] }],
+        morphMeshChannels: [
+          {
+            name: "Blink",
+            keys: [
+              { time: 0, values: [0], weights: [0] },
+              { time: 1, values: [0], weights: [1] },
+            ],
+          },
+        ],
       },
     ],
     textures: [],
@@ -135,4 +163,3 @@ describe("FBX skinning and blendshape fidelity", () => {
     expect(blendShapeAnimationCurves[0]?.objectName).toBe("Blink");
   });
 });
-

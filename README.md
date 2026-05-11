@@ -4,15 +4,15 @@
 
 ## Workspace
 
-| 路径 | 发布包名 | 作用 |
-|---|---|---|
-| `packages/nexus-core` | `@3d-nexus/core` | 通用 IR、数学类型、兼容性类型 |
-| `packages/nexus-obj` | `@3d-nexus/obj` | OBJ / MTL 导入导出 |
-| `packages/nexus-fbx` | `@3d-nexus/fbx` | FBX 导入导出、scene extras、animation、material fidelity |
-| `packages/nexus-mmd` | `@3d-nexus/mmd` | PMX / PMD / VMD 导入导出与 MMD 相关保真逻辑 |
-| `packages/nexus-bvh` | `@3d-nexus/bvh` | BVH skeleton/motion 解析、导入导出、frame timing fidelity |
-| `packages/nexus-converter` | `@3d-nexus/converter` | 格式转换管线、post-process、compatibility report |
-| `apps/playground` | private | 浏览器内加载、转换、下载、查看 compatibility report |
+| 路径                       | 发布包名              | 作用                                                      |
+| -------------------------- | --------------------- | --------------------------------------------------------- |
+| `packages/nexus-core`      | `@3d-nexus/core`      | 通用 IR、数学类型、兼容性类型                             |
+| `packages/nexus-obj`       | `@3d-nexus/obj`       | OBJ / MTL 导入导出                                        |
+| `packages/nexus-fbx`       | `@3d-nexus/fbx`       | FBX 导入导出、scene extras、animation、material fidelity  |
+| `packages/nexus-mmd`       | `@3d-nexus/mmd`       | PMX / PMD / VMD 导入导出与 MMD 相关保真逻辑               |
+| `packages/nexus-bvh`       | `@3d-nexus/bvh`       | BVH skeleton/motion 解析、导入导出、frame timing fidelity |
+| `packages/nexus-converter` | `@3d-nexus/converter` | 格式转换管线、post-process、compatibility report          |
+| `apps/playground`          | private               | 浏览器内加载、转换、下载、查看 compatibility report       |
 
 ## 常用命令
 
@@ -27,13 +27,13 @@ pnpm release:check
 
 ## Compatibility Workflow
 
-| 步骤 | 做什么 |
-|---|---|
-| 1 | 用对应 importer 读取 `PMX / VMD / FBX / OBJ / BVH` |
-| 2 | 通过 `ModelConverter.convertWithReport()` 执行转换 |
-| 3 | 传入 `compatibilityProfile` 生成 profile-aware report |
-| 4 | 用 `renderCompatibilityReportMarkdown()` 渲染报告 |
-| 5 | 在 `apps/playground` 中查看状态、诊断和下载结果 |
+| 步骤 | 做什么                                                |
+| ---- | ----------------------------------------------------- |
+| 1    | 用对应 importer 读取 `PMX / VMD / FBX / OBJ / BVH`    |
+| 2    | 通过 `ModelConverter.convertWithReport()` 执行转换    |
+| 3    | 传入 `compatibilityProfile` 生成 profile-aware report |
+| 4    | 用 `renderCompatibilityReportMarkdown()` 渲染报告     |
+| 5    | 在 `apps/playground` 中查看状态、诊断和下载结果       |
 
 示例：
 
@@ -50,16 +50,16 @@ const markdown = result.report ? renderCompatibilityReportMarkdown(result.report
 
 ## Compatibility Profiles
 
-| Profile | 说明 |
-|---|---|
-| `mmd` | PMX / VMD round-trip 优先 |
-| `blender-fbx` | Blender FBX authoring/export 路径 |
-| `maya-fbx` | Maya pivot / animation / material fidelity 路径 |
-| `3dsmax-fbx` | 3ds Max negative scale / handedness 路径 |
-| `motionbuilder-fbx` | MotionBuilder timing / animation stack 路径 |
-| `unity` | runtime-oriented FBX compatibility |
-| `unreal` | Unreal import-oriented FBX compatibility |
-| `bvh` | BVH skeleton motion / frame timing / drift diagnostics 路径 |
+| Profile             | 说明                                                        |
+| ------------------- | ----------------------------------------------------------- |
+| `mmd`               | PMX / VMD round-trip 优先                                   |
+| `blender-fbx`       | Blender FBX authoring/export 路径                           |
+| `maya-fbx`          | Maya pivot / animation / material fidelity 路径             |
+| `3dsmax-fbx`        | 3ds Max negative scale / handedness 路径                    |
+| `motionbuilder-fbx` | MotionBuilder timing / animation stack 路径                 |
+| `unity`             | runtime-oriented FBX compatibility                          |
+| `unreal`            | Unreal import-oriented FBX compatibility                    |
+| `bvh`               | BVH skeleton motion / frame timing / drift diagnostics 路径 |
 
 更完整的语义说明见：
 
@@ -81,15 +81,15 @@ GitHub 仓库：[`3d-nexus/3d-nexus`](https://github.com/3d-nexus/3d-nexus)
 
 ## Release Flow
 
-| 步骤 | 命令 / 说明 |
-|---|---|
-| 1 | 功能或修复完成后执行 `pnpm changeset`，为受影响的 `@3d-nexus/*` 包写变更说明 |
-| 2 | 本地验证执行 `pnpm release:check` |
-| 3 | 执行 `pnpm version-packages` 更新版本，再执行 `pnpm tag:release` 创建仓库级 tag |
-| 4 | 推送到 `master` 后，GitHub Actions 会创建版本 PR 或自动发布 |
+| 步骤 | 命令 / 说明                                                                     |
+| ---- | ------------------------------------------------------------------------------- |
+| 1    | 功能或修复完成后执行 `pnpm changeset`，为受影响的 `@3d-nexus/*` 包写变更说明    |
+| 2    | 本地验证执行 `pnpm release:check`                                               |
+| 3    | 执行 `pnpm version-packages` 更新版本，再执行 `pnpm tag:release` 创建仓库级 tag |
+| 4    | 推送到 `master` 后，GitHub Actions 会创建版本 PR 或自动发布                     |
 
 GitHub Actions 发布依赖仓库 Secret：
 
-| Secret | 用途 |
-|---|---|
+| Secret      | 用途                                            |
+| ----------- | ----------------------------------------------- |
 | `NPM_TOKEN` | npm 发布 token，需具备发布 `@3d-nexus/*` 的权限 |

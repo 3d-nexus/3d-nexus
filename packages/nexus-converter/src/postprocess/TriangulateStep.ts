@@ -19,4 +19,3 @@ export class TriangulateStep implements PostProcessStep {
     };
   }
 }
-

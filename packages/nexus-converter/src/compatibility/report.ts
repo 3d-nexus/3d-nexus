@@ -223,10 +223,7 @@ export function createSceneCompatibilityReport(input: CreateSceneCompatibilityRe
   }
 
   const vmdRelevant =
-    input.sourceFormat === "vmd" ||
-    input.targetFormat === "vmd" ||
-    hasTimingData ||
-    hasCapabilityDiagnostic(diagnostics, "vmd-interpolation");
+    input.sourceFormat === "vmd" || input.targetFormat === "vmd" || hasTimingData || hasCapabilityDiagnostic(diagnostics, "vmd-interpolation");
   if (vmdRelevant) {
     const driftDiagnostics = diagnostics
       .filter((entry) => String(entry.capability ?? "") === "vmd-interpolation")
@@ -384,4 +381,3 @@ export function createSceneCompatibilityReport(input: CreateSceneCompatibilityRe
     checks,
   });
 }
-

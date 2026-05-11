@@ -23,10 +23,12 @@ describe("BVH animation fidelity", () => {
 
     expect(roundtripped.metadata["bvh:frameTime"]?.data).toBe("0.0333333");
     expect(roundtripped.metadata["bvh:frameCount"]?.data).toBe("2");
-    expect(roundtripped.metadata["bvh:motionValues"]?.data).toBe(JSON.stringify([
-      [0, 0, 0, 0, 0, 0],
-      [1, 2, 3, 10, 20, 30],
-    ]));
+    expect(roundtripped.metadata["bvh:motionValues"]?.data).toBe(
+      JSON.stringify([
+        [0, 0, 0, 0, 0, 0],
+        [1, 2, 3, 10, 20, 30],
+      ]),
+    );
     expect(roundtripped.rootNode.children[0]?.metadata?.["bvh:rotationOrder"]?.data).toBe("ZXY");
   });
 

@@ -26,9 +26,7 @@ function flattenVertices(mesh: AiScene["meshes"][number]): string {
 }
 
 function flattenPolygonIndices(mesh: AiScene["meshes"][number]): string {
-  return mesh.faces
-    .flatMap((face) => face.indices.map((index, idx) => (idx === face.indices.length - 1 ? -(index + 1) : index)))
-    .join(",");
+  return mesh.faces.flatMap((face) => face.indices.map((index, idx) => (idx === face.indices.length - 1 ? -(index + 1) : index))).join(",");
 }
 
 function flattenNormals(mesh: AiScene["meshes"][number]): string {
@@ -103,14 +101,18 @@ function renderMaterialNode(id: number, material: AiMaterial | undefined): FbxEx
     [id, `Material::${name}`, "Material"],
     [`ShadingModel: "${shadingModel}"`],
     [
-      new FbxExportNode("Properties70", [], [
-        `P: "DiffuseColor", "Color", "", "A", ${diffuse[0]}, ${diffuse[1]}, ${diffuse[2]}`,
-        `P: "SpecularColor", "Color", "", "A", ${specular[0]}, ${specular[1]}, ${specular[2]}`,
-        `P: "AmbientColor", "Color", "", "A", ${ambient[0]}, ${ambient[1]}, ${ambient[2]}`,
-        `P: "TransparencyFactor", "double", "", "A", ${1 - opacity}`,
-        `P: "Maya|roughness", "double", "", "A", ${roughness}`,
-        `P: "Metalness", "double", "", "A", ${metalness}`,
-      ]),
+      new FbxExportNode(
+        "Properties70",
+        [],
+        [
+          `P: "DiffuseColor", "Color", "", "A", ${diffuse[0]}, ${diffuse[1]}, ${diffuse[2]}`,
+          `P: "SpecularColor", "Color", "", "A", ${specular[0]}, ${specular[1]}, ${specular[2]}`,
+          `P: "AmbientColor", "Color", "", "A", ${ambient[0]}, ${ambient[1]}, ${ambient[2]}`,
+          `P: "TransparencyFactor", "double", "", "A", ${1 - opacity}`,
+          `P: "Maya|roughness", "double", "", "A", ${roughness}`,
+          `P: "Metalness", "double", "", "A", ${metalness}`,
+        ],
+      ),
     ],
   );
 }
@@ -128,27 +130,27 @@ function flattenMatrix(mesh: AiScene["meshes"][number], boneIndex: number): stri
 }
 
 function flattenShapeIndexes(mesh: AiScene["meshes"][number], morphIndex: number): string {
-  return mesh.morphTargets[morphIndex]?.vertices
-    .flatMap((vertex, vertexIndex) => {
-      const base = mesh.vertices[vertexIndex];
-      return base &&
-        (Math.abs(vertex.x - base.x) > 1e-6 || Math.abs(vertex.y - base.y) > 1e-6 || Math.abs(vertex.z - base.z) > 1e-6)
-        ? [vertexIndex]
-        : [];
-    })
-    .join(",") ?? "";
+  return (
+    mesh.morphTargets[morphIndex]?.vertices
+      .flatMap((vertex, vertexIndex) => {
+        const base = mesh.vertices[vertexIndex];
+        return base && (Math.abs(vertex.x - base.x) > 1e-6 || Math.abs(vertex.y - base.y) > 1e-6 || Math.abs(vertex.z - base.z) > 1e-6) ? [vertexIndex] : [];
+      })
+      .join(",") ?? ""
+  );
 }
 
 function flattenShapeVertices(mesh: AiScene["meshes"][number], morphIndex: number): string {
-  return mesh.morphTargets[morphIndex]?.vertices
-    .flatMap((vertex, vertexIndex) => {
-      const base = mesh.vertices[vertexIndex];
-      return base &&
-        (Math.abs(vertex.x - base.x) > 1e-6 || Math.abs(vertex.y - base.y) > 1e-6 || Math.abs(vertex.z - base.z) > 1e-6)
-        ? [vertex.x - base.x, vertex.y - base.y, vertex.z - base.z]
-        : [];
-    })
-    .join(",") ?? "";
+  return (
+    mesh.morphTargets[morphIndex]?.vertices
+      .flatMap((vertex, vertexIndex) => {
+        const base = mesh.vertices[vertexIndex];
+        return base && (Math.abs(vertex.x - base.x) > 1e-6 || Math.abs(vertex.y - base.y) > 1e-6 || Math.abs(vertex.z - base.z) > 1e-6)
+          ? [vertex.x - base.x, vertex.y - base.y, vertex.z - base.z]
+          : [];
+      })
+      .join(",") ?? ""
+  );
 }
 
 function quaternionToEulerDegrees(quaternion: AiQuaternion): [number, number, number] {
@@ -212,9 +214,7 @@ function collectSceneNodes(root: AiNode): ExportNodeDescriptor[] {
 }
 
 function renderModelProperties(node: AiNode): FbxExportNode[] {
-  const userProperties = parseJsonMetadata<Array<{ name: string; type: string; value: unknown }>>(
-    node.metadata?.["fbx:userProperties"]?.data,
-  ) ?? [];
+  const userProperties = parseJsonMetadata<Array<{ name: string; type: string; value: unknown }>>(node.metadata?.["fbx:userProperties"]?.data) ?? [];
   const renderUserPropertyLines = (): string[] =>
     userProperties.map((entry) => {
       if (entry.value && typeof entry.value === "object") {
@@ -244,33 +244,53 @@ function renderModelProperties(node: AiNode): FbxExportNode[] {
     const geometricTranslation = vectorFromUnknown(stack.geometricTranslation, [0, 0, 0]);
     const geometricRotation = vectorFromUnknown(stack.geometricRotation, [0, 0, 0]);
     const geometricScaling = vectorFromUnknown(stack.geometricScaling, [1, 1, 1]);
-    const rotationOrder = Number(stack.rotationOrder === "ZYX" ? 5 : stack.rotationOrder === "ZXY" ? 4 : stack.rotationOrder === "YXZ" ? 3 : stack.rotationOrder === "YZX" ? 2 : stack.rotationOrder === "XZY" ? 1 : 0);
+    const rotationOrder = Number(
+      stack.rotationOrder === "ZYX"
+        ? 5
+        : stack.rotationOrder === "ZXY"
+          ? 4
+          : stack.rotationOrder === "YXZ"
+            ? 3
+            : stack.rotationOrder === "YZX"
+              ? 2
+              : stack.rotationOrder === "XZY"
+                ? 1
+                : 0,
+    );
     return [
-      new FbxExportNode("Properties70", [], [
-      `  P: "Lcl Translation", "Lcl Translation", "", "A", ${translation[0]}, ${translation[1]}, ${translation[2]}`,
-      `  P: "Lcl Rotation", "Lcl Rotation", "", "A", ${rotation[0]}, ${rotation[1]}, ${rotation[2]}`,
-      `  P: "Lcl Scaling", "Lcl Scaling", "", "A", ${scaling[0]}, ${scaling[1]}, ${scaling[2]}`,
-      `  P: "RotationOrder", "enum", "", "A", ${rotationOrder}`,
-      `  P: "PreRotation", "Vector3D", "", "A", ${preRotation[0]}, ${preRotation[1]}, ${preRotation[2]}`,
-      `  P: "PostRotation", "Vector3D", "", "A", ${postRotation[0]}, ${postRotation[1]}, ${postRotation[2]}`,
-      `  P: "RotationPivot", "Vector3D", "", "A", ${rotationPivot[0]}, ${rotationPivot[1]}, ${rotationPivot[2]}`,
-      `  P: "RotationOffset", "Vector3D", "", "A", ${rotationOffset[0]}, ${rotationOffset[1]}, ${rotationOffset[2]}`,
-      `  P: "ScalingPivot", "Vector3D", "", "A", ${scalingPivot[0]}, ${scalingPivot[1]}, ${scalingPivot[2]}`,
-      `  P: "ScalingOffset", "Vector3D", "", "A", ${scalingOffset[0]}, ${scalingOffset[1]}, ${scalingOffset[2]}`,
-      `  P: "GeometricTranslation", "Vector3D", "", "A", ${geometricTranslation[0]}, ${geometricTranslation[1]}, ${geometricTranslation[2]}`,
-      `  P: "GeometricRotation", "Vector3D", "", "A", ${geometricRotation[0]}, ${geometricRotation[1]}, ${geometricRotation[2]}`,
-      `  P: "GeometricScaling", "Vector3D", "", "A", ${geometricScaling[0]}, ${geometricScaling[1]}, ${geometricScaling[2]}`,
-      `  P: "InheritType", "int", "", "A", ${Number(stack.inheritType ?? 0)}`,
-      ...renderUserPropertyLines(),
-      ]),
+      new FbxExportNode(
+        "Properties70",
+        [],
+        [
+          `  P: "Lcl Translation", "Lcl Translation", "", "A", ${translation[0]}, ${translation[1]}, ${translation[2]}`,
+          `  P: "Lcl Rotation", "Lcl Rotation", "", "A", ${rotation[0]}, ${rotation[1]}, ${rotation[2]}`,
+          `  P: "Lcl Scaling", "Lcl Scaling", "", "A", ${scaling[0]}, ${scaling[1]}, ${scaling[2]}`,
+          `  P: "RotationOrder", "enum", "", "A", ${rotationOrder}`,
+          `  P: "PreRotation", "Vector3D", "", "A", ${preRotation[0]}, ${preRotation[1]}, ${preRotation[2]}`,
+          `  P: "PostRotation", "Vector3D", "", "A", ${postRotation[0]}, ${postRotation[1]}, ${postRotation[2]}`,
+          `  P: "RotationPivot", "Vector3D", "", "A", ${rotationPivot[0]}, ${rotationPivot[1]}, ${rotationPivot[2]}`,
+          `  P: "RotationOffset", "Vector3D", "", "A", ${rotationOffset[0]}, ${rotationOffset[1]}, ${rotationOffset[2]}`,
+          `  P: "ScalingPivot", "Vector3D", "", "A", ${scalingPivot[0]}, ${scalingPivot[1]}, ${scalingPivot[2]}`,
+          `  P: "ScalingOffset", "Vector3D", "", "A", ${scalingOffset[0]}, ${scalingOffset[1]}, ${scalingOffset[2]}`,
+          `  P: "GeometricTranslation", "Vector3D", "", "A", ${geometricTranslation[0]}, ${geometricTranslation[1]}, ${geometricTranslation[2]}`,
+          `  P: "GeometricRotation", "Vector3D", "", "A", ${geometricRotation[0]}, ${geometricRotation[1]}, ${geometricRotation[2]}`,
+          `  P: "GeometricScaling", "Vector3D", "", "A", ${geometricScaling[0]}, ${geometricScaling[1]}, ${geometricScaling[2]}`,
+          `  P: "InheritType", "int", "", "A", ${Number(stack.inheritType ?? 0)}`,
+          ...renderUserPropertyLines(),
+        ],
+      ),
     ];
   }
 
   return [
-    new FbxExportNode("Properties70", [], [
-      `  P: "Lcl Translation", "Lcl Translation", "", "A", ${node.transformation.data[12] ?? 0}, ${node.transformation.data[13] ?? 0}, ${node.transformation.data[14] ?? 0}`,
-      ...renderUserPropertyLines(),
-    ]),
+    new FbxExportNode(
+      "Properties70",
+      [],
+      [
+        `  P: "Lcl Translation", "Lcl Translation", "", "A", ${node.transformation.data[12] ?? 0}, ${node.transformation.data[13] ?? 0}, ${node.transformation.data[14] ?? 0}`,
+        ...renderUserPropertyLines(),
+      ],
+    ),
   ];
 }
 
@@ -282,30 +302,48 @@ function writeAnimations(
   connectionLines: string[],
   nextId: number,
 ): number {
-  const stackMetadata = parseJsonMetadata<
-    Array<{ name: string; layers: Array<{ name: string }> }>
-  >(scene.metadata["fbx:animationStacks"]?.data) ?? [];
-  const cameraCurves = parseJsonMetadata<
-    Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
-  >(scene.metadata["fbx:cameraAnimationCurves"]?.data) ?? [];
-  const lightCurves = parseJsonMetadata<
-    Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
-  >(scene.metadata["fbx:lightAnimationCurves"]?.data) ?? [];
-  const blendShapeCurves = parseJsonMetadata<
-    Array<{ animationName?: string; layerName?: string; objectName: string; propertyName: string; axes: Record<string, { times: number[]; values: number[] }> }>
-  >(scene.metadata["fbx:blendShapeAnimationCurves"]?.data) ?? [];
+  const stackMetadata = parseJsonMetadata<Array<{ name: string; layers: Array<{ name: string }> }>>(scene.metadata["fbx:animationStacks"]?.data) ?? [];
+  const cameraCurves =
+    parseJsonMetadata<
+      Array<{
+        animationName?: string;
+        layerName?: string;
+        objectName: string;
+        propertyName: string;
+        axes: Record<string, { times: number[]; values: number[] }>;
+      }>
+    >(scene.metadata["fbx:cameraAnimationCurves"]?.data) ?? [];
+  const lightCurves =
+    parseJsonMetadata<
+      Array<{
+        animationName?: string;
+        layerName?: string;
+        objectName: string;
+        propertyName: string;
+        axes: Record<string, { times: number[]; values: number[] }>;
+      }>
+    >(scene.metadata["fbx:lightAnimationCurves"]?.data) ?? [];
+  const blendShapeCurves =
+    parseJsonMetadata<
+      Array<{
+        animationName?: string;
+        layerName?: string;
+        objectName: string;
+        propertyName: string;
+        axes: Record<string, { times: number[]; values: number[] }>;
+      }>
+    >(scene.metadata["fbx:blendShapeAnimationCurves"]?.data) ?? [];
 
   animations.forEach((animation, animationIndex) => {
     const stackId = nextId++;
-    const layersForStack =
-      stackMetadata.find((entry) => entry.name === animation.name)?.layers ??
-      [{ name: animation.name || `Layer_${animationIndex}` }];
+    const layersForStack = stackMetadata.find((entry) => entry.name === animation.name)?.layers ?? [{ name: animation.name || `Layer_${animationIndex}` }];
     const layerIds = layersForStack.map(() => nextId++);
     objects.push(
-      new FbxExportNode("AnimationStack", [stackId, `AnimStack::${animation.name || `Take_${animationIndex}`}`, "AnimationStack"], [
-        `LocalStart: 0`,
-        `LocalStop: ${toTick(animation.duration)}`,
-      ]),
+      new FbxExportNode(
+        "AnimationStack",
+        [stackId, `AnimStack::${animation.name || `Take_${animationIndex}`}`, "AnimationStack"],
+        [`LocalStart: 0`, `LocalStop: ${toTick(animation.duration)}`],
+      ),
     );
     layersForStack.forEach((layer, index) => {
       const layerId = layerIds[index]!;
@@ -342,10 +380,11 @@ function writeAnimations(
         ["X", "Y", "Z"].forEach((axis, axisIndex) => {
           const curveId = nextId++;
           objects.push(
-            new FbxExportNode("AnimationCurve", [curveId, `AnimCurve::${channel.nodeName}_${spec.type}_${axis}`, "AnimationCurve"], [
-              `KeyTime: ${spec.keys.map((key) => toTick(key.time)).join(",")}`,
-              `KeyValueFloat: ${spec.keys.map((key) => key.values[axisIndex]).join(",")}`,
-            ]),
+            new FbxExportNode(
+              "AnimationCurve",
+              [curveId, `AnimCurve::${channel.nodeName}_${spec.type}_${axis}`, "AnimationCurve"],
+              [`KeyTime: ${spec.keys.map((key) => toTick(key.time)).join(",")}`, `KeyValueFloat: ${spec.keys.map((key) => key.values[axisIndex]).join(",")}`],
+            ),
           );
           connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
         });
@@ -356,9 +395,7 @@ function writeAnimations(
       ...cameraCurves
         .filter((entry) => !entry.animationName || entry.animationName === animation.name)
         .map((entry) => ({ ...entry, prefix: "CameraProperty" })),
-      ...lightCurves
-        .filter((entry) => !entry.animationName || entry.animationName === animation.name)
-        .map((entry) => ({ ...entry, prefix: "LightProperty" })),
+      ...lightCurves.filter((entry) => !entry.animationName || entry.animationName === animation.name).map((entry) => ({ ...entry, prefix: "LightProperty" })),
       ...blendShapeCurves
         .filter((entry) => !entry.animationName || entry.animationName === animation.name)
         .map((entry) => ({ ...entry, prefix: "BlendShapeProperty" })),
@@ -371,21 +408,17 @@ function writeAnimations(
       const targetLayerName = entry.layerName ?? layersForStack[0]?.name;
       const layerIndex = layersForStack.findIndex((layer) => layer.name === targetLayerName);
       const curveNodeId = nextId++;
-      objects.push(
-        new FbxExportNode(
-          "AnimationCurveNode",
-          [curveNodeId, `${entry.prefix}::${entry.objectName}::${entry.propertyName}`, "AnimationCurveNode"],
-        ),
-      );
+      objects.push(new FbxExportNode("AnimationCurveNode", [curveNodeId, `${entry.prefix}::${entry.objectName}::${entry.propertyName}`, "AnimationCurveNode"]));
       connectionLines.push(`C: "OO", ${curveNodeId}, ${layerIds[Math.max(layerIndex, 0)]!}`);
       connectionLines.push(`C: "OO", ${modelId}, ${curveNodeId}`);
       Object.entries(entry.axes).forEach(([axis, payload]) => {
         const curveId = nextId++;
         objects.push(
-          new FbxExportNode("AnimationCurve", [curveId, `AnimCurve::${entry.objectName}_${entry.propertyName}_${axis}`, "AnimationCurve"], [
-            `KeyTime: ${payload.times.map((time) => toTick(time)).join(",")}`,
-            `KeyValueFloat: ${payload.values.join(",")}`,
-          ]),
+          new FbxExportNode(
+            "AnimationCurve",
+            [curveId, `AnimCurve::${entry.objectName}_${entry.propertyName}_${axis}`, "AnimationCurve"],
+            [`KeyTime: ${payload.times.map((time) => toTick(time)).join(",")}`, `KeyValueFloat: ${payload.values.join(",")}`],
+          ),
         );
         connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
       });
@@ -398,20 +431,16 @@ function writeAnimations(
         return;
       }
       const curveNodeId = nextId++;
-      objects.push(
-        new FbxExportNode(
-          "AnimationCurveNode",
-          [curveNodeId, `BlendShapeProperty::${channel.name}::DeformPercent`, "AnimationCurveNode"],
-        ),
-      );
+      objects.push(new FbxExportNode("AnimationCurveNode", [curveNodeId, `BlendShapeProperty::${channel.name}::DeformPercent`, "AnimationCurveNode"]));
       connectionLines.push(`C: "OO", ${curveNodeId}, ${primaryLayerId}`);
       connectionLines.push(`C: "OO", ${modelId}, ${curveNodeId}`);
       const curveId = nextId++;
       objects.push(
-        new FbxExportNode("AnimationCurve", [curveId, `AnimCurve::${channel.name}_DeformPercent_X`, "AnimationCurve"], [
-          `KeyTime: ${channel.keys.map((key) => toTick(key.time)).join(",")}`,
-          `KeyValueFloat: ${channel.keys.map((key) => key.weights[0] ?? 0).join(",")}`,
-        ]),
+        new FbxExportNode(
+          "AnimationCurve",
+          [curveId, `AnimCurve::${channel.name}_DeformPercent_X`, "AnimationCurve"],
+          [`KeyTime: ${channel.keys.map((key) => toTick(key.time)).join(",")}`, `KeyValueFloat: ${channel.keys.map((key) => key.weights[0] ?? 0).join(",")}`],
+        ),
       );
       connectionLines.push(`C: "OO", ${curveId}, ${curveNodeId}`);
     });
@@ -432,19 +461,26 @@ export class FBXExporter implements BaseExporter {
     const modelIdMap = new Map<string, number>();
     const geometryIdMap = new Map<number, number>();
     const embeddedVideoIdMap = new Map<string, number>();
-    const blendShapeMetadata = parseJsonMetadata<Array<{ meshName?: string; channelName?: string; deformPercent?: number; fullWeights?: number[] }>>(
-      scene.metadata["fbx:blendShapeChannels"]?.data,
-    ) ?? [];
+    const blendShapeMetadata =
+      parseJsonMetadata<Array<{ meshName?: string; channelName?: string; deformPercent?: number; fullWeights?: number[] }>>(
+        scene.metadata["fbx:blendShapeChannels"]?.data,
+      ) ?? [];
     let nextId = BASE_NODE_ID;
 
     scene.textures.forEach((texture) => {
       const videoId = nextId++;
       embeddedVideoIdMap.set(texture.filename, videoId);
       objects.push(
-        new FbxExportNode("Video", [videoId, `Video::${texture.filename}`, "Video"], [
-          `RelativeFilename: "${texture.filename}"`,
-          `Content: "${Array.from(texture.data).map((value) => value.toString(16).padStart(2, "0")).join("")}"`,
-        ]),
+        new FbxExportNode(
+          "Video",
+          [videoId, `Video::${texture.filename}`, "Video"],
+          [
+            `RelativeFilename: "${texture.filename}"`,
+            `Content: "${Array.from(texture.data)
+              .map((value) => value.toString(16).padStart(2, "0"))
+              .join("")}"`,
+          ],
+        ),
       );
     });
 
@@ -474,29 +510,29 @@ export class FBXExporter implements BaseExporter {
           .forEach((property) => {
             const textureId = nextId++;
             const rawFilename = String(property.data ?? "");
-            const filename = rawFilename.startsWith("*")
-              ? scene.textures[Number(rawFilename.slice(1))]?.filename ?? rawFilename
-              : rawFilename;
+            const filename = rawFilename.startsWith("*") ? (scene.textures[Number(rawFilename.slice(1))]?.filename ?? rawFilename) : rawFilename;
             const textureBinding = findTextureBinding(material, property, filename);
             const relativeFilename = String(textureBinding?.relativeFilename ?? filename);
             objects.push(
               new FbxExportNode(
                 "Texture",
                 [textureId, `Texture::${filename}`, "TextureVideoClip"],
+                [`RelativeFilename: "${relativeFilename}"`],
                 [
-                  `RelativeFilename: "${relativeFilename}"`,
-                ],
-                [
-                  new FbxExportNode("Properties70", [], [
-                    `P: "UVSet", "KString", "", "A", "${String(textureBinding?.uvSet ?? "map1")}"`,
-                    `P: "Translation", "Vector3D", "", "A", ${Array.isArray(textureBinding?.translation) ? (textureBinding?.translation as number[]).join(", ") : "0, 0, 0"}`,
-                    `P: "Scaling", "Vector3D", "", "A", ${Array.isArray(textureBinding?.scaling) ? (textureBinding?.scaling as number[]).join(", ") : "1, 1, 1"}`,
-                    `P: "Rotation", "Vector3D", "", "A", ${Array.isArray(textureBinding?.rotation) ? (textureBinding?.rotation as number[]).join(", ") : "0, 0, 0"}`,
-                    `P: "WrapModeU", "int", "", "A", ${Number(textureBinding?.wrapModeU ?? 0)}`,
-                    `P: "WrapModeV", "int", "", "A", ${Number(textureBinding?.wrapModeV ?? 0)}`,
-                    `P: "BlendMode", "KString", "", "A", "${String(textureBinding?.blendMode ?? "Normal")}"`,
-                    `P: "Layered", "bool", "", "A", ${textureBinding?.layered ? 1 : 0}`,
-                  ]),
+                  new FbxExportNode(
+                    "Properties70",
+                    [],
+                    [
+                      `P: "UVSet", "KString", "", "A", "${String(textureBinding?.uvSet ?? "map1")}"`,
+                      `P: "Translation", "Vector3D", "", "A", ${Array.isArray(textureBinding?.translation) ? (textureBinding?.translation as number[]).join(", ") : "0, 0, 0"}`,
+                      `P: "Scaling", "Vector3D", "", "A", ${Array.isArray(textureBinding?.scaling) ? (textureBinding?.scaling as number[]).join(", ") : "1, 1, 1"}`,
+                      `P: "Rotation", "Vector3D", "", "A", ${Array.isArray(textureBinding?.rotation) ? (textureBinding?.rotation as number[]).join(", ") : "0, 0, 0"}`,
+                      `P: "WrapModeU", "int", "", "A", ${Number(textureBinding?.wrapModeU ?? 0)}`,
+                      `P: "WrapModeV", "int", "", "A", ${Number(textureBinding?.wrapModeV ?? 0)}`,
+                      `P: "BlendMode", "KString", "", "A", "${String(textureBinding?.blendMode ?? "Normal")}"`,
+                      `P: "Layered", "bool", "", "A", ${textureBinding?.layered ? 1 : 0}`,
+                    ],
+                  ),
                 ],
               ),
             );
@@ -507,11 +543,7 @@ export class FBXExporter implements BaseExporter {
               (() => {
                 const createdVideoId = nextId++;
                 embeddedVideoIdMap.set(filename, createdVideoId);
-                objects.push(
-                  new FbxExportNode("Video", [createdVideoId, `Video::${filename}`, "Video"], [
-                    `RelativeFilename: "${filename}"`,
-                  ]),
-                );
+                objects.push(new FbxExportNode("Video", [createdVideoId, `Video::${filename}`, "Video"], [`RelativeFilename: "${filename}"`]));
                 return createdVideoId;
               })();
             connectionLines.push(`C: "OO", ${videoId}, ${textureId}`);
@@ -522,10 +554,11 @@ export class FBXExporter implements BaseExporter {
         const skinId = nextId++;
         const skinClusterMetadata = parseJsonMetadata<Record<string, unknown>>(mesh.bones[0]?.node?.metadata?.["fbx:skinCluster"]?.data);
         objects.push(
-          new FbxExportNode("Deformer", [skinId, `Deformer::Skin_${meshIndex}`, "Skin"], [
-            `SkinningType: "${String(skinClusterMetadata?.skinningType ?? "Linear")}"`,
-            `DeformAccuracy: ${Number(skinClusterMetadata?.deformAccuracy ?? 0)}`,
-          ]),
+          new FbxExportNode(
+            "Deformer",
+            [skinId, `Deformer::Skin_${meshIndex}`, "Skin"],
+            [`SkinningType: "${String(skinClusterMetadata?.skinningType ?? "Linear")}"`, `DeformAccuracy: ${Number(skinClusterMetadata?.deformAccuracy ?? 0)}`],
+          ),
         );
         connectionLines.push(`C: "OO", ${skinId}, ${geometryId}`);
         mesh.bones.forEach((bone, boneIndex) => {
@@ -536,13 +569,17 @@ export class FBXExporter implements BaseExporter {
             ? (clusterMetadata?.transformLinkMatrix as number[]).join(",")
             : flattenMatrix(mesh, boneIndex);
           objects.push(
-            new FbxExportNode("Deformer", [clusterId, `SubDeformer::${bone.name}`, "Cluster"], [
-              `Indexes: ${flattenBoneIndexes(mesh, boneIndex)}`,
-              `Weights: ${flattenBoneWeights(mesh, boneIndex)}`,
-              `TransformMatrix: ${flattenMatrix(mesh, boneIndex)}`,
-              `TransformLinkMatrix: ${transformLinkMatrix}`,
-              `LinkMode: "${String(clusterMetadata?.linkMode ?? "TotalOne")}"`,
-            ]),
+            new FbxExportNode(
+              "Deformer",
+              [clusterId, `SubDeformer::${bone.name}`, "Cluster"],
+              [
+                `Indexes: ${flattenBoneIndexes(mesh, boneIndex)}`,
+                `Weights: ${flattenBoneWeights(mesh, boneIndex)}`,
+                `TransformMatrix: ${flattenMatrix(mesh, boneIndex)}`,
+                `TransformLinkMatrix: ${transformLinkMatrix}`,
+                `LinkMode: "${String(clusterMetadata?.linkMode ?? "TotalOne")}"`,
+              ],
+            ),
           );
           objects.push(new FbxExportNode("Model", [boneModelId, `Model::${bone.name}`, "LimbNode"]));
           modelIdMap.set(bone.name, boneModelId);
@@ -562,16 +599,21 @@ export class FBXExporter implements BaseExporter {
             (entry) => (entry.meshName ?? mesh.name) === mesh.name && (entry.channelName ?? morphTarget.name) === morphTarget.name,
           );
           objects.push(
-            new FbxExportNode("Deformer", [channelId, `SubDeformer::${morphTarget.name}`, "BlendShapeChannel"], [
-              `DeformPercent: ${Number(channelMetadata?.deformPercent ?? morphTarget.weight ?? 0)}`,
-              `FullWeights: ${(channelMetadata?.fullWeights ?? [morphTarget.weight ?? 0]).join(",")}`,
-            ]),
+            new FbxExportNode(
+              "Deformer",
+              [channelId, `SubDeformer::${morphTarget.name}`, "BlendShapeChannel"],
+              [
+                `DeformPercent: ${Number(channelMetadata?.deformPercent ?? morphTarget.weight ?? 0)}`,
+                `FullWeights: ${(channelMetadata?.fullWeights ?? [morphTarget.weight ?? 0]).join(",")}`,
+              ],
+            ),
           );
           objects.push(
-            new FbxExportNode("Geometry", [shapeId, `Geometry::${morphTarget.name}`, "Shape"], [
-              `Indexes: ${flattenShapeIndexes(mesh, morphIndex)}`,
-              `Vertices: ${flattenShapeVertices(mesh, morphIndex)}`,
-            ]),
+            new FbxExportNode(
+              "Geometry",
+              [shapeId, `Geometry::${morphTarget.name}`, "Shape"],
+              [`Indexes: ${flattenShapeIndexes(mesh, morphIndex)}`, `Vertices: ${flattenShapeVertices(mesh, morphIndex)}`],
+            ),
           );
           connectionLines.push(`C: "OO", ${channelId}, ${blendShapeId}`);
           connectionLines.push(`C: "OO", ${shapeId}, ${channelId}`);
@@ -610,7 +652,7 @@ export class FBXExporter implements BaseExporter {
       if (!modelId) {
         return;
       }
-      const parentId = parent && parent !== scene.rootNode ? sceneNodeIdMap.get(parent.name) ?? ROOT_MODEL_ID : ROOT_MODEL_ID;
+      const parentId = parent && parent !== scene.rootNode ? (sceneNodeIdMap.get(parent.name) ?? ROOT_MODEL_ID) : ROOT_MODEL_ID;
       connectionLines.push(`C: "OO", ${modelId}, ${parentId}`);
       node.meshIndices.forEach((meshIndex) => {
         const geometryId = geometryIdMap.get(meshIndex);
@@ -633,11 +675,11 @@ export class FBXExporter implements BaseExporter {
         sceneNodeIdMap.set(camera.name, modelId);
         modelIdMap.set(camera.name, modelId);
         objects.push(
-          new FbxExportNode("Model", [modelId, `Model::${camera.name}`, "Model"], [
-            `Properties70: {`,
-            `  P: "Lcl Translation", "Lcl Translation", "", "A", ${camera.position.x}, ${camera.position.y}, ${camera.position.z}`,
-            `}`,
-          ]),
+          new FbxExportNode(
+            "Model",
+            [modelId, `Model::${camera.name}`, "Model"],
+            [`Properties70: {`, `  P: "Lcl Translation", "Lcl Translation", "", "A", ${camera.position.x}, ${camera.position.y}, ${camera.position.z}`, `}`],
+          ),
         );
         connectionLines.push(`C: "OO", ${modelId}, ${ROOT_MODEL_ID}`);
       }
@@ -645,15 +687,19 @@ export class FBXExporter implements BaseExporter {
       const aspectHeight = camera.aspect === 0 ? 1 : 1;
       const aspectWidth = camera.aspect === 0 ? 1 : camera.aspect;
       objects.push(
-        new FbxExportNode("Camera", [cameraId, `Camera::${camera.name}`, "Camera"], [
-          `Properties70: {`,
-          `  P: "FieldOfView", "double", "", "A", ${(camera.horizontalFov * 180) / Math.PI}`,
-          `  P: "NearPlane", "double", "", "A", ${camera.clipPlaneNear}`,
-          `  P: "FarPlane", "double", "", "A", ${camera.clipPlaneFar}`,
-          `  P: "AspectWidth", "double", "", "A", ${aspectWidth}`,
-          `  P: "AspectHeight", "double", "", "A", ${aspectHeight}`,
-          `}`,
-        ]),
+        new FbxExportNode(
+          "Camera",
+          [cameraId, `Camera::${camera.name}`, "Camera"],
+          [
+            `Properties70: {`,
+            `  P: "FieldOfView", "double", "", "A", ${(camera.horizontalFov * 180) / Math.PI}`,
+            `  P: "NearPlane", "double", "", "A", ${camera.clipPlaneNear}`,
+            `  P: "FarPlane", "double", "", "A", ${camera.clipPlaneFar}`,
+            `  P: "AspectWidth", "double", "", "A", ${aspectWidth}`,
+            `  P: "AspectHeight", "double", "", "A", ${aspectHeight}`,
+            `}`,
+          ],
+        ),
       );
       connectionLines.push(`C: "OO", ${cameraId}, ${modelId}`);
     });
@@ -665,32 +711,35 @@ export class FBXExporter implements BaseExporter {
         sceneNodeIdMap.set(light.name, modelId);
         modelIdMap.set(light.name, modelId);
         objects.push(
-          new FbxExportNode("Model", [modelId, `Model::${light.name}`, "Model"], [
-            `Properties70: {`,
-            `  P: "Lcl Translation", "Lcl Translation", "", "A", ${light.position.x}, ${light.position.y}, ${light.position.z}`,
-            `}`,
-          ]),
+          new FbxExportNode(
+            "Model",
+            [modelId, `Model::${light.name}`, "Model"],
+            [`Properties70: {`, `  P: "Lcl Translation", "Lcl Translation", "", "A", ${light.position.x}, ${light.position.y}, ${light.position.z}`, `}`],
+          ),
         );
         connectionLines.push(`C: "OO", ${modelId}, ${ROOT_MODEL_ID}`);
       }
       const lightId = nextId++;
       const lightType = light.type === 3 ? 2 : light.type === 1 ? 1 : 0;
       objects.push(
-        new FbxExportNode("Light", [lightId, `Light::${light.name}`, "Light"], [
-          `Properties70: {`,
-          `  P: "LightType", "int", "", "A", ${lightType}`,
-          `  P: "Color", "Color", "", "A", ${light.diffuseColor.r}, ${light.diffuseColor.g}, ${light.diffuseColor.b}`,
-          `  P: "InnerAngle", "double", "", "A", ${light.angleInnerCone}`,
-          `  P: "OuterAngle", "double", "", "A", ${light.angleOuterCone}`,
-          `}`,
-        ]),
+        new FbxExportNode(
+          "Light",
+          [lightId, `Light::${light.name}`, "Light"],
+          [
+            `Properties70: {`,
+            `  P: "LightType", "int", "", "A", ${lightType}`,
+            `  P: "Color", "Color", "", "A", ${light.diffuseColor.r}, ${light.diffuseColor.g}, ${light.diffuseColor.b}`,
+            `  P: "InnerAngle", "double", "", "A", ${light.angleInnerCone}`,
+            `  P: "OuterAngle", "double", "", "A", ${light.angleOuterCone}`,
+            `}`,
+          ],
+        ),
       );
       connectionLines.push(`C: "OO", ${lightId}, ${modelId}`);
     });
 
-    const constraints = parseJsonMetadata<Array<{ name: string; type: string; sourceModels: string[]; targetModels: string[] }>>(
-      scene.metadata["fbx:constraints"]?.data,
-    ) ?? [];
+    const constraints =
+      parseJsonMetadata<Array<{ name: string; type: string; sourceModels: string[]; targetModels: string[] }>>(scene.metadata["fbx:constraints"]?.data) ?? [];
     constraints.forEach((constraint) => {
       const constraintId = nextId++;
       objects.push(new FbxExportNode(constraint.type, [constraintId, constraint.name, constraint.type]));
@@ -719,15 +768,11 @@ export class FBXExporter implements BaseExporter {
       "FBXHeaderExtension: {",
       "  FBXVersion: 7400",
       "}",
-      new FbxExportNode("GlobalSettings", [], [
-        "UpAxis: 1",
-        "UpAxisSign: 1",
-        "FrontAxis: 2",
-        "FrontAxisSign: 1",
-        "CoordAxis: 0",
-        "CoordAxisSign: 1",
-        "UnitScaleFactor: 1.0",
-      ]).render(),
+      new FbxExportNode(
+        "GlobalSettings",
+        [],
+        ["UpAxis: 1", "UpAxisSign: 1", "FrontAxis: 2", "FrontAxisSign: 1", "CoordAxis: 0", "CoordAxisSign: 1", "UnitScaleFactor: 1.0"],
+      ).render(),
       new FbxExportNode("Objects", [], [], objects).render(),
       new FbxExportNode("Connections", [], connectionLines).render(),
       "Takes: {",
@@ -737,4 +782,3 @@ export class FBXExporter implements BaseExporter {
     return new TextEncoder().encode(text).buffer;
   }
 }
-

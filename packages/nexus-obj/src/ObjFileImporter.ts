@@ -40,12 +40,7 @@ function updateAabb(aabb: AiAABB, x: number, y: number, z: number): AiAABB {
   };
 }
 
-function createMaterialProperty(
-  key: string,
-  semantic: AiTextureType,
-  type: AiPropertyTypeInfo,
-  data: unknown,
-): AiMaterialProperty {
+function createMaterialProperty(key: string, semantic: AiTextureType, type: AiPropertyTypeInfo, data: unknown): AiMaterialProperty {
   return { key, semantic, index: 0, type, data };
 }
 
@@ -79,14 +74,7 @@ function convertMaterial(material: ObjMaterial): AiMaterial {
   }
 
   if (material.textureDiffuse) {
-    properties.push(
-      createMaterialProperty(
-        "$tex.file",
-        AiTextureType.DIFFUSE,
-        AiPropertyTypeInfo.STRING,
-        material.textureDiffuse,
-      ),
-    );
+    properties.push(createMaterialProperty("$tex.file", AiTextureType.DIFFUSE, AiPropertyTypeInfo.STRING, material.textureDiffuse));
   }
 
   return {
@@ -145,9 +133,7 @@ function buildMesh(model: ObjModel, faces: ObjFace[], materialIndex: number, nam
 
   return {
     name,
-    primitiveTypes: aiFaces.some((face) => face.indices.length > 3)
-      ? AiPrimitiveType.POLYGON
-      : AiPrimitiveType.TRIANGLE,
+    primitiveTypes: aiFaces.some((face) => face.indices.length > 3) ? AiPrimitiveType.POLYGON : AiPrimitiveType.TRIANGLE,
     vertices,
     normals,
     tangents: [],
@@ -179,9 +165,7 @@ export class ObjFileImporter implements BaseImporter {
     const text = new TextDecoder().decode(buffer);
     const model = this.parser.parse(text);
     const warnings: ImportResult["warnings"] = [];
-    const materials = settings?.mtlText
-      ? this.mtlParser.parse(settings.mtlText)
-      : [];
+    const materials = settings?.mtlText ? this.mtlParser.parse(settings.mtlText) : [];
 
     if (!settings?.mtlText && model.materialLibraries.length > 0) {
       warnings.push({
@@ -192,10 +176,7 @@ export class ObjFileImporter implements BaseImporter {
     }
 
     model.materials = materials;
-    const aiMaterials =
-      materials.length > 0
-        ? materials.map((material) => convertMaterial(material))
-        : [{ name: "DefaultMaterial", properties: [] }];
+    const aiMaterials = materials.length > 0 ? materials.map((material) => convertMaterial(material)) : [{ name: "DefaultMaterial", properties: [] }];
     const materialIndexByName = new Map(aiMaterials.map((material, index) => [material.name, index]));
 
     const meshes: AiMesh[] = [];
@@ -209,16 +190,8 @@ export class ObjFileImporter implements BaseImporter {
           continue;
         }
 
-        const materialIndex =
-          group.materialName && materialIndexByName.has(group.materialName)
-            ? materialIndexByName.get(group.materialName)!
-            : 0;
-        const mesh = buildMesh(
-          model,
-          group.faces,
-          materialIndex,
-          `${object.name}:${group.name}:${group.materialName ?? "default"}`,
-        );
+        const materialIndex = group.materialName && materialIndexByName.has(group.materialName) ? materialIndexByName.get(group.materialName)! : 0;
+        const mesh = buildMesh(model, group.faces, materialIndex, `${object.name}:${group.name}:${group.materialName ?? "default"}`);
         objectMeshIndices.push(meshes.length);
         meshes.push(mesh);
       }
@@ -261,4 +234,3 @@ export class ObjFileImporter implements BaseImporter {
     return { scene, warnings };
   }
 }
-

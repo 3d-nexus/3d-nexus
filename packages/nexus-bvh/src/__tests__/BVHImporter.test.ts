@@ -23,14 +23,9 @@ describe("BVHImporter", () => {
     const channel = animation?.channels[0];
 
     expect(hierarchyRoot?.name).toBe("Hips");
-    expect(hierarchyRoot?.metadata?.["bvh:channels"]?.data).toBe(JSON.stringify([
-      "Xposition",
-      "Yposition",
-      "Zposition",
-      "Zrotation",
-      "Xrotation",
-      "Yrotation",
-    ]));
+    expect(hierarchyRoot?.metadata?.["bvh:channels"]?.data).toBe(
+      JSON.stringify(["Xposition", "Yposition", "Zposition", "Zrotation", "Xrotation", "Yrotation"]),
+    );
     expect(hierarchyRoot?.metadata?.["bvh:rotationOrder"]?.data).toBe("ZXY");
     expect(endSite?.metadata?.["bvh:jointType"]?.data).toBe("EndSite");
     expect(endSite?.metadata?.["bvh:offset"]?.data).toBe(JSON.stringify([0, 10, 0]));
@@ -46,7 +41,7 @@ describe("BVHImporter", () => {
 
     expect(result.scene.metadata["bvh:frameTime"]?.data).toBe("0.0333333");
     expect(result.scene.metadata["bvh:frameIndices"]?.data).toBe(JSON.stringify([0, 1]));
-    expect(result.scene.metadata["bvh:jointChannelLayout"]?.data).toContain("\"rotationOrder\":\"ZXY\"");
+    expect(result.scene.metadata["bvh:jointChannelLayout"]?.data).toContain('"rotationOrder":"ZXY"');
   });
 
   it("keeps original frame semantics in animation timing", () => {

@@ -32,10 +32,18 @@ function createIndustrialScene(): AiScene {
         tangents: [],
         bitangents: [],
         textureCoords: [
-          [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }],
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 0, y: 0, z: 0 },
+            { x: 0, y: 0, z: 0 },
+          ],
           null,
           null,
-          [{ x: 0.2, y: 0.4, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }],
+          [
+            { x: 0.2, y: 0.4, z: 0 },
+            { x: 0, y: 0, z: 0 },
+            { x: 0, y: 0, z: 0 },
+          ],
           null,
           null,
           null,
@@ -70,7 +78,11 @@ function createIndustrialScene(): AiScene {
               null,
               null,
               null,
-              [{ x: 0.2, y: 0.4, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }],
+              [
+                { x: 0.2, y: 0.4, z: 0 },
+                { x: 0, y: 0, z: 0 },
+                { x: 0, y: 0, z: 0 },
+              ],
               null,
               null,
               null,
@@ -218,4 +230,3 @@ describe("PMX industrial fidelity", () => {
     expect(softBodies[0]?.aeroModel).toBe(2);
   });
 });
-

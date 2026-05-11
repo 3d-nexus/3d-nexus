@@ -1,4 +1,18 @@
-﻿import { AiAnimBehaviour, AiMetadataType, AiSceneFlags, createIdentityMatrix4x4, createTranslationMatrix4x4, type AiAnimation, type AiNode, type AiNodeAnim, type AiQuaternion, type AiScene, type BaseImporter, type ImportResult, type ImportSettings } from "@3d-nexus/core";
+﻿import {
+  AiAnimBehaviour,
+  AiMetadataType,
+  AiSceneFlags,
+  createIdentityMatrix4x4,
+  createTranslationMatrix4x4,
+  type AiAnimation,
+  type AiNode,
+  type AiNodeAnim,
+  type AiQuaternion,
+  type AiScene,
+  type BaseImporter,
+  type ImportResult,
+  type ImportSettings,
+} from "@3d-nexus/core";
 import { BVHParser, countChannels, type BvhJoint } from "./BVHParser";
 
 type JointChannelLayout = {
@@ -58,10 +72,12 @@ function quaternionFromChannels(channels: string[], values: number[]): AiQuatern
     .filter((entry) => entry.channel.endsWith("rotation"));
 
   return normalizeQuaternion(
-    rotationChannels.reduce<AiQuaternion>(
-      (current, entry) => multiplyQuaternions(current, axisQuaternion(entry.channel[0] as "X" | "Y" | "Z", entry.value)),
-      { x: 0, y: 0, z: 0, w: 1 },
-    ),
+    rotationChannels.reduce<AiQuaternion>((current, entry) => multiplyQuaternions(current, axisQuaternion(entry.channel[0] as "X" | "Y" | "Z", entry.value)), {
+      x: 0,
+      y: 0,
+      z: 0,
+      w: 1,
+    }),
   );
 }
 
@@ -161,10 +177,7 @@ export class BVHImporter implements BaseImporter {
         rotationKeys: document.motionValues.map((frameValues, frameIndex) => ({
           time: frameIndex,
           value: {
-            ...quaternionFromChannels(
-              joint.channels,
-              frameValues.slice(jointCursor, jointCursor + joint.channels.length),
-            ),
+            ...quaternionFromChannels(joint.channels, frameValues.slice(jointCursor, jointCursor + joint.channels.length)),
           },
         })),
         scalingKeys: [],
@@ -213,4 +226,3 @@ export class BVHImporter implements BaseImporter {
     return { scene, warnings: [] };
   }
 }
-

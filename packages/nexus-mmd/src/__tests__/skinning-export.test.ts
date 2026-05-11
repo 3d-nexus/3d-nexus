@@ -34,29 +34,56 @@ const scene: AiScene = {
       ],
       tangents: [],
       bitangents: [],
-      textureCoords: [[{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }], null, null, null, null, null, null, null],
+      textureCoords: [
+        [
+          { x: 0, y: 0, z: 0 },
+          { x: 0, y: 0, z: 0 },
+          { x: 0, y: 0, z: 0 },
+        ],
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ],
       colors: Array.from({ length: 8 }, () => null),
       faces: [{ indices: [0, 1, 2] }],
       bones: [
         {
           name: "Bone0",
-          weights: [{ vertexId: 0, weight: 0.7 }, { vertexId: 1, weight: 0.25 }, { vertexId: 2, weight: 0.4 }],
+          weights: [
+            { vertexId: 0, weight: 0.7 },
+            { vertexId: 1, weight: 0.25 },
+            { vertexId: 2, weight: 0.4 },
+          ],
           offsetMatrix: createIdentityMatrix4x4(),
           ikChain: { type: "sdef", c: { x: 1, y: 2, z: 3 }, r0: { x: 4, y: 5, z: 6 }, r1: { x: 7, y: 8, z: 9 } },
         },
         {
           name: "Bone1",
-          weights: [{ vertexId: 0, weight: 0.3 }, { vertexId: 1, weight: 0.25 }, { vertexId: 2, weight: 0.3 }],
+          weights: [
+            { vertexId: 0, weight: 0.3 },
+            { vertexId: 1, weight: 0.25 },
+            { vertexId: 2, weight: 0.3 },
+          ],
           offsetMatrix: createIdentityMatrix4x4(),
         },
         {
           name: "Bone2",
-          weights: [{ vertexId: 1, weight: 0.25 }, { vertexId: 2, weight: 0.2 }],
+          weights: [
+            { vertexId: 1, weight: 0.25 },
+            { vertexId: 2, weight: 0.2 },
+          ],
           offsetMatrix: createIdentityMatrix4x4(),
         },
         {
           name: "Bone3",
-          weights: [{ vertexId: 1, weight: 0.25 }, { vertexId: 2, weight: 0.1 }],
+          weights: [
+            { vertexId: 1, weight: 0.25 },
+            { vertexId: 2, weight: 0.1 },
+          ],
           offsetMatrix: createIdentityMatrix4x4(),
         },
       ],
@@ -93,4 +120,3 @@ describe("PMX skinning export", () => {
     expect(bones[3]?.weights.find((entry) => entry.vertexId === 1)?.weight).toBeCloseTo(0.25);
   });
 });
-

@@ -87,11 +87,7 @@ function readPropertyVectorAsArray(values: { get(name: string): unknown }, name:
   return [vector.x, vector.y, vector.z];
 }
 
-function readVectorProperty(
-  values: { get(name: string): unknown },
-  name: string,
-  fallback = vector3(),
-): AiVector3D {
+function readVectorProperty(values: { get(name: string): unknown }, name: string, fallback = vector3()): AiVector3D {
   const value = values.get(name) as Partial<AiVector3D> | number[] | undefined;
   if (Array.isArray(value)) {
     return vector3(Number(value[0] ?? fallback.x), Number(value[1] ?? fallback.y), Number(value[2] ?? fallback.z));
@@ -132,33 +128,15 @@ function composeTransformStack(stack: FbxTransformStack): AiMatrix4x4 {
   const scalingOffset = createTranslationMatrix4x4(stack.scalingOffset.x, stack.scalingOffset.y, stack.scalingOffset.z);
   const scalingPivot = createTranslationMatrix4x4(stack.scalingPivot.x, stack.scalingPivot.y, stack.scalingPivot.z);
   const inverseScalingPivot = invertMatrix4x4(scalingPivot);
-  const preRotation = createEulerRotationMatrix4x4(
-    stack.preRotation.x,
-    stack.preRotation.y,
-    stack.preRotation.z,
-    stack.rotationOrder,
-  );
+  const preRotation = createEulerRotationMatrix4x4(stack.preRotation.x, stack.preRotation.y, stack.preRotation.z, stack.rotationOrder);
   const rotation = createEulerRotationMatrix4x4(stack.rotation.x, stack.rotation.y, stack.rotation.z, stack.rotationOrder);
   const inversePostRotation = invertMatrix4x4(
     createEulerRotationMatrix4x4(stack.postRotation.x, stack.postRotation.y, stack.postRotation.z, stack.rotationOrder),
   );
   const scaling = createScalingMatrix4x4(stack.scaling.x, stack.scaling.y, stack.scaling.z);
-  const geometricTranslation = createTranslationMatrix4x4(
-    stack.geometricTranslation.x,
-    stack.geometricTranslation.y,
-    stack.geometricTranslation.z,
-  );
-  const geometricRotation = createEulerRotationMatrix4x4(
-    stack.geometricRotation.x,
-    stack.geometricRotation.y,
-    stack.geometricRotation.z,
-    stack.rotationOrder,
-  );
-  const geometricScaling = createScalingMatrix4x4(
-    stack.geometricScaling.x,
-    stack.geometricScaling.y,
-    stack.geometricScaling.z,
-  );
+  const geometricTranslation = createTranslationMatrix4x4(stack.geometricTranslation.x, stack.geometricTranslation.y, stack.geometricTranslation.z);
+  const geometricRotation = createEulerRotationMatrix4x4(stack.geometricRotation.x, stack.geometricRotation.y, stack.geometricRotation.z, stack.rotationOrder);
+  const geometricScaling = createScalingMatrix4x4(stack.geometricScaling.x, stack.geometricScaling.y, stack.geometricScaling.z);
 
   return [
     localTranslation,
@@ -178,9 +156,7 @@ function composeTransformStack(stack: FbxTransformStack): AiMatrix4x4 {
   ].reduce((acc, matrix) => multiplyMatrix4x4(acc, matrix), createIdentityMatrix4x4());
 }
 
-function readTransformStack(
-  model: FbxObject,
-): FbxTransformStack {
+function readTransformStack(model: FbxObject): FbxTransformStack {
   const properties = model.properties;
   return {
     translation: readVectorProperty(properties, "Lcl Translation"),
@@ -286,14 +262,7 @@ function convertLight(object: FbxObject, model: FbxObject | undefined): AiLight 
   };
 }
 
-export function buildAxisSwapMatrix(
-  upAxis: number,
-  upSign: number,
-  frontAxis: number,
-  frontSign: number,
-  coordAxis: number,
-  coordSign: number,
-): AiMatrix4x4 {
+export function buildAxisSwapMatrix(upAxis: number, upSign: number, frontAxis: number, frontSign: number, coordAxis: number, coordSign: number): AiMatrix4x4 {
   const basis = [
     [0, 0, 0],
     [0, 0, 0],
@@ -373,7 +342,10 @@ function addMaterialProperty(properties: AiMaterialProperty[], key: string, sema
   properties.push({ key, semantic, index: 0, type, data });
 }
 
-function expandUvLayers(geometry: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never, vertexCount: number): Array<Array<{ x: number; y: number; z: number }> | null> {
+function expandUvLayers(
+  geometry: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never,
+  vertexCount: number,
+): Array<Array<{ x: number; y: number; z: number }> | null> {
   const layers = Array.from({ length: 8 }, () => null as Array<{ x: number; y: number; z: number }> | null);
   const uvElements = geometry.element.children.filter((child) => child.name === "LayerElementUV");
   if (uvElements.length === 0) {
@@ -401,14 +373,14 @@ function expandUvLayers(geometry: FbxDocument["objects"] extends Map<bigint, inf
 
     if (mapping === "ByVertice") {
       layers[layerIndex] = Array.from({ length: vertexCount }, (_, vertexIndex) => {
-        const sourceIndex = reference === "IndexToDirect" ? uvIndex[vertexIndex] ?? vertexIndex : vertexIndex;
+        const sourceIndex = reference === "IndexToDirect" ? (uvIndex[vertexIndex] ?? vertexIndex) : vertexIndex;
         return direct[sourceIndex] ?? { x: 0, y: 0, z: 0 };
       });
       return;
     }
 
     layers[layerIndex] = Array.from({ length: vertexCount }, (_, vertexIndex) => {
-      const sourceIndex = reference === "IndexToDirect" ? uvIndex[vertexIndex] ?? vertexIndex : vertexIndex;
+      const sourceIndex = reference === "IndexToDirect" ? (uvIndex[vertexIndex] ?? vertexIndex) : vertexIndex;
       return direct[sourceIndex] ?? { x: 0, y: 0, z: 0 };
     });
   });
@@ -416,7 +388,11 @@ function expandUvLayers(geometry: FbxDocument["objects"] extends Map<bigint, inf
   return layers;
 }
 
-function convertMaterial(document: FbxDocument, materialObject: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never, embeddedTextureLookup: Map<string, string>): AiMaterial {
+function convertMaterial(
+  document: FbxDocument,
+  materialObject: FbxDocument["objects"] extends Map<bigint, infer T> ? T : never,
+  embeddedTextureLookup: Map<string, string>,
+): AiMaterial {
   const properties: AiMaterialProperty[] = [];
   const metadata: Record<string, unknown> = {};
   const table = materialObject.properties;
@@ -487,7 +463,7 @@ function convertMaterial(document: FbxDocument, materialObject: FbxDocument["obj
       blendMode: String(textureObject.properties.get("BlendMode") ?? "Normal"),
       layered: Boolean(textureObject.properties.get("Layered") ?? false),
     };
-    const bindings = (metadata.textureBindings as typeof textureBinding[] | undefined) ?? [];
+    const bindings = (metadata.textureBindings as (typeof textureBinding)[] | undefined) ?? [];
     bindings.push(textureBinding);
     metadata.textureBindings = bindings;
     addMaterialProperty(properties, "$tex.file", semanticFromConnection(connection.property), AiPropertyTypeInfo.STRING, resolvedFilename);
@@ -518,9 +494,7 @@ function collectAnimationMetadata(document: FbxDocument): {
   metadata: AiMetadata;
   diagnostics: Array<Record<string, unknown>>;
 } {
-  const stacks = [...document.objects.values()]
-    .filter((object) => object.kind === "AnimationStack")
-    .map((object) => new FbxAnimationStack(document, object));
+  const stacks = [...document.objects.values()].filter((object) => object.kind === "AnimationStack").map((object) => new FbxAnimationStack(document, object));
   const stackMetadata = stacks.map((stack) => ({
     name: stack.name || "Take001",
     localStart: Number(stack.localStart),
@@ -552,10 +526,7 @@ function collectAnimationMetadata(document: FbxDocument): {
     }
     stack.layers.forEach((layer) => {
       layer.curveNodes.forEach((curveNode) => {
-        const collectTarget = (
-          prefix: "CameraProperty::" | "LightProperty::" | "BlendShapeProperty::",
-          sink: Array<Record<string, unknown>>,
-        ): void => {
+        const collectTarget = (prefix: "CameraProperty::" | "LightProperty::" | "BlendShapeProperty::", sink: Array<Record<string, unknown>>): void => {
           if (!curveNode.name.startsWith(prefix)) {
             return;
           }
@@ -601,9 +572,7 @@ function collectAnimationMetadata(document: FbxDocument): {
 
 export class FBXConverter {
   convertAnimations(document: FbxDocument): AiAnimation[] {
-    const stacks = [...document.objects.values()]
-      .filter((object) => object.kind === "AnimationStack")
-      .map((object) => new FbxAnimationStack(document, object));
+    const stacks = [...document.objects.values()].filter((object) => object.kind === "AnimationStack").map((object) => new FbxAnimationStack(document, object));
     return stacks.map((stack) => {
       const channels = new Map<string, AiNodeAnim>();
       stack.layers.forEach((layer) => {
@@ -620,8 +589,8 @@ export class FBXConverter {
               values: Array.from(curve.keyValues),
             });
           });
-          const mergedTimes = [...new Set(Array.from(axisValues.values()).flatMap((axis) => axis.times.map((time) => time.toString())))].map(
-            (time) => BigInt(time),
+          const mergedTimes = [...new Set(Array.from(axisValues.values()).flatMap((axis) => axis.times.map((time) => time.toString())))].map((time) =>
+            BigInt(time),
           );
           if (mergedTimes.length === 0) {
             return;
@@ -641,11 +610,7 @@ export class FBXConverter {
               channels.set(targetName, next);
               return next;
             })();
-          const nodeType = curveNode.name.includes("::R_")
-            ? "R"
-            : curveNode.name.includes("::S_")
-              ? "S"
-              : "T";
+          const nodeType = curveNode.name.includes("::R_") ? "R" : curveNode.name.includes("::S_") ? "S" : "T";
           mergedTimes.forEach((time) => {
             const seconds = Number(time) / Number(FBX_TICKS_PER_SECOND);
             const readAxis = (axis: string) => {
@@ -712,14 +677,15 @@ export class FBXConverter {
 
     const meshes = geometries.map((geometry, geometryIndex) => {
       geometryIndexMap.set(geometry.id, geometryIndex);
-      const vertices = parseNumberList(geometry.element.values.Vertices?.[0] ?? []).reduce<
-        Array<{ x: number; y: number; z: number }>
-      >((acc, value, index, all) => {
-        if (index % 3 === 0) {
-          acc.push({ x: value, y: all[index + 1] ?? 0, z: all[index + 2] ?? 0 });
-        }
-        return acc;
-      }, []);
+      const vertices = parseNumberList(geometry.element.values.Vertices?.[0] ?? []).reduce<Array<{ x: number; y: number; z: number }>>(
+        (acc, value, index, all) => {
+          if (index % 3 === 0) {
+            acc.push({ x: value, y: all[index + 1] ?? 0, z: all[index + 2] ?? 0 });
+          }
+          return acc;
+        },
+        [],
+      );
       const polygonIndex = parseNumberList(geometry.element.values.PolygonVertexIndex?.[0] ?? []);
       const faces: Array<{ indices: number[] }> = [];
       let current: number[] = [];
@@ -734,9 +700,7 @@ export class FBXConverter {
       const normalNumbers = parseNumberList(geometry.element.values.Normals?.[0] ?? []);
       const mesh: AiMesh = {
         name: String(geometry.properties.get("Name") ?? geometry.name).replace(/^Geometry::/, ""),
-        primitiveTypes: faces.some((face) => face.indices.length > 3)
-          ? AiPrimitiveType.POLYGON
-          : AiPrimitiveType.TRIANGLE,
+        primitiveTypes: faces.some((face) => face.indices.length > 3) ? AiPrimitiveType.POLYGON : AiPrimitiveType.TRIANGLE,
         vertices,
         normals: normalNumbers.reduce<Array<{ x: number; y: number; z: number }>>((acc, value, index, all) => {
           if (index % 3 === 0) {
@@ -867,9 +831,7 @@ export class FBXConverter {
         .getChildObjects(model.id)
         .filter((entry) => entry.kind === "Mesh")
         .map((entry) => entry.id);
-      const meshIndices = linkedGeometryIds
-        .map((geometryId) => geometryIndexMap.get(geometryId))
-        .filter((entry): entry is number => entry !== undefined);
+      const meshIndices = linkedGeometryIds.map((geometryId) => geometryIndexMap.get(geometryId)).filter((entry): entry is number => entry !== undefined);
       const transformation = composeTransformStack(transformStack);
       const metadata: AiMetadata = {
         "fbx:transformStack": metadataJson(transformStack),
@@ -894,9 +856,7 @@ export class FBXConverter {
       }
       if (linkedGeometryIds.some((geometryId) => (geometryParentCounts.get(geometryId) ?? 0) > 1)) {
         metadata["fbx:instanceOf"] = metadataJson(
-          linkedGeometryIds
-            .filter((geometryId) => (geometryParentCounts.get(geometryId) ?? 0) > 1)
-            .map((geometryId) => geometryId.toString()),
+          linkedGeometryIds.filter((geometryId) => (geometryParentCounts.get(geometryId) ?? 0) > 1).map((geometryId) => geometryId.toString()),
         );
       }
       nodeById.set(model.id, {
@@ -915,9 +875,7 @@ export class FBXConverter {
       if (!node) {
         return;
       }
-      const parentNode = document
-        .getParentObjects(model.id)
-        .find((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
+      const parentNode = document.getParentObjects(model.id).find((entry) => ["Model", "LimbNode", "Null"].includes(entry.kind));
       if (parentNode) {
         const parent = nodeById.get(parentNode.id);
         if (parent) {
@@ -931,14 +889,7 @@ export class FBXConverter {
     const rootNode: AiNode = {
       name: "FBXRoot",
       transformation: applyScale(
-        buildAxisSwapMatrix(
-          coordInfo.upAxis,
-          coordInfo.upSign,
-          coordInfo.frontAxis,
-          coordInfo.frontSign,
-          coordInfo.coordAxis,
-          coordInfo.coordSign,
-        ),
+        buildAxisSwapMatrix(coordInfo.upAxis, coordInfo.upSign, coordInfo.frontAxis, coordInfo.frontSign, coordInfo.coordAxis, coordInfo.coordSign),
         coordInfo.unitScaleFactor / 100,
       ),
       parent: null,
@@ -1010,13 +961,9 @@ export class FBXConverter {
               "fbx:blendShapeChannels": metadataJson(blendShapeChannelsMetadata),
             }
           : {}),
-        ...((animationMetadata.diagnostics.length > 0 || diagnostics.length > 0 || compatDiagnostics.length > 0)
+        ...(animationMetadata.diagnostics.length > 0 || diagnostics.length > 0 || compatDiagnostics.length > 0
           ? {
-              "nexus:compatDiagnostics": metadataJson([
-                ...animationMetadata.diagnostics,
-                ...diagnostics,
-                ...compatDiagnostics,
-              ]),
+              "nexus:compatDiagnostics": metadataJson([...animationMetadata.diagnostics, ...diagnostics, ...compatDiagnostics]),
             }
           : {}),
         ...(constraints.length > 0
@@ -1033,4 +980,3 @@ export class FBXConverter {
     };
   }
 }
-

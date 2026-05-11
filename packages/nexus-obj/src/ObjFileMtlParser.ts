@@ -92,4 +92,3 @@ export class ObjFileMtlParser {
     return materials;
   }
 }
-

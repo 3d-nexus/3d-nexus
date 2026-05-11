@@ -11,7 +11,13 @@ function writeFixedString(writer: BinaryWriter, text: string, length: number): v
   writer.writeString(text, "shift-jis", length);
 }
 
-function createVmdBuffer(options?: { interpolation?: Uint8Array; cameraCount?: number; lightCount?: number; morphCount?: number; ikCount?: number }): ArrayBuffer {
+function createVmdBuffer(options?: {
+  interpolation?: Uint8Array;
+  cameraCount?: number;
+  lightCount?: number;
+  morphCount?: number;
+  ikCount?: number;
+}): ArrayBuffer {
   const writer = new BinaryWriter();
   const interpolation =
     options?.interpolation ??

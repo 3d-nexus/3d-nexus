@@ -31,8 +31,16 @@ function createScene(): AiScene {
         tangents: [],
         bitangents: [],
         textureCoords: [
-          [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }],
-          [{ x: 0.1, y: 0.1, z: 0 }, { x: 0.9, y: 0.1, z: 0 }, { x: 0.1, y: 0.9, z: 0 }],
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 1, y: 0, z: 0 },
+            { x: 0, y: 1, z: 0 },
+          ],
+          [
+            { x: 0.1, y: 0.1, z: 0 },
+            { x: 0.9, y: 0.1, z: 0 },
+            { x: 0.1, y: 0.9, z: 0 },
+          ],
           null,
           null,
           null,
@@ -85,11 +93,6 @@ describe("FBX material and texture pipeline", () => {
     expect(scene.meshes[0]?.textureCoords[1]?.length).toBe(3);
     expect(scene.textures.length).toBeGreaterThan(0);
     expect(material.properties.some((property) => property.key === "$clr.diffuse")).toBe(true);
-    expect(
-      material.properties.some(
-        (property) => property.key === "$tex.file" && property.semantic === AiTextureType.NORMALS,
-      ),
-    ).toBe(true);
+    expect(material.properties.some((property) => property.key === "$tex.file" && property.semantic === AiTextureType.NORMALS)).toBe(true);
   });
 });
-

@@ -2,34 +2,19 @@ import type { AiMatrix4x4, AiVector3D } from "../types/math";
 
 export function createIdentityMatrix4x4(): AiMatrix4x4 {
   return {
-    data: new Float32Array([
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]),
+    data: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]),
   };
 }
 
 export function createTranslationMatrix4x4(x: number, y: number, z: number): AiMatrix4x4 {
   return {
-    data: new Float32Array([
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      x, y, z, 1,
-    ]),
+    data: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]),
   };
 }
 
 export function createScalingMatrix4x4(x: number, y: number, z: number): AiMatrix4x4 {
   return {
-    data: new Float32Array([
-      x, 0, 0, 0,
-      0, y, 0, 0,
-      0, 0, z, 0,
-      0, 0, 0, 1,
-    ]),
+    data: new Float32Array([x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1]),
   };
 }
 
@@ -37,12 +22,7 @@ export function createRotationXMatrix4x4(radians: number): AiMatrix4x4 {
   const c = Math.cos(radians);
   const s = Math.sin(radians);
   return {
-    data: new Float32Array([
-      1, 0, 0, 0,
-      0, c, s, 0,
-      0, -s, c, 0,
-      0, 0, 0, 1,
-    ]),
+    data: new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]),
   };
 }
 
@@ -50,12 +30,7 @@ export function createRotationYMatrix4x4(radians: number): AiMatrix4x4 {
   const c = Math.cos(radians);
   const s = Math.sin(radians);
   return {
-    data: new Float32Array([
-      c, 0, -s, 0,
-      0, 1, 0, 0,
-      s, 0, c, 0,
-      0, 0, 0, 1,
-    ]),
+    data: new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]),
   };
 }
 
@@ -63,21 +38,11 @@ export function createRotationZMatrix4x4(radians: number): AiMatrix4x4 {
   const c = Math.cos(radians);
   const s = Math.sin(radians);
   return {
-    data: new Float32Array([
-      c, s, 0, 0,
-      -s, c, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]),
+    data: new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]),
   };
 }
 
-export function createEulerRotationMatrix4x4(
-  xDegrees: number,
-  yDegrees: number,
-  zDegrees: number,
-  order = "XYZ",
-): AiMatrix4x4 {
+export function createEulerRotationMatrix4x4(xDegrees: number, yDegrees: number, zDegrees: number, order = "XYZ"): AiMatrix4x4 {
   const radians = {
     X: (xDegrees * Math.PI) / 180,
     Y: (yDegrees * Math.PI) / 180,
@@ -114,10 +79,22 @@ export function invertMatrix4x4(matrix: AiMatrix4x4): AiMatrix4x4 {
   const m = matrix.data;
   const out = new Float32Array(16);
 
-  const a00 = m[0]!, a01 = m[1]!, a02 = m[2]!, a03 = m[3]!;
-  const a10 = m[4]!, a11 = m[5]!, a12 = m[6]!, a13 = m[7]!;
-  const a20 = m[8]!, a21 = m[9]!, a22 = m[10]!, a23 = m[11]!;
-  const a30 = m[12]!, a31 = m[13]!, a32 = m[14]!, a33 = m[15]!;
+  const a00 = m[0]!,
+    a01 = m[1]!,
+    a02 = m[2]!,
+    a03 = m[3]!;
+  const a10 = m[4]!,
+    a11 = m[5]!,
+    a12 = m[6]!,
+    a13 = m[7]!;
+  const a20 = m[8]!,
+    a21 = m[9]!,
+    a22 = m[10]!,
+    a23 = m[11]!;
+  const a30 = m[12]!,
+    a31 = m[13]!,
+    a32 = m[14]!,
+    a33 = m[15]!;
 
   const b00 = a00 * a11 - a01 * a10;
   const b01 = a00 * a12 - a02 * a10;
@@ -132,8 +109,7 @@ export function invertMatrix4x4(matrix: AiMatrix4x4): AiMatrix4x4 {
   const b10 = a21 * a33 - a23 * a31;
   const b11 = a22 * a33 - a23 * a32;
 
-  const determinant =
-    b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+  const determinant = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 
   if (!determinant) {
     return createIdentityMatrix4x4();
@@ -185,9 +161,5 @@ export function normalizeVector3(vector: AiVector3D): AiVector3D {
 
 export function determinant3x3FromMatrix4x4(matrix: AiMatrix4x4): number {
   const m = matrix.data;
-  return (
-    m[0]! * (m[5]! * m[10]! - m[6]! * m[9]!) -
-    m[4]! * (m[1]! * m[10]! - m[2]! * m[9]!) +
-    m[8]! * (m[1]! * m[6]! - m[2]! * m[5]!)
-  );
+  return m[0]! * (m[5]! * m[10]! - m[6]! * m[9]!) - m[4]! * (m[1]! * m[10]! - m[2]! * m[9]!) + m[8]! * (m[1]! * m[6]! - m[2]! * m[5]!);
 }

@@ -48,4 +48,3 @@ export class PropertyTable {
     return this.values.get(name);
   }
 }
-

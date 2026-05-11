@@ -37,4 +37,3 @@ export class GenerateNormalsStep implements PostProcessStep {
     };
   }
 }
-

@@ -1,13 +1,4 @@
-export const COMPATIBILITY_PROFILES = [
-  "mmd",
-  "blender-fbx",
-  "maya-fbx",
-  "3dsmax-fbx",
-  "motionbuilder-fbx",
-  "unity",
-  "unreal",
-  "bvh",
-] as const;
+export const COMPATIBILITY_PROFILES = ["mmd", "blender-fbx", "maya-fbx", "3dsmax-fbx", "motionbuilder-fbx", "unity", "unreal", "bvh"] as const;
 
 export type CompatibilityProfileName = (typeof COMPATIBILITY_PROFILES)[number];
 
@@ -92,10 +83,7 @@ export function createCompatibilityDiagnostic(
   };
 }
 
-export function determineCompatibilityOutcome(
-  difference: number,
-  tolerance: CompatibilityTolerance = {},
-): CompatibilityOutcome {
+export function determineCompatibilityOutcome(difference: number, tolerance: CompatibilityTolerance = {}): CompatibilityOutcome {
   const exactAbsolute = tolerance.exactAbsolute ?? 1e-6;
   const normalizedAbsolute = tolerance.normalizedAbsolute ?? 1e-3;
   const degradedAbsolute = tolerance.degradedAbsolute ?? 1e-2;

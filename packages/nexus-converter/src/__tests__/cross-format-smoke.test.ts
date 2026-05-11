@@ -54,4 +54,3 @@ describe("ModelConverter cross-format smoke", () => {
     expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.outcome).toBe("normalized");
   });
 });
-

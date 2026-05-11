@@ -89,15 +89,24 @@ function serializeInterpolation(positionKey: AiVectorKey, rotationKey: AiQuatKey
 
 function coerceByteArray(value: CameraFrame["interpolation"], size: number): Uint8Array {
   if (value instanceof Uint8Array) {
-    return value.length === size ? value : Uint8Array.from(Array.from(value).slice(0, size).concat(Array(Math.max(0, size - value.length)).fill(0)));
+    return value.length === size
+      ? value
+      : Uint8Array.from(
+          Array.from(value)
+            .slice(0, size)
+            .concat(Array(Math.max(0, size - value.length)).fill(0)),
+        );
   }
   if (Array.isArray(value)) {
-    return Uint8Array.from(value.map((entry) => Number(entry ?? 0)).slice(0, size).concat(Array(Math.max(0, size - value.length)).fill(0)));
+    return Uint8Array.from(
+      value
+        .map((entry) => Number(entry ?? 0))
+        .slice(0, size)
+        .concat(Array(Math.max(0, size - value.length)).fill(0)),
+    );
   }
   if (value && typeof value === "object") {
-    return Uint8Array.from(
-      Array.from({ length: size }, (_, index) => Number((value as Record<string, number>)[index] ?? 0)),
-    );
+    return Uint8Array.from(Array.from({ length: size }, (_, index) => Number((value as Record<string, number>)[index] ?? 0)));
   }
   return new Uint8Array(size);
 }
@@ -183,4 +192,3 @@ export class MMDVmdExporter {
     return writer.toArrayBuffer();
   }
 }
-

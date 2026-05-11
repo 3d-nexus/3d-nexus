@@ -7,11 +7,8 @@ export class FlipUVsStep implements PostProcessStep {
       ...scene,
       meshes: scene.meshes.map((mesh) => ({
         ...mesh,
-        textureCoords: mesh.textureCoords.map((channel) =>
-          channel?.map((uv) => ({ ...uv, y: 1 - uv.y })) ?? null,
-        ),
+        textureCoords: mesh.textureCoords.map((channel) => channel?.map((uv) => ({ ...uv, y: 1 - uv.y })) ?? null),
       })),
     };
   }
 }
-

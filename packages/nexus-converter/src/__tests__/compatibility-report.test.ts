@@ -43,7 +43,20 @@ function createBaseScene(): AiScene {
         ],
         tangents: [],
         bitangents: [],
-        textureCoords: [[{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], null, null, null, null, null, null, null],
+        textureCoords: [
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 1, y: 0, z: 0 },
+            { x: 0, y: 1, z: 0 },
+          ],
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
         colors: Array.from({ length: 8 }, () => null),
         faces: [{ indices: [0, 1, 2] }],
         bones: [],
@@ -76,7 +89,16 @@ describe("converter compatibility reports", () => {
     };
     scene.metadata["mmd:morphCatalog"] = {
       type: AiMetadataType.AISTRING,
-      data: JSON.stringify([{ name: "Impulse", englishName: "Impulse", panel: 4, type: 10, order: 0, offsets: [{ rigidBodyIndex: 0, localFlag: 1, velocity: [1, 2, 3], torque: [4, 5, 6] }] }]),
+      data: JSON.stringify([
+        {
+          name: "Impulse",
+          englishName: "Impulse",
+          panel: 4,
+          type: 10,
+          order: 0,
+          offsets: [{ rigidBodyIndex: 0, localFlag: 1, velocity: [1, 2, 3], torque: [4, 5, 6] }],
+        },
+      ]),
     };
     scene.metadata["mmd:softBodies"] = {
       type: AiMetadataType.AISTRING,
@@ -116,7 +138,9 @@ describe("converter compatibility reports", () => {
     };
     scene.metadata["mmd:cameraFrames"] = {
       type: AiMetadataType.AISTRING,
-      data: JSON.stringify([{ frame: 10, originalFrame: 10, distance: 30, position: [0, 1, 2], rotation: [0, 0, 0], interpolation: Array(24).fill(0), fov: 45, perspective: 0 }]),
+      data: JSON.stringify([
+        { frame: 10, originalFrame: 10, distance: 30, position: [0, 1, 2], rotation: [0, 0, 0], interpolation: Array(24).fill(0), fov: 45, perspective: 0 },
+      ]),
     };
 
     const input = new MMDExporter().write(scene, { format: "vmd" });
@@ -212,4 +236,3 @@ describe("converter compatibility reports", () => {
     expect(result.report?.checks.find((entry) => entry.capability === "bvh-animation-fidelity")?.diagnostics[0]?.code).toBe("BVH_FRAME_DRIFT");
   });
 });
-

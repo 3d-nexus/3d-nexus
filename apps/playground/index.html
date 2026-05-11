@@ -24,8 +24,7 @@
         font-family: Georgia, "Times New Roman", serif;
         color: var(--ink);
         background:
-          radial-gradient(circle at top left, #fff7df, transparent 35%),
-          radial-gradient(circle at bottom right, #d8e3d2, transparent 25%),
+          radial-gradient(circle at top left, #fff7df, transparent 35%), radial-gradient(circle at bottom right, #d8e3d2, transparent 25%),
           linear-gradient(135deg, #efe6d7, #dde7df);
       }
 
@@ -65,13 +64,13 @@
         padding: 40px 24px;
         border: 2px dashed rgba(192, 82, 29, 0.4);
         border-radius: 20px;
-        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(243,209,188,0.45));
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(243, 209, 188, 0.45));
         text-align: center;
       }
 
       .dropzone.dragover {
         border-color: var(--accent);
-        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(192,82,29,0.12));
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(192, 82, 29, 0.12));
       }
 
       .controls {
@@ -123,14 +122,16 @@
         border-radius: 16px;
         background: rgba(31, 42, 55, 0.92);
         color: #f8fafc;
-        font: 0.9rem/1.5 "Courier New", monospace;
+        font:
+          0.9rem/1.5 "Courier New",
+          monospace;
         white-space: pre-wrap;
       }
 
       .stat {
         border-radius: 16px;
         padding: 16px;
-        background: rgba(255,255,255,0.75);
+        background: rgba(255, 255, 255, 0.75);
         border: 1px solid var(--border);
       }
 

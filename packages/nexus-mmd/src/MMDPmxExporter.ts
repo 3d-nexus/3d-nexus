@@ -154,12 +154,7 @@ function collectTexturePaths(scene: AiScene): string[] {
   return textures;
 }
 
-function writeMaterialBlock(
-  writer: BinaryWriter,
-  material: AiMaterial | undefined,
-  faceVertexCount: number,
-  textureIndexLookup: Map<string, number>,
-): void {
+function writeMaterialBlock(writer: BinaryWriter, material: AiMaterial | undefined, faceVertexCount: number, textureIndexLookup: Map<string, number>): void {
   const name = material?.name ?? "Material";
   const englishName = String(material?.metadata?.englishName ?? name);
   const diffuse = getColor4(material, "$clr.diffuse", [1, 1, 1, 1]);
@@ -198,11 +193,7 @@ function writeMaterialBlock(
   writer.writeInt32(faceVertexCount);
 }
 
-function writeBoneBlock(
-  writer: BinaryWriter,
-  bone: Record<string, unknown>,
-  settingBoneIndexSize = 4,
-): void {
+function writeBoneBlock(writer: BinaryWriter, bone: Record<string, unknown>, settingBoneIndexSize = 4): void {
   writer.writeString(String(bone.name ?? ""), "utf-8");
   writer.writeString(String(bone.englishName ?? bone.name ?? ""), "utf-8");
   ((bone.position as number[] | undefined) ?? [0, 0, 0]).forEach((value) => writer.writeFloat32(Number(value ?? 0)));
@@ -318,10 +309,10 @@ function writeMorphs(writer: BinaryWriter, scene: AiScene, mesh: AiMesh, baseVer
     const offsets =
       morph.textureCoords[channelIndex]
         ?.map((uv, index) => ({
-            vertexIndex: index,
-            uv,
-          }))
-        .filter((entry) => entry.uv && (Math.abs(entry.uv.x) + Math.abs(entry.uv.y) + Math.abs(entry.uv.z)) > 1e-6) ?? [];
+          vertexIndex: index,
+          uv,
+        }))
+        .filter((entry) => entry.uv && Math.abs(entry.uv.x) + Math.abs(entry.uv.y) + Math.abs(entry.uv.z) > 1e-6) ?? [];
     writeNamedMorphHeader(name, englishName, panel, type, offsets.length);
     offsets.forEach((entry) => {
       writer.writeUint32(entry.vertexIndex);
@@ -647,9 +638,7 @@ export class MMDPmxExporter {
       });
     });
 
-    const indices = meshes.flatMap((mesh, meshIndex) =>
-      mesh.faces.flatMap((face) => face.indices.map((index) => index + vertexOffsets[meshIndex]!)),
-    );
+    const indices = meshes.flatMap((mesh, meshIndex) => mesh.faces.flatMap((face) => face.indices.map((index) => index + vertexOffsets[meshIndex]!)));
     writer.writeUint32(indices.length);
     indices.forEach((index) => writer.writeUint32(index));
     writer.writeUint32(textures.length);
@@ -689,4 +678,3 @@ export class MMDPmxExporter {
     return writer.toArrayBuffer();
   }
 }
-

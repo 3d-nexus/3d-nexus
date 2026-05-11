@@ -28,9 +28,7 @@ function createMorphScene(): AiScene {
     z: 0,
   }));
   const baseUv = vertices.map(() => ({ x: 0, y: 0, z: 0 }));
-  const vertexMorphVertices = vertices.map((vertex, index) =>
-    index === 42 ? { x: vertex.x, y: vertex.y + 1.5, z: vertex.z } : { ...vertex },
-  );
+  const vertexMorphVertices = vertices.map((vertex, index) => (index === 42 ? { x: vertex.x, y: vertex.y + 1.5, z: vertex.z } : { ...vertex }));
   const uvMorphOffsets = vertices.map((_, index) => (index === 42 ? { x: 0.25, y: -0.5, z: 0 } : { x: 0, y: 0, z: 0 }));
 
   return {
@@ -154,4 +152,3 @@ describe("PMX morph pipeline", () => {
     expect(totalMorphCount(reparsed.scene)).toBe(5);
   });
 });
-

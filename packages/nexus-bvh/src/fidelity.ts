@@ -51,4 +51,3 @@ export function analyzeBvhFrameDrift(scene: AiScene): BvhFrameDriftSummary {
     ],
   };
 }
-

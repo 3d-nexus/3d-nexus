@@ -58,4 +58,3 @@ export class FBXImporter implements BaseImporter {
     return { scene: this.converter.convert(document), warnings: [] };
   }
 }
-

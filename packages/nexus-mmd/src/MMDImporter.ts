@@ -126,12 +126,7 @@ function extractWeights(
       if (!entry || typeof entry !== "object") {
         return;
       }
-      pushWeight(
-        acc,
-        vertexId,
-        Number((entry as { boneIndex?: number }).boneIndex ?? -1),
-        Number((entry as { weight?: number }).weight ?? 0),
-      );
+      pushWeight(acc, vertexId, Number((entry as { boneIndex?: number }).boneIndex ?? -1), Number((entry as { weight?: number }).weight ?? 0));
     });
   }
 }
@@ -182,10 +177,7 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
       const overrides = new Map<number, number[]>();
       morph.offsets.forEach((offset) => {
         if (offset && typeof offset === "object" && "vertexIndex" in offset) {
-          overrides.set(
-            Number((offset as { vertexIndex: number }).vertexIndex),
-            ((offset as { position?: number[] }).position ?? [0, 0, 0]).map(Number),
-          );
+          overrides.set(Number((offset as { vertexIndex: number }).vertexIndex), ((offset as { position?: number[] }).position ?? [0, 0, 0]).map(Number));
         }
       });
       return [
@@ -193,9 +185,7 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
           name: morph.englishName || morph.name,
           vertices: baseMesh.vertices.map((vertex, index) => {
             const delta = overrides.get(index);
-            return delta
-              ? { x: vertex.x + delta[0]!, y: vertex.y + delta[1]!, z: vertex.z + delta[2]! }
-              : { ...vertex };
+            return delta ? { x: vertex.x + delta[0]!, y: vertex.y + delta[1]!, z: vertex.z + delta[2]! } : { ...vertex };
           }),
           normals: [...baseMesh.normals],
           tangents: [],
@@ -211,10 +201,7 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
       const overrides = new Map<number, number[]>();
       morph.offsets.forEach((offset) => {
         if (offset && typeof offset === "object" && "vertexIndex" in offset) {
-          overrides.set(
-            Number((offset as { vertexIndex: number }).vertexIndex),
-            ((offset as { uv?: number[] }).uv ?? [0, 0, 0, 0]).map(Number),
-          );
+          overrides.set(Number((offset as { vertexIndex: number }).vertexIndex), ((offset as { uv?: number[] }).uv ?? [0, 0, 0, 0]).map(Number));
         }
       });
       return [
@@ -231,7 +218,7 @@ function buildMorphTargets(document: PmxDocument, baseMesh: AiMesh): AiMesh["mor
                   const delta = overrides.get(index) ?? [0, 0, 0, 0];
                   return { x: delta[0] ?? 0, y: delta[1] ?? 0, z: delta[2] ?? 0 };
                 })
-              : channel?.map((value) => ({ ...value })) ?? null,
+              : (channel?.map((value) => ({ ...value })) ?? null),
           ),
           weight: 0,
         },
@@ -320,16 +307,7 @@ function sceneFromPmx(document: PmxDocument): ImportResult {
     })),
     tangents: [],
     bitangents: [],
-    textureCoords: [
-      document.vertices.map((vertex) => ({ x: vertex.uv[0], y: vertex.uv[1], z: 0 })),
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-    ],
+    textureCoords: [document.vertices.map((vertex) => ({ x: vertex.uv[0], y: vertex.uv[1], z: 0 })), null, null, null, null, null, null, null],
     colors: Array.from({ length: 8 }, () => null),
     faces: Array.from({ length: document.indices.length / 3 }, (_, index) => ({
       indices: document.indices.slice(index * 3, index * 3 + 3),
@@ -674,4 +652,3 @@ export class MMDImporter implements BaseImporter {
     return { scene, warnings };
   }
 }
-

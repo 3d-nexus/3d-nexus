@@ -14,4 +14,3 @@ export class MMDExporter implements BaseExporter {
     return settings?.format === "vmd" ? this.vmdExporter.write(scene) : this.pmxExporter.write(scene);
   }
 }
-

@@ -30,7 +30,20 @@ function createScene(): AiScene {
         ],
         tangents: [],
         bitangents: [],
-        textureCoords: [[{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], null, null, null, null, null, null, null],
+        textureCoords: [
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 1, y: 0, z: 0 },
+            { x: 0, y: 1, z: 0 },
+          ],
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
         colors: Array.from({ length: 8 }, () => null),
         faces: [{ indices: [0, 1, 2] }],
         bones: [],
@@ -53,7 +66,20 @@ function createScene(): AiScene {
         ],
         tangents: [],
         bitangents: [],
-        textureCoords: [[{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], null, null, null, null, null, null, null],
+        textureCoords: [
+          [
+            { x: 0, y: 0, z: 0 },
+            { x: 1, y: 0, z: 0 },
+            { x: 0, y: 1, z: 0 },
+          ],
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
         colors: Array.from({ length: 8 }, () => null),
         faces: [{ indices: [0, 1, 2] }],
         bones: [],
@@ -100,4 +126,3 @@ describe("PMX multi-mesh export", () => {
     expect(document.textures).toEqual(["shared.png"]);
   });
 });
-

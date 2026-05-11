@@ -35,9 +35,7 @@ function readChannels(node: AiNode, isRoot: boolean): string[] {
   if (metadataChannels && metadataChannels.length > 0) {
     return metadataChannels.map(String);
   }
-  return isRoot
-    ? ["Xposition", "Yposition", "Zposition", ...rotationChannelsFromOrder(null)]
-    : rotationChannelsFromOrder(null);
+  return isRoot ? ["Xposition", "Yposition", "Zposition", ...rotationChannelsFromOrder(null)] : rotationChannelsFromOrder(null);
 }
 
 function readOffset(node: AiNode): [number, number, number] {
@@ -55,12 +53,7 @@ function renderJoint(node: AiNode, depth: number, isRoot = false): string[] {
   const offset = readOffset(node);
 
   if (type === "EndSite") {
-    return [
-      `${indent}End Site`,
-      `${indent}{`,
-      `${indent}  OFFSET ${offset[0]} ${offset[1]} ${offset[2]}`,
-      `${indent}}`,
-    ];
+    return [`${indent}End Site`, `${indent}{`, `${indent}  OFFSET ${offset[0]} ${offset[1]} ${offset[2]}`, `${indent}}`];
   }
 
   const channels = readChannels(node, isRoot);
@@ -92,7 +85,11 @@ function renderJoint(node: AiNode, depth: number, isRoot = false): string[] {
   return lines;
 }
 
-function collectHierarchyNodes(node: AiNode, isRoot = false, output: Array<{ node: AiNode; channels: string[] }> = []): Array<{ node: AiNode; channels: string[] }> {
+function collectHierarchyNodes(
+  node: AiNode,
+  isRoot = false,
+  output: Array<{ node: AiNode; channels: string[] }> = [],
+): Array<{ node: AiNode; channels: string[] }> {
   const type = readNodeType(node, isRoot);
   if (type !== "EndSite") {
     output.push({ node, channels: readChannels(node, isRoot) });
@@ -122,12 +119,10 @@ function buildMotionValues(scene: AiScene, skeletonRoot: AiNode): number[][] {
 
   const animation = scene.animations[0];
   const frameCountRaw = scene.metadata["bvh:frameCount"]?.data;
-  const frameCount = typeof frameCountRaw === "string"
-    ? Number(frameCountRaw)
-    : Math.max(
-        1,
-        ...((animation?.channels ?? []).flatMap((channel) => channel.positionKeys.map((key) => key.time + 1))),
-      );
+  const frameCount =
+    typeof frameCountRaw === "string"
+      ? Number(frameCountRaw)
+      : Math.max(1, ...(animation?.channels ?? []).flatMap((channel) => channel.positionKeys.map((key) => key.time + 1)));
   const nodes = collectHierarchyNodes(skeletonRoot, true);
   const frames: number[][] = [];
 
@@ -178,4 +173,3 @@ export class BVHExporter implements BaseExporter {
     return new TextEncoder().encode(text).buffer;
   }
 }
-

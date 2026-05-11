@@ -69,9 +69,7 @@ export class ObjFileParser {
     currentObject.groups.push(currentGroup);
 
     const ensureGroup = (name: string, materialName: string | null): ObjGroup => {
-      const existing = currentObject.groups.find(
-        (group) => group.name === name && group.materialName === materialName,
-      );
+      const existing = currentObject.groups.find((group) => group.name === name && group.materialName === materialName);
       if (existing) {
         return existing;
       }
@@ -140,4 +138,3 @@ export class ObjFileParser {
     return model;
   }
 }
-

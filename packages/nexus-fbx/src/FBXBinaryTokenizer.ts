@@ -36,10 +36,6 @@ export class FBXBinaryTokenizer {
     const payload = new Uint8Array(readArrayBufferSlice(buffer, offset, offset + compressedLength));
     const value = encoding === 1 ? new Uint8Array(inflateSync(payload)) : payload;
 
-    return [
-      { type: "NodeBegin", name: "BinaryFBX", properties: [version, recordOffset] },
-      { type: "Data", name: "Array", value },
-      { type: "NodeEnd" },
-    ];
+    return [{ type: "NodeBegin", name: "BinaryFBX", properties: [version, recordOffset] }, { type: "Data", name: "Array", value }, { type: "NodeEnd" }];
   }
 }

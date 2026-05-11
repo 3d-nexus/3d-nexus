@@ -19,12 +19,7 @@ function expectMatrixCloseTo(actual: Float32Array, expected: number[]): void {
 
 describe("math utilities", () => {
   it("creates identity, translation, and scaling transforms", () => {
-    expectMatrixCloseTo(createIdentityMatrix4x4().data, [
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]);
+    expectMatrixCloseTo(createIdentityMatrix4x4().data, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
     expect(transformVector3(createTranslationMatrix4x4(2, 3, 4), { x: 1, y: 1, z: 1 })).toEqual({
       x: 3,
@@ -48,12 +43,7 @@ describe("math utilities", () => {
       y: 1,
       z: 7,
     });
-    expectMatrixCloseTo(identity.data, [
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]);
+    expectMatrixCloseTo(identity.data, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
 
   it("normalizes vectors and computes upper-left 3x3 determinants", () => {

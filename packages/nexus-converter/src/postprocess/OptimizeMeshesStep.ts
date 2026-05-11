@@ -35,4 +35,3 @@ export class OptimizeMeshesStep implements PostProcessStep {
     };
   }
 }
-

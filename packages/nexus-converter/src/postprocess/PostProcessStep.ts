@@ -3,4 +3,3 @@
 export interface PostProcessStep {
   process(scene: AiScene): AiScene;
 }
-

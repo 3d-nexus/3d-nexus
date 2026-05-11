@@ -2,10 +2,7 @@ import { builtinModules } from "node:module";
 import { defineConfig, type UserConfig } from "vite";
 import dts from "vite-plugin-dts";
 
-const BUILTIN_EXTERNALS = new Set([
-  ...builtinModules,
-  ...builtinModules.map((moduleName: string) => `node:${moduleName}`),
-]);
+const BUILTIN_EXTERNALS = new Set([...builtinModules, ...builtinModules.map((moduleName: string) => `node:${moduleName}`)]);
 
 export interface PackageBuildOptions {
   entry: string;

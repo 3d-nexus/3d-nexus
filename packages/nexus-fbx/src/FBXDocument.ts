@@ -55,21 +55,16 @@ export class FbxCluster {
   readonly linkMode: string;
   readonly linkedModel: FbxModel | null;
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     this.indexes = Int32Array.from(parseNumberArray(object.element.values.Indexes?.[0] ?? []));
     this.weights = Float64Array.from(parseNumberArray(object.element.values.Weights?.[0] ?? []));
     const transformValues = parseNumberArray(object.element.values.TransformMatrix?.[0] ?? []);
-    this.transformMatrix = Float64Array.from(
-      transformValues.length === 16
-        ? transformValues
-        : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-    );
+    this.transformMatrix = Float64Array.from(transformValues.length === 16 ? transformValues : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
     const transformLinkValues = parseNumberArray(object.element.values.TransformLinkMatrix?.[0] ?? []);
-    this.transformLinkMatrix = Float64Array.from(
-      transformLinkValues.length === 16
-        ? transformLinkValues
-        : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-    );
+    this.transformLinkMatrix = Float64Array.from(transformLinkValues.length === 16 ? transformLinkValues : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
     this.linkMode = String(object.element.values.LinkMode?.[0] ?? "TotalOne");
     const modelObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Model");
     this.linkedModel = modelObject ? new FbxModel(modelObject) : null;
@@ -89,7 +84,10 @@ export class FbxSkin {
   readonly skinningType: string;
   readonly deformAccuracy: number;
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     this.clusters = document
       .getChildObjects(object.id)
       .filter((entry) => entry.kind === "Cluster")
@@ -110,7 +108,10 @@ export class FbxBlendShapeChannel {
   readonly deformPercent: number;
   readonly fullWeights: number[];
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     const shapeObject = document.getChildObjects(object.id).find((entry) => entry.kind === "Shape");
     this.shapeIndexes = Int32Array.from(parseNumberArray(shapeObject?.element.values.Indexes?.[0] ?? []));
     this.shapeVertices = Float64Array.from(parseNumberArray(shapeObject?.element.values.Vertices?.[0] ?? []));
@@ -127,7 +128,10 @@ export class FbxBlendShapeChannel {
 export class FbxBlendShape {
   readonly channels: FbxBlendShapeChannel[];
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     this.channels = document
       .getChildObjects(object.id)
       .filter((entry) => entry.kind === "BlendShapeChannel")
@@ -153,7 +157,10 @@ export class FbxAnimationCurveNode {
   readonly curves: FbxAnimationCurve[];
   readonly linkedModel: FbxModel | null;
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     this.curves = document
       .getChildObjects(object.id)
       .filter((entry) => entry.kind === "AnimationCurve")
@@ -170,7 +177,10 @@ export class FbxAnimationCurveNode {
 export class FbxAnimationLayer {
   readonly curveNodes: FbxAnimationCurveNode[];
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     this.curveNodes = document
       .getChildObjects(object.id)
       .filter((entry) => entry.kind === "AnimationCurveNode")
@@ -185,7 +195,10 @@ export class FbxAnimationLayer {
 export class FbxAnimationStack {
   readonly layers: FbxAnimationLayer[];
 
-  constructor(document: FbxDocument, private readonly object: LazyFbxObject) {
+  constructor(
+    document: FbxDocument,
+    private readonly object: LazyFbxObject,
+  ) {
     this.layers = document
       .getChildObjects(object.id)
       .filter((entry) => entry.kind === "AnimationLayer")
@@ -242,15 +255,11 @@ export class FbxDocument {
   }
 
   getChildObjects(parentId: bigint): LazyFbxObject[] {
-    return (this.connections.parentToChildren.get(parentId) ?? [])
-      .map((id) => this.objects.get(id))
-      .filter((entry): entry is LazyFbxObject => Boolean(entry));
+    return (this.connections.parentToChildren.get(parentId) ?? []).map((id) => this.objects.get(id)).filter((entry): entry is LazyFbxObject => Boolean(entry));
   }
 
   getParentObjects(childId: bigint): LazyFbxObject[] {
-    return (this.connections.childToParents.get(childId) ?? [])
-      .map((id) => this.objects.get(id))
-      .filter((entry): entry is LazyFbxObject => Boolean(entry));
+    return (this.connections.childToParents.get(childId) ?? []).map((id) => this.objects.get(id)).filter((entry): entry is LazyFbxObject => Boolean(entry));
   }
 
   getChildConnections(parentId: bigint): FbxConnection[] {

@@ -1,11 +1,5 @@
 ﻿import { isCompatibilityProfileName, type CompatibilityProfileName, type ImportResult } from "@3d-nexus/core";
-import {
-  ModelConverter,
-  IMPORTER_REGISTRY,
-  ModelFormat,
-  renderCompatibilityReportMarkdown,
-  type ModelFormat as ModelFormatValue,
-} from "@3d-nexus/converter";
+import { ModelConverter, IMPORTER_REGISTRY, ModelFormat, renderCompatibilityReportMarkdown, type ModelFormat as ModelFormatValue } from "@3d-nexus/converter";
 import { createUi } from "./ui";
 
 const ui = createUi();
@@ -89,10 +83,7 @@ async function convertCurrentFile(): Promise<void> {
   const result = converter.convertWithReport(buffer, currentFormat, target, {
     compatibilityProfile,
   });
-  ui.setDownload(
-    `${currentFile.name.replace(/\.[^.]+$/, "")}.${target}`,
-    new Blob([result.output], { type: "application/octet-stream" }),
-  );
+  ui.setDownload(`${currentFile.name.replace(/\.[^.]+$/, "")}.${target}`, new Blob([result.output], { type: "application/octet-stream" }));
   ui.setCompatibilityReport(result.report ? renderCompatibilityReportMarkdown(result.report) : null);
   ui.setStatus(`Converted ${currentFile.name} -> ${target.toUpperCase()}.`);
 }
@@ -134,4 +125,3 @@ dropzone.addEventListener("drop", (event) => {
 
 ui.setWarnings([]);
 ui.setCompatibilityReport(null);
-

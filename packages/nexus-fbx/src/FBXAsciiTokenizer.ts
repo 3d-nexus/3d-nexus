@@ -6,7 +6,7 @@ function splitArguments(text: string): Array<string | number | boolean | bigint>
     .map((part) => part.trim())
     .filter(Boolean)
     .map((part) => {
-      if (part.startsWith("\"") && part.endsWith("\"")) {
+      if (part.startsWith('"') && part.endsWith('"')) {
         return part.slice(1, -1).replace(/\\n/g, "\n").replace(/\\t/g, "\t").replace(/\\\\/g, "\\");
       }
       if (part === "Y" || part === "true") return true;

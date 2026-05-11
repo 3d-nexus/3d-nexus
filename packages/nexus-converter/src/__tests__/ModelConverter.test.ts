@@ -24,9 +24,7 @@ describe("ModelConverter", () => {
   it("triangulates quads during conversion", () => {
     const converter = new ModelConverter();
     const obj = readFixture("cube.obj");
-    const triangulated = new TextDecoder().decode(
-      converter.convert(obj, "obj", "obj", { postProcess: [new TriangulateStep()] }),
-    );
+    const triangulated = new TextDecoder().decode(converter.convert(obj, "obj", "obj", { postProcess: [new TriangulateStep()] }));
 
     expect(triangulated.match(/^f /gm)?.length).toBeGreaterThan(2);
   });
