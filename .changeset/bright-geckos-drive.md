@@ -4,6 +4,7 @@
 "@3d-nexus/bvh": patch
 "@3d-nexus/mmd": patch
 "@3d-nexus/fbx": patch
+"@3d-nexus/gltf": patch
 "@3d-nexus/converter": patch
 ---
 

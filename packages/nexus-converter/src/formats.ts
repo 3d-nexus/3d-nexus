@@ -1,6 +1,7 @@
-﻿import type { BaseExporter, BaseImporter } from "@3d-nexus/core";
+import type { BaseExporter, BaseImporter } from "@3d-nexus/core";
 import { BVHExporter, BVHImporter } from "@3d-nexus/bvh";
 import { FBXExporter, FBXImporter } from "@3d-nexus/fbx";
+import { GltfExporter, GltfImporter } from "@3d-nexus/gltf";
 import { MMDExporter, MMDImporter } from "@3d-nexus/mmd";
 import { ObjExporter, ObjFileImporter } from "@3d-nexus/obj";
 
@@ -11,6 +12,8 @@ export const ModelFormat = {
   PMD: "pmd",
   VMD: "vmd",
   BVH: "bvh",
+  GLTF: "gltf",
+  GLB: "glb",
 } as const;
 
 export type ModelFormat = (typeof ModelFormat)[keyof typeof ModelFormat];
@@ -22,6 +25,8 @@ export const IMPORTER_REGISTRY: Record<ModelFormat, BaseImporter> = {
   pmd: new MMDImporter(),
   vmd: new MMDImporter(),
   bvh: new BVHImporter(),
+  gltf: new GltfImporter(),
+  glb: new GltfImporter(),
 };
 
 export const EXPORTER_REGISTRY: Record<ModelFormat, BaseExporter> = {
@@ -31,4 +36,6 @@ export const EXPORTER_REGISTRY: Record<ModelFormat, BaseExporter> = {
   pmd: new MMDExporter(),
   vmd: new MMDExporter(),
   bvh: new BVHExporter(),
+  gltf: new GltfExporter(),
+  glb: new GltfExporter(),
 };

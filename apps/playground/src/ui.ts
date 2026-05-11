@@ -4,6 +4,7 @@ export interface UiHandle {
   setStatus(message: string): void;
   setWarnings(warnings: ImportResult["warnings"]): void;
   setStats(result: ImportResult | null): void;
+  setDownloads(files: Array<{ fileName: string; blob: Blob }>): void;
   setDownload(fileName: string, blob: Blob | null): void;
   setCompatibilityReport(markdown: string | null): void;
 }
@@ -39,7 +40,39 @@ export function createUi(): UiHandle {
   const stats = document.querySelector<HTMLDivElement>("#stats")!;
   const download = document.querySelector<HTMLAnchorElement>("#download-link")!;
   const compatibilityReport = document.querySelector<HTMLPreElement>("#compat-report")!;
-  let currentUrl: string | null = null;
+  let currentUrls: string[] = [];
+
+  function clearDownloads(): void {
+    currentUrls.forEach((url) => URL.revokeObjectURL(url));
+    currentUrls = [];
+    download.parentElement?.querySelectorAll<HTMLAnchorElement>('a.download[data-generated="true"]').forEach((link) => link.remove());
+    download.hidden = true;
+    download.removeAttribute("href");
+    download.textContent = "";
+    download.replaceChildren();
+  }
+
+  function setDownloadFiles(files: Array<{ fileName: string; blob: Blob }>): void {
+    clearDownloads();
+    if (files.length === 0) {
+      return;
+    }
+
+    files.forEach(({ fileName, blob }, index) => {
+      const url = URL.createObjectURL(blob);
+      currentUrls.push(url);
+      const link = index === 0 ? download : document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.textContent = `Download ${fileName}`;
+      if (index > 0) {
+        link.className = "download";
+        link.dataset.generated = "true";
+        download.after(link);
+      }
+    });
+    download.hidden = false;
+  }
 
   return {
     setStatus(message) {
@@ -81,22 +114,9 @@ export function createUi(): UiHandle {
         stats.append(card);
       });
     },
+    setDownloads: setDownloadFiles,
     setDownload(fileName, blob) {
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl);
-        currentUrl = null;
-      }
-      if (!blob) {
-        download.hidden = true;
-        download.removeAttribute("href");
-        return;
-      }
-
-      currentUrl = URL.createObjectURL(blob);
-      download.href = currentUrl;
-      download.download = fileName;
-      download.hidden = false;
-      download.textContent = `Download ${fileName}`;
+      setDownloadFiles(blob ? [{ fileName, blob }] : []);
     },
     setCompatibilityReport(markdown) {
       compatibilityReport.textContent = markdown ?? "No report yet.";

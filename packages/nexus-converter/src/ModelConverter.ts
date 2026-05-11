@@ -1,14 +1,24 @@
-﻿import type { ImportResult } from "@3d-nexus/core";
+import type { ExportSettings, ImportResult } from "@3d-nexus/core";
 import { EXPORTER_REGISTRY, IMPORTER_REGISTRY, type ModelFormat } from "./formats";
 import type { ConvertOptions } from "./ConvertOptions";
 import { createSceneCompatibilityReport } from "./compatibility/report";
 
 export class ConversionError extends Error {}
 
+export interface ConversionSidecar {
+  fileName: string;
+  content: ArrayBuffer;
+}
+
 export interface ConversionResult {
   output: ArrayBuffer;
+  sidecars?: ConversionSidecar[];
   report?: ReturnType<typeof createSceneCompatibilityReport>;
   warnings: ImportResult["warnings"];
+}
+
+function hasBinContent(exporter: unknown): exporter is { getBinContent(): ArrayBuffer } {
+  return typeof exporter === "object" && exporter !== null && "getBinContent" in exporter && typeof exporter.getBinContent === "function";
 }
 
 export class ModelConverter {
@@ -36,8 +46,20 @@ export class ModelConverter {
           targetFormat: toFormat,
         })
       : undefined;
+    const exportSettings: ExportSettings = { ...options?.exportSettings, format: toFormat };
+    const output = exporter.write(scene, exportSettings);
+    const sidecars =
+      toFormat === "gltf" && hasBinContent(exporter)
+        ? [
+            {
+              fileName: typeof exportSettings.binFileName === "string" ? exportSettings.binFileName : "scene.bin",
+              content: exporter.getBinContent(),
+            },
+          ]
+        : undefined;
     return {
-      output: exporter.write(scene, { ...options?.exportSettings, format: toFormat }),
+      output,
+      ...(sidecars ? { sidecars } : {}),
       warnings: result.warnings,
       ...(report ? { report } : {}),
     };

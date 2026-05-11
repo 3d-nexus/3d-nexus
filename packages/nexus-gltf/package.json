@@ -1,7 +1,7 @@
 {
-  "name": "@3d-nexus/converter",
+  "name": "@3d-nexus/gltf",
   "version": "0.1.0",
-  "description": "Cross-format 3D conversion and compatibility reporting for 3d-nexus.",
+  "description": "glTF 2.0 and GLB import/export support for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,16 +19,16 @@
   "keywords": [
     "3d",
     "nexus",
-    "converter",
-    "compatibility",
-    "fbx",
-    "mmd"
+    "gltf",
+    "glb",
+    "importer",
+    "exporter"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/3d-nexus/3d-nexus.git",
-    "directory": "packages/nexus-converter"
+    "directory": "packages/nexus-gltf"
   },
   "homepage": "https://github.com/3d-nexus/3d-nexus#readme",
   "bugs": {
@@ -39,12 +39,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@3d-nexus/bvh": "workspace:*",
-    "@3d-nexus/core": "workspace:*",
-    "@3d-nexus/fbx": "workspace:*",
-    "@3d-nexus/gltf": "workspace:*",
-    "@3d-nexus/mmd": "workspace:*",
-    "@3d-nexus/obj": "workspace:*"
+    "@3d-nexus/core": "workspace:*"
   },
   "scripts": {
     "build": "vite build",

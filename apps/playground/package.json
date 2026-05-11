@@ -7,6 +7,7 @@
     "@3d-nexus/converter": "workspace:*",
     "@3d-nexus/core": "workspace:*",
     "@3d-nexus/fbx": "workspace:*",
+    "@3d-nexus/gltf": "workspace:*",
     "@3d-nexus/mmd": "workspace:*",
     "@3d-nexus/obj": "workspace:*"
   },

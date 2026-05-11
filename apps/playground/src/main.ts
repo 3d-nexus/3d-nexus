@@ -14,6 +14,7 @@ const supportedFormats = Object.values(ModelFormat);
 let currentFile: File | null = null;
 let currentFormat: ModelFormatValue | null = null;
 let currentResult: ImportResult | null = null;
+let currentBinBuffer: ArrayBuffer | null = null;
 
 function detectFormat(fileName: string): ModelFormatValue {
   const extension = fileName.split(".").pop()?.toLowerCase();
@@ -57,16 +58,32 @@ function readCompatibilityProfile(): CompatibilityProfileName {
   return profile;
 }
 
-async function loadFile(file: File): Promise<void> {
+function findPrimaryFile(files: FileList | File[]): File | null {
+  return Array.from(files).find((file) => !file.name.toLowerCase().endsWith(".bin")) ?? null;
+}
+
+function findBinFile(files: FileList | File[], modelFile: File): File | null {
+  const allFiles = Array.from(files);
+  const baseName = modelFile.name.replace(/\.[^.]+$/, "").toLowerCase();
+  return allFiles.find((file) => file.name.toLowerCase() === `${baseName}.bin`) ?? allFiles.find((file) => file.name.toLowerCase().endsWith(".bin")) ?? null;
+}
+
+async function loadFiles(files: FileList | File[]): Promise<void> {
+  const file = findPrimaryFile(files);
+  if (!file) {
+    throw new Error("Choose a model file.");
+  }
   currentFile = file;
   currentFormat = detectFormat(file.name);
   syncTargetOptions(currentFormat);
   const buffer = await file.arrayBuffer();
-  currentResult = IMPORTER_REGISTRY[currentFormat].read(buffer, file.name);
+  const binFile = currentFormat === ModelFormat.GLTF ? findBinFile(files, file) : null;
+  currentBinBuffer = binFile ? await binFile.arrayBuffer() : null;
+  currentResult = IMPORTER_REGISTRY[currentFormat].read(buffer, file.name, currentBinBuffer ? { binBuffer: currentBinBuffer } : undefined);
   ui.setStatus(`Loaded ${file.name} as ${currentFormat.toUpperCase()}.`);
   ui.setWarnings(currentResult.warnings);
   ui.setStats(currentResult);
-  ui.setDownload("", null);
+  ui.setDownloads([]);
   ui.setCompatibilityReport(null);
 }
 
@@ -82,17 +99,25 @@ async function convertCurrentFile(): Promise<void> {
   ui.setStatus(`Converting ${currentFile.name} -> ${target.toUpperCase()}...`);
   const result = converter.convertWithReport(buffer, currentFormat, target, {
     compatibilityProfile,
+    ...(currentBinBuffer ? { importSettings: { binBuffer: currentBinBuffer } } : {}),
+    ...(target === ModelFormat.GLTF ? { exportSettings: { binFileName: `${currentFile.name.replace(/\.[^.]+$/, "")}.bin` } } : {}),
   });
-  ui.setDownload(`${currentFile.name.replace(/\.[^.]+$/, "")}.${target}`, new Blob([result.output], { type: "application/octet-stream" }));
+  ui.setDownloads([
+    { fileName: `${currentFile.name.replace(/\.[^.]+$/, "")}.${target}`, blob: new Blob([result.output], { type: "application/octet-stream" }) },
+    ...(result.sidecars ?? []).map((sidecar) => ({
+      fileName: sidecar.fileName,
+      blob: new Blob([sidecar.content], { type: "application/octet-stream" }),
+    })),
+  ]);
   ui.setCompatibilityReport(result.report ? renderCompatibilityReportMarkdown(result.report) : null);
   ui.setStatus(`Converted ${currentFile.name} -> ${target.toUpperCase()}.`);
 }
 
 fileInput.addEventListener("change", async () => {
-  const file = fileInput.files?.[0];
-  if (!file) return;
+  const files = fileInput.files;
+  if (!files || files.length === 0) return;
   try {
-    await loadFile(file);
+    await loadFiles(files);
   } catch (error) {
     ui.setStatus(error instanceof Error ? error.message : "Failed to load file.");
   }
@@ -116,9 +141,9 @@ dropzone.addEventListener("dragleave", () => {
 dropzone.addEventListener("drop", (event) => {
   event.preventDefault();
   dropzone.classList.remove("dragover");
-  const file = event.dataTransfer?.files?.[0];
-  if (!file) return;
-  void loadFile(file).catch((error) => {
+  const files = event.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+  void loadFiles(files).catch((error) => {
     ui.setStatus(error instanceof Error ? error.message : "Failed to load file.");
   });
 });

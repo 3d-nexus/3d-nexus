@@ -1,6 +1,6 @@
 # 3d-nexus
 
-`3d-nexus` 是一个基于 `pnpm` workspace 的 3D 格式转换与兼容性验证仓库，当前聚焦于 `OBJ`、`FBX`、`PMX/PMD`、`VMD`、`BVH` 的导入、导出、浏览器内转换，以及面向 DCC/runtime profile 的 compatibility report。
+`3d-nexus` 是一个基于 `pnpm` workspace 的 3D 格式转换与兼容性验证仓库，当前聚焦于 `OBJ`、`FBX`、`glTF/GLB`、`PMX/PMD`、`VMD`、`BVH` 的导入、导出、浏览器内转换，以及面向 DCC/runtime profile 的 compatibility report。
 
 ## Workspace
 
@@ -9,6 +9,7 @@
 | `packages/nexus-core`      | `@3d-nexus/core`      | 通用 IR、数学类型、兼容性类型                             |
 | `packages/nexus-obj`       | `@3d-nexus/obj`       | OBJ / MTL 导入导出                                        |
 | `packages/nexus-fbx`       | `@3d-nexus/fbx`       | FBX 导入导出、scene extras、animation、material fidelity  |
+| `packages/nexus-gltf`      | `@3d-nexus/gltf`      | glTF 2.0 / GLB 导入导出、gltf+bin sidecar 支持            |
 | `packages/nexus-mmd`       | `@3d-nexus/mmd`       | PMX / PMD / VMD 导入导出与 MMD 相关保真逻辑               |
 | `packages/nexus-bvh`       | `@3d-nexus/bvh`       | BVH skeleton/motion 解析、导入导出、frame timing fidelity |
 | `packages/nexus-converter` | `@3d-nexus/converter` | 格式转换管线、post-process、compatibility report          |
@@ -72,6 +73,7 @@ const markdown = result.report ? renderCompatibilityReportMarkdown(result.report
 npm i @3d-nexus/core
 npm i @3d-nexus/obj
 npm i @3d-nexus/fbx
+npm i @3d-nexus/gltf
 npm i @3d-nexus/mmd
 npm i @3d-nexus/bvh
 npm i @3d-nexus/converter

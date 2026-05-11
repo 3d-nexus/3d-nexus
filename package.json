@@ -9,7 +9,7 @@
     "apps/*"
   ],
   "scripts": {
-    "clean": "node -e \"const { rmSync } = require('node:fs'); for (const path of ['packages/nexus-bvh/dist','packages/nexus-converter/dist','packages/nexus-core/dist','packages/nexus-fbx/dist','packages/nexus-mmd/dist','packages/nexus-obj/dist','apps/playground/dist']) rmSync(path, { recursive: true, force: true });\"",
+    "clean": "node -e \"const { rmSync } = require('node:fs'); for (const path of ['packages/nexus-bvh/dist','packages/nexus-converter/dist','packages/nexus-core/dist','packages/nexus-fbx/dist','packages/nexus-gltf/dist','packages/nexus-mmd/dist','packages/nexus-obj/dist','apps/playground/dist']) rmSync(path, { recursive: true, force: true });\"",
     "format:check": "prettier --check \"**/*.{html,json,md,ts,yaml,yml}\"",
     "typecheck": "pnpm -r exec tsc -p tsconfig.json --noEmit",
     "build": "pnpm -r build",

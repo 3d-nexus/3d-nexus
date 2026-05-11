@@ -28,4 +28,14 @@ describe("ModelConverter", () => {
 
     expect(triangulated.match(/^f /gm)?.length).toBeGreaterThan(2);
   });
+
+  it("returns a BIN sidecar for glTF JSON conversion", () => {
+    const converter = new ModelConverter();
+    const obj = readFixture("cube.obj");
+    const result = converter.convertWithReport(obj, "obj", "gltf", { exportSettings: { binFileName: "cube.bin" } });
+
+    expect(new TextDecoder().decode(result.output)).toContain('"uri": "cube.bin"');
+    expect(result.sidecars?.[0]?.fileName).toBe("cube.bin");
+    expect(result.sidecars?.[0]?.content.byteLength).toBeGreaterThan(0);
+  });
 });
