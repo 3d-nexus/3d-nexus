@@ -139,6 +139,17 @@ describe("converter compatibility reports", () => {
     expect(result.report?.targetFormat).toBe("pmx");
   });
 
+  it("omits PMX, VMD, and BVH checks for unrelated FBX profile conversions", () => {
+    const scene = createBaseScene();
+    const input = new FBXExporter().write(scene, { format: "fbx" });
+    const result = new ModelConverter().convertWithReport(input, ModelFormat.FBX, ModelFormat.OBJ, {
+      compatibilityProfile: "maya-fbx",
+    });
+
+    expect(result.output.byteLength).toBeGreaterThan(0);
+    expect(result.report?.checks.map((entry) => entry.capability)).toEqual([]);
+  });
+
   it("reports exact BVH compatibility for unchanged BVH round-trips", () => {
     const input = loadBvhFixture("minimal.bvh");
     const result = new ModelConverter().convertWithReport(input, ModelFormat.BVH, ModelFormat.BVH, {

@@ -141,6 +141,14 @@ function createOutcomeCheck(
   };
 }
 
+function isMmdModelFormat(format: string): boolean {
+  return format === "pmx" || format === "pmd";
+}
+
+function hasCapabilityDiagnostic(diagnostics: Array<Record<string, unknown>>, capability: string): boolean {
+  return diagnostics.some((entry) => String(entry.capability ?? "") === capability);
+}
+
 export interface CreateSceneCompatibilityReportInput {
   scene: AiScene;
   profile: CompatibilityProfileName;
@@ -158,73 +166,89 @@ export function createSceneCompatibilityReport(input: CreateSceneCompatibilityRe
   const lightFrames = readSceneArray(input.scene, "mmd:lightFrames");
   const checks: CompatibilityCheckResult[] = [];
 
-  const qdefVertices = vertexSkinning.filter((entry) => Number(entry.skinningType ?? 0) === 4).length;
-  const qdefDiagnostics =
-    qdefVertices > 0 && input.targetFormat !== "pmx"
-      ? [
-          createCompatibilityDiagnostic(
-            input.profile,
-            "pmx-skinning",
-            "PMX_QDEF_FALLBACK",
-            `Target ${input.targetFormat} cannot preserve ${qdefVertices} QDEF-authored vertices exactly.`,
-            "warning",
-            { count: qdefVertices, targetFormat: input.targetFormat },
-          ),
-        ]
-      : [];
-  checks.push(createOutcomeCheck(input.profile, "pmx-skinning", qdefDiagnostics.length > 0 ? "degraded" : "exact", qdefDiagnostics));
+  const hasTimingData = morphFrames.length > 0 || cameraFrames.length > 0 || lightFrames.length > 0;
+  const pmxRelevant =
+    input.profile === "mmd" ||
+    isMmdModelFormat(input.sourceFormat) ||
+    isMmdModelFormat(input.targetFormat) ||
+    vertexSkinning.length > 0 ||
+    impulseMorphs.length > 0 ||
+    softBodies.length > 0;
+  if (pmxRelevant) {
+    const qdefVertices = vertexSkinning.filter((entry) => Number(entry.skinningType ?? 0) === 4).length;
+    const qdefDiagnostics =
+      qdefVertices > 0 && input.targetFormat !== "pmx"
+        ? [
+            createCompatibilityDiagnostic(
+              input.profile,
+              "pmx-skinning",
+              "PMX_QDEF_FALLBACK",
+              `Target ${input.targetFormat} cannot preserve ${qdefVertices} QDEF-authored vertices exactly.`,
+              "warning",
+              { count: qdefVertices, targetFormat: input.targetFormat },
+            ),
+          ]
+        : [];
+    checks.push(createOutcomeCheck(input.profile, "pmx-skinning", qdefDiagnostics.length > 0 ? "degraded" : "exact", qdefDiagnostics));
 
-  const impulseDiagnostics =
-    impulseMorphs.length > 0 && input.targetFormat !== "pmx"
-      ? [
-          createCompatibilityDiagnostic(
-            input.profile,
-            "pmx-morphs",
-            "PMX_IMPULSE_MORPH_FALLBACK",
-            `Target ${input.targetFormat} normalizes or drops ${impulseMorphs.length} impulse morph entries.`,
-            "warning",
-            { count: impulseMorphs.length, targetFormat: input.targetFormat },
-          ),
-        ]
-      : [];
-  checks.push(createOutcomeCheck(input.profile, "pmx-morphs", impulseDiagnostics.length > 0 ? "degraded" : "exact", impulseDiagnostics));
+    const impulseDiagnostics =
+      impulseMorphs.length > 0 && input.targetFormat !== "pmx"
+        ? [
+            createCompatibilityDiagnostic(
+              input.profile,
+              "pmx-morphs",
+              "PMX_IMPULSE_MORPH_FALLBACK",
+              `Target ${input.targetFormat} normalizes or drops ${impulseMorphs.length} impulse morph entries.`,
+              "warning",
+              { count: impulseMorphs.length, targetFormat: input.targetFormat },
+            ),
+          ]
+        : [];
+    checks.push(createOutcomeCheck(input.profile, "pmx-morphs", impulseDiagnostics.length > 0 ? "degraded" : "exact", impulseDiagnostics));
 
-  const physicsDiagnostics =
-    softBodies.length > 0 && input.targetFormat !== "pmx"
-      ? [
-          createCompatibilityDiagnostic(
-            input.profile,
-            "pmx-physics-export",
-            "PMX_SOFT_BODY_NORMALIZED",
-            `Target ${input.targetFormat} does not keep ${softBodies.length} PMX soft-body blocks as first-class data.`,
-            "warning",
-            { count: softBodies.length, targetFormat: input.targetFormat },
-          ),
-        ]
-      : [];
-  checks.push(createOutcomeCheck(input.profile, "pmx-physics-export", physicsDiagnostics.length > 0 ? "degraded" : "exact", physicsDiagnostics));
+    const physicsDiagnostics =
+      softBodies.length > 0 && input.targetFormat !== "pmx"
+        ? [
+            createCompatibilityDiagnostic(
+              input.profile,
+              "pmx-physics-export",
+              "PMX_SOFT_BODY_NORMALIZED",
+              `Target ${input.targetFormat} does not keep ${softBodies.length} PMX soft-body blocks as first-class data.`,
+              "warning",
+              { count: softBodies.length, targetFormat: input.targetFormat },
+            ),
+          ]
+        : [];
+    checks.push(createOutcomeCheck(input.profile, "pmx-physics-export", physicsDiagnostics.length > 0 ? "degraded" : "exact", physicsDiagnostics));
+  }
 
-  const driftDiagnostics = diagnostics
-    .filter((entry) => String(entry.capability ?? "") === "vmd-interpolation")
-    .map((entry) =>
-      createCompatibilityDiagnostic(
+  const vmdRelevant =
+    input.sourceFormat === "vmd" ||
+    input.targetFormat === "vmd" ||
+    hasTimingData ||
+    hasCapabilityDiagnostic(diagnostics, "vmd-interpolation");
+  if (vmdRelevant) {
+    const driftDiagnostics = diagnostics
+      .filter((entry) => String(entry.capability ?? "") === "vmd-interpolation")
+      .map((entry) =>
+        createCompatibilityDiagnostic(
+          input.profile,
+          "vmd-interpolation",
+          String(entry.code ?? "VMD_FRAME_DRIFT"),
+          String(entry.message ?? "VMD frame timing drift detected."),
+          "warning",
+          entry.details,
+        ),
+      );
+    checks.push(
+      createOutcomeCheck(
         input.profile,
         "vmd-interpolation",
-        String(entry.code ?? "VMD_FRAME_DRIFT"),
-        String(entry.message ?? "VMD frame timing drift detected."),
-        "warning",
-        entry.details,
+        driftDiagnostics.length > 0 ? "degraded" : hasTimingData ? "exact" : "normalized",
+        driftDiagnostics,
       ),
     );
-  const hasTimingData = morphFrames.length > 0 || cameraFrames.length > 0 || lightFrames.length > 0;
-  checks.push(
-    createOutcomeCheck(
-      input.profile,
-      "vmd-interpolation",
-      driftDiagnostics.length > 0 ? "degraded" : hasTimingData ? "exact" : "normalized",
-      driftDiagnostics,
-    ),
-  );
+  }
 
   const bvhInvolved = input.profile === "bvh" || input.sourceFormat === "bvh" || input.targetFormat === "bvh";
   if (bvhInvolved) {

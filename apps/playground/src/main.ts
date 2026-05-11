@@ -1,4 +1,4 @@
-﻿import type { ImportResult } from "@3d-nexus/core";
+﻿import { isCompatibilityProfileName, type CompatibilityProfileName, type ImportResult } from "@3d-nexus/core";
 import {
   ModelConverter,
   IMPORTER_REGISTRY,
@@ -55,6 +55,14 @@ function syncTargetOptions(inputFormat: ModelFormatValue): void {
   targetSelect.value = nextTargetFormat(inputFormat);
 }
 
+function readCompatibilityProfile(): CompatibilityProfileName {
+  const profile = compatibilityProfileSelect.value;
+  if (!isCompatibilityProfileName(profile)) {
+    throw new Error(`Unsupported compatibility profile: ${profile}`);
+  }
+  return profile;
+}
+
 async function loadFile(file: File): Promise<void> {
   currentFile = file;
   currentFormat = detectFormat(file.name);
@@ -75,10 +83,11 @@ async function convertCurrentFile(): Promise<void> {
   }
 
   const target = targetSelect.value as ModelFormatValue;
+  const compatibilityProfile = readCompatibilityProfile();
   const buffer = await currentFile.arrayBuffer();
   ui.setStatus(`Converting ${currentFile.name} -> ${target.toUpperCase()}...`);
   const result = converter.convertWithReport(buffer, currentFormat, target, {
-    compatibilityProfile: compatibilityProfileSelect.value as never,
+    compatibilityProfile,
   });
   ui.setDownload(
     `${currentFile.name.replace(/\.[^.]+$/, "")}.${target}`,
@@ -99,7 +108,9 @@ fileInput.addEventListener("change", async () => {
 });
 
 convertButton.addEventListener("click", () => {
-  void convertCurrentFile();
+  void convertCurrentFile().catch((error) => {
+    ui.setStatus(error instanceof Error ? error.message : "Failed to convert file.");
+  });
 });
 
 dropzone.addEventListener("dragover", (event) => {
