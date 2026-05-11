@@ -1,41 +1,57 @@
 import { describe, expect, it } from "vitest";
+import { FBXBinaryWriter } from "../FBXBinaryWriter";
+import { FbxExportNode } from "../FBXExportNode";
 import { FBXImporter } from "../FBXImporter";
 
-function createAsciiFbx(globalSettings: string): ArrayBuffer {
-  const text = [
-    "; FBX 7.4.0 project file",
-    "FBXHeaderExtension: {",
-    "  FBXVersion: 7400",
-    "}",
-    "GlobalSettings: {",
-    globalSettings,
-    "}",
-    "Objects: {",
-    '  Geometry: 1, "Geometry::Mesh", "Mesh" {',
-    "    Vertices: 0,0,0,1,0,0,0,1,0",
-    "    PolygonVertexIndex: 0,1,-3",
-    "    Normals: 0,1,0,0,1,0,0,1,0",
-    "    UV: 0,0,1,0,0,1",
-    "  }",
-    '  Material: 2, "Material::Mat", "Material" {',
-    "  }",
-    '  Model: 3, "Model::Mesh", "Model" {',
-    "  }",
-    "}",
-    "Connections: {",
-    '  C: "OO", 1, 3',
-    '  C: "OO", 2, 3',
-    "}",
-    "Takes: {",
-    "}",
-  ].join("\n");
-  return new TextEncoder().encode(text).buffer;
+interface AxisSettings {
+  upAxis: number;
+  upAxisSign: number;
+  frontAxis: number;
+  frontAxisSign: number;
+  coordAxis: number;
+  coordAxisSign: number;
+  unitScaleFactor: number;
+}
+
+function createBinaryFbx(settings: AxisSettings): ArrayBuffer {
+  return new FBXBinaryWriter().writeNodes([
+    new FbxExportNode("FBXHeaderExtension", [], ["FBXVersion: 7400"]),
+    new FbxExportNode(
+      "GlobalSettings",
+      [],
+      [
+        `UpAxis: ${settings.upAxis}`,
+        `UpAxisSign: ${settings.upAxisSign}`,
+        `FrontAxis: ${settings.frontAxis}`,
+        `FrontAxisSign: ${settings.frontAxisSign}`,
+        `CoordAxis: ${settings.coordAxis}`,
+        `CoordAxisSign: ${settings.coordAxisSign}`,
+        `UnitScaleFactor: ${settings.unitScaleFactor}`,
+      ],
+    ),
+    new FbxExportNode(
+      "Objects",
+      [],
+      [],
+      [
+        new FbxExportNode(
+          "Geometry",
+          [1, "Geometry::Mesh", "Mesh"],
+          ["Vertices: 0,0,0,1,0,0,0,1,0", "PolygonVertexIndex: 0,1,-3", "Normals: 0,1,0,0,1,0,0,1,0", "UV: 0,0,1,0,0,1"],
+        ),
+        new FbxExportNode("Material", [2, "Material::Mat", "Material"]),
+        new FbxExportNode("Model", [3, "Model::Mesh", "Model"]),
+      ],
+    ),
+    new FbxExportNode("Connections", [], ['C: "OO", 1, 3', 'C: "OO", 2, 3']),
+    new FbxExportNode("Takes"),
+  ]);
 }
 
 describe("FBX coordinate normalization", () => {
   it("applies Z-up to Y-up root transform", () => {
     const scene = new FBXImporter().read(
-      createAsciiFbx("  UpAxis: 2\n  UpAxisSign: 1\n  FrontAxis: 1\n  FrontAxisSign: -1\n  CoordAxis: 0\n  CoordAxisSign: 1\n  UnitScaleFactor: 100"),
+      createBinaryFbx({ upAxis: 2, upAxisSign: 1, frontAxis: 1, frontAxisSign: -1, coordAxis: 0, coordAxisSign: 1, unitScaleFactor: 100 }),
       "zup.fbx",
     ).scene;
 
@@ -46,7 +62,7 @@ describe("FBX coordinate normalization", () => {
 
   it("keeps canonical Y-up root transform as identity", () => {
     const scene = new FBXImporter().read(
-      createAsciiFbx("  UpAxis: 1\n  UpAxisSign: 1\n  FrontAxis: 2\n  FrontAxisSign: 1\n  CoordAxis: 0\n  CoordAxisSign: 1\n  UnitScaleFactor: 100"),
+      createBinaryFbx({ upAxis: 1, upAxisSign: 1, frontAxis: 2, frontAxisSign: 1, coordAxis: 0, coordAxisSign: 1, unitScaleFactor: 100 }),
       "yup.fbx",
     ).scene;
 

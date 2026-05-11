@@ -1,52 +1,66 @@
 import { deflateSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { FBXBinaryTokenizer } from "../FBXBinaryTokenizer";
+import { FBXBinaryWriter } from "../FBXBinaryWriter";
+import type { FBXToken } from "../FBXTokenizer";
 
-function createBinaryFixture(version: number): ArrayBuffer {
-  const magic = new TextEncoder().encode("Kaydara FBX Binary  \0\x1a\0");
-  const payload = deflateSync(new Uint8Array([1, 2, 3, 4]));
-  const bytes: number[] = [...magic];
-  const versionBuffer = new ArrayBuffer(4);
-  new DataView(versionBuffer).setUint32(0, version, true);
-  bytes.push(...new Uint8Array(versionBuffer));
-  if (version >= 7500) {
-    const offsetBuffer = new ArrayBuffer(8);
-    new DataView(offsetBuffer).setBigUint64(0, 123n, true);
-    bytes.push(...new Uint8Array(offsetBuffer));
-  } else {
-    const offsetBuffer = new ArrayBuffer(4);
-    new DataView(offsetBuffer).setUint32(0, 123, true);
-    bytes.push(...new Uint8Array(offsetBuffer));
-  }
-  const len = new ArrayBuffer(4);
-  new DataView(len).setUint32(0, 4, true);
-  bytes.push(...new Uint8Array(len));
-  const encoding = new ArrayBuffer(4);
-  new DataView(encoding).setUint32(0, 1, true);
-  bytes.push(...new Uint8Array(encoding));
-  const compressedLength = new ArrayBuffer(4);
-  new DataView(compressedLength).setUint32(0, payload.length, true);
-  bytes.push(...new Uint8Array(compressedLength));
-  bytes.push(...payload);
-  return Uint8Array.from(bytes).buffer;
+const magic = new TextEncoder().encode("Kaydara FBX Binary  \0\x1a\0");
+
+function writeUint32(value: number): number[] {
+  const buffer = new ArrayBuffer(4);
+  new DataView(buffer).setUint32(0, value, true);
+  return Array.from(new Uint8Array(buffer));
+}
+
+function createCompressedArrayFixture(): ArrayBuffer {
+  const values = new Int32Array([1, 2, 3, 4]);
+  const payload = deflateSync(new Uint8Array(values.buffer));
+  const name = new TextEncoder().encode("Vertices");
+  const property = [..."i"].map((char) => char.charCodeAt(0));
+  property.push(...writeUint32(values.length), ...writeUint32(1), ...writeUint32(payload.byteLength), ...payload);
+
+  const recordStart = 27;
+  const endOffset = recordStart + 4 + 4 + 4 + 1 + name.byteLength + property.length;
+  return Uint8Array.from([
+    ...magic,
+    ...writeUint32(7400),
+    ...writeUint32(endOffset),
+    ...writeUint32(1),
+    ...writeUint32(property.length),
+    name.byteLength,
+    ...name,
+    ...property,
+    ...Array(13).fill(0),
+  ]).buffer;
 }
 
 describe("FBXBinaryTokenizer", () => {
-  it("validates magic and decompresses arrays", () => {
+  it("validates magic and decompresses array properties", () => {
     const tokenizer = new FBXBinaryTokenizer();
-    const tokens = tokenizer.tokenize(createBinaryFixture(7400));
+    const tokens = tokenizer.tokenize(createCompressedArrayFixture());
 
-    expect(tokens[1]).toMatchObject({
+    expect(tokens[0]).toMatchObject({
       type: "Data",
-      name: "Array",
-      value: new Uint8Array([1, 2, 3, 4]),
+      name: "Vertices",
+      value: [1, 2, 3, 4],
     });
     expect(() => tokenizer.tokenize(new TextEncoder().encode("bad").buffer)).toThrow(/Invalid FBX binary magic/);
   });
 
-  it("detects 64-bit offsets for 7500+", () => {
-    const tokenizer = new FBXBinaryTokenizer();
-    const tokens = tokenizer.tokenize(createBinaryFixture(7500));
-    expect(tokens[0]).toMatchObject({ type: "NodeBegin", properties: [7500, 123n] });
+  it("round-trips exported binary tokens", () => {
+    const source: FBXToken[] = [
+      { type: "NodeBegin", name: "FBXHeaderExtension", properties: [] },
+      { type: "Data", name: "FBXVersion", value: 7400 },
+      { type: "NodeEnd" },
+      { type: "NodeBegin", name: "Objects", properties: [] },
+      { type: "NodeBegin", name: "Model", properties: [100000, "Model::Root", "Model"] },
+      { type: "NodeEnd" },
+      { type: "NodeEnd" },
+    ];
+    const buffer = new FBXBinaryWriter().write(source);
+    const header = new TextDecoder("ascii").decode(buffer.slice(0, 23));
+
+    expect(header).toBe("Kaydara FBX Binary  \0\x1a\0");
+    expect(new FBXBinaryTokenizer().tokenize(buffer)).toEqual(source);
   });
 });

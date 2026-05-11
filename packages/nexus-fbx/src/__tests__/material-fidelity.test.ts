@@ -25,10 +25,14 @@ describe("FBX material fidelity", () => {
     expect(scene.meshes[0]?.textureCoords[1]?.length).toBe(3);
     expect(diagnostics.some((entry: { code?: string }) => entry.code === "FBX_MATERIAL_FALLBACK")).toBe(true);
 
-    const outputA = new TextDecoder().decode(exporter.write(scene));
-    const outputB = new TextDecoder().decode(exporter.write(scene));
-    expect(outputA).toContain('RelativeFilename: "纹理/漫反射.png"');
-    expect(outputA).toContain('P: "UVSet", "KString", "", "A", "map2"');
-    expect(outputA).toBe(outputB);
+    const outputA = exporter.write(scene);
+    const outputB = exporter.write(scene);
+    const exported = importer.read(outputA, "unicode-texture-roundtrip.fbx").scene;
+    const exportedBinding = (exported.materials[0]?.metadata?.textureBindings as Array<Record<string, unknown>>)[0]!;
+
+    expect(new TextDecoder("ascii").decode(outputA.slice(0, 23))).toBe("Kaydara FBX Binary  \0\x1a\0");
+    expect(Array.from(new Uint8Array(outputA))).toEqual(Array.from(new Uint8Array(outputB)));
+    expect(exportedBinding.relativeFilename).toBe("纹理/漫反射.png");
+    expect(exportedBinding.uvSet).toBe("map2");
   });
 });

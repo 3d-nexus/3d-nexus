@@ -10,6 +10,7 @@
   type BaseExporter,
   type ExportSettings,
 } from "@3d-nexus/core";
+import { FBXBinaryWriter } from "./FBXBinaryWriter";
 import { FbxExportNode } from "./FBXExportNode";
 import { FBX_TICKS_PER_SECOND } from "./FBXTokenizer";
 
@@ -450,6 +451,8 @@ function writeAnimations(
 }
 
 export class FBXExporter implements BaseExporter {
+  private readonly binaryWriter = new FBXBinaryWriter();
+
   getSupportedExtensions(): string[] {
     return ["fbx"];
   }
@@ -762,23 +765,16 @@ export class FBXExporter implements BaseExporter {
     modelIdMap.set(scene.rootNode.name, ROOT_MODEL_ID);
     nextId = writeAnimations(scene, scene.animations, modelIdMap, objects, connectionLines, nextId);
 
-    const text = [
-      "; FBX 7.4.0 project file",
-      "; Created by 3d-nexus/fbx",
-      "FBXHeaderExtension: {",
-      "  FBXVersion: 7400",
-      "}",
+    return this.binaryWriter.writeNodes([
+      new FbxExportNode("FBXHeaderExtension", [], ["FBXVersion: 7400"]),
       new FbxExportNode(
         "GlobalSettings",
         [],
         ["UpAxis: 1", "UpAxisSign: 1", "FrontAxis: 2", "FrontAxisSign: 1", "CoordAxis: 0", "CoordAxisSign: 1", "UnitScaleFactor: 1.0"],
-      ).render(),
-      new FbxExportNode("Objects", [], [], objects).render(),
-      new FbxExportNode("Connections", [], connectionLines).render(),
-      "Takes: {",
-      "}",
-    ].join("\n");
-
-    return new TextEncoder().encode(text).buffer;
+      ),
+      new FbxExportNode("Objects", [], [], objects),
+      new FbxExportNode("Connections", [], connectionLines),
+      new FbxExportNode("Takes"),
+    ]);
   }
 }

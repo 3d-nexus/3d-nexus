@@ -1,6 +1,7 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createIdentityMatrix4x4, type AiScene } from "@3d-nexus/core";
 import { FBXExporter } from "../FBXExporter";
+import { FBXImporter } from "../FBXImporter";
 
 function createScene(): AiScene {
   return {
@@ -63,10 +64,12 @@ function createScene(): AiScene {
 
 describe("FBX multi-mesh export", () => {
   it("writes one geometry and model per mesh, deduplicating materials", () => {
-    const output = new TextDecoder().decode(new FBXExporter().write(createScene()));
+    const output = new FBXExporter().write(createScene());
+    const scene = new FBXImporter().read(output, "multi-mesh-binary.fbx").scene;
 
-    expect(output.match(/^\s*Geometry:/gm)).toHaveLength(3);
-    expect(output.match(/^\s*Model:/gm)).toHaveLength(4);
-    expect(output.match(/^\s*Material:/gm)).toHaveLength(2);
+    expect(new TextDecoder("ascii").decode(output.slice(0, 23))).toBe("Kaydara FBX Binary  \0\x1a\0");
+    expect(scene.meshes).toHaveLength(3);
+    expect(scene.rootNode.children[0]?.children).toHaveLength(3);
+    expect(scene.materials).toHaveLength(2);
   });
 });
