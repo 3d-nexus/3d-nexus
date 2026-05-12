@@ -1,6 +1,6 @@
 {
   "name": "@3d-nexus/fbx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "FBX import/export support with scene and animation fidelity for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",

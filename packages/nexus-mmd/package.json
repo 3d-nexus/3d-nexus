@@ -1,6 +1,6 @@
 {
   "name": "@3d-nexus/mmd",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "PMX, PMD, and VMD import/export support for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",

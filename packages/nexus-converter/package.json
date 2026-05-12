@@ -1,6 +1,6 @@
 {
   "name": "@3d-nexus/converter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cross-format 3D conversion and compatibility reporting for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",

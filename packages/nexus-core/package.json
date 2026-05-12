@@ -1,6 +1,6 @@
 {
   "name": "@3d-nexus/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Core IR, math utilities, and compatibility types for 3d-nexus.",
   "type": "module",
   "main": "./dist/index.js",
